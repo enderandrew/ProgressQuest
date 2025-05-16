@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link rel="apple-touch-icon" sizes="180x180" href="https://enderandrew.com/ProgressQuest/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="https://enderandrew.com/ProgressQuest/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="https://enderandrew.com/ProgressQuest/favicon-16x16.png">
+	<link rel="manifest" href="https://enderandrew.com/ProgressQuest/site.webmanifest">
+	<link rel="mask-icon" href="https://enderandrew.com/ProgressQuest/safari-pinned-tab.svg" color="#5bbad5">
+	<link rel="shortcut icon" href="https://enderandrew.com/ProgressQuest/favicon.ico">
+	<meta name="msapplication-TileColor" content="#da532c">
+	<meta name="msapplication-config" content="https://enderandrew.com/ProgressQuest/browserconfig.xml">
+	<meta name="theme-color" content="#ffffff">
+	<title>Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle</title>
+			<!-- Google tag (gtag.js) -->
+			<meta name="google-site-verification" content="Fw32VtOfNNMYuxwq-LDxGbzuY7QIxjvQmLuWnv6FTGY" />
+			<script async src="https://www.googletagmanager.com/gtag/js?id=G-C7FZLTKS4Q"></script>
+				<script>
+				window.dataLayer = window.dataLayer || [];
+				function gtag(){dataLayer.push(arguments);}
+				gtag('js', new Date());
+				
+				gtag('config', 'G-C7FZLTKS4Q');
+			</script>
+	<style>
+		body {
+			text-align: center;
+			background-image: url('battleback9.png');
+			background-size: cover;
+			background-repeat: no-repeat;
+		}
+		p {
+			margin-left: 10%;
+			margin-right: 10%;
+			text-align: left;
+		}
+		.sig {
+			text-align: center;
+			font-size: small;
+			color: #808080;
+		}
+		.sig a, .sig a:visited {
+			color: #808080;
+			text-decoration: none;
+		}
+		div {
+			background:#7f7f7f;
+			background:rgba(255,255,255,0.5);
+			margin-left: 15%;
+			margin-right: 15%;
+		}
+		.center {
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		#go {
+			font-size: 30pt;
+		}
+		img {
+			border-style: none;
+		}
+		th, td { text-align: left; padding-right: 2em; }
+		.good { color: #2a2; }
+		.ugly { color: #c82; }
+	</style>
+</head>
+
+<body>
+
+<a href="./">
+<a href="https://ProgressQuest.EnderAndrew.com" style="text-decoration:none"><img style="border:0" src="pq.gif" width="512px" height="451px" id="logo" title="Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle" alt="Progress Quest Remix" class="center"></a>
+</a>
+<div>
+<h1>Progress Quest Remix in Your Browser</h1>
+
+<p>
+This is a fork of the original <a href="http://progressquest.com" target="_blank">Progress Quest</a> that leans heavily into the parody aspect of the game.
+</p>
+
+<p>
+Thanks to recent advances in technology, it has been possible to port Progress Quest Remix to run in your browser. You no longer need to download or install anything to play Progress Quest; just hit the button:
+</p>
+
+<button id="go" onclick="window.location.href='roster.html'">Play!</button>
+
+<p>
+Does that sound easy to you? Well it wasn't; we started with hardware emulation of a 80386-equipped PC clone running a novel Windows XP compatible operating system called ProgrOS, implemented in a clean room in the Seychelles by a team of people who had never programmed before (to keep the lawyers at bay).
+
+<p>
+Unfortunately that wasn't fast enough (there was too much lag death), so we instead emulated the much faster Cray-2 supercomputer and ran the 80386 emulator in that. But the 80386 kept getting hot, so we switched to a 6502 overclocked at 120GHz with emulated liquid helium coolant, and ported ProgrOS to that.
+
+<p>
+Between you, me, and that talking pony over there, this is pretty much beta software at this point. Browser support breakdown:
+<center>
+<table>
+<tr>
+  <th class=good>Chrome, Firefox, Safari 
+  <td>Aces! Works great! (We think!)
+<tr>
+  <th class=ugly>Opera, Mobile Safari, Internet Explorer
+  <td>Some visual glitches. Should play fine.
+</table>
+</center>
+
+<p>
+This edition of the game is only single player - there is no Hall of Fame yet. If anyone cares, that will come later.
+</p>
+
+
+<br>
+<br>
+		<div align="center" id="nabar">
+			<a href="./">Home</a> &middot;
+			<a href="./info.php">Info</a> &middot;
+			<a href="./faq.php">FAQ</a> &middot;
+			<a href="./roster.html">Play</a> &middot;
+			<a href="./dl.php">Download</a> &middot;
+			<a href="http://progressquest.com/realms.php">Realms</a> &middot;
+			<a href="http://progressquest.com/acct.php">Accounts</a> &middot;
+			<a href="./news.php">News</a> &middot;
+			<a href="http://www.cafepress.com/pqm">Store</a> &middot;
+			<a href="http://forum.progressquest.com/">Forum</a> &middot;
+			<a href="./links.php">Links</a>
+		</div>
+		<br>
+		<div class="sig">
+			&copy;2001-2010 <a class=dim href="mailto:grumdrig@progressquest.com">grumdrig@progressquest.com</a> for original Progress Quest - &copy;2023 <a class=dim href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix
+		</div>
+	</div>
+</div>
+</body>
+
+</html>

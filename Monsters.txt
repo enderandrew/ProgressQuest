@@ -1,0 +1,443 @@
+Ankle-biter	0	baby-teeth
+Charlotte the Spider	0	web
+Clingy Mothball	0	dust
+Cray-Crayfish	0	antenna
+Flik the Ant	0	antenna
+Frogger	0	leg
+Hollow Chocolate Bunny	0	ear
+Marty McFly	0	*
+Old Yeller	0	collar
+Pixelated Centipede	0	leg
+Ratatouille	0	tail
+Spores mold and fungus	0	infection
+Tick	0	spoon
+W.A.S.P.	0	church bulletin
+Bat-Mite	1	wing
+Berserker	1	shirt
+Billy Goat	1	beard
+Brownie the Elf	1	tusk
+Butt Pirate	1	booty
+Closet Skeleton	1	clavicle
+Club Scout	1	neckerchief
+Dervish	1	robe
+Garden Gnome	1	hat
+Goblin mode	1	ear
+Grid Bug	1	carapace
+Hobbled goblin	1	patella
+Kobold	1	penis
+Leprechaun in the Hood	1	wallet
+Little Mermaid	1	gills
+Manes	1	tooth
+Modest Mouse	1	tail
+Nebbish	1	belly
+Orc Zuckerberg	1	snout
+Ozzy Ostrich	1	beak
+Red Dwarf	1	drawers
+Rot Grub	1	eggsac
+Sea Elf	1	jerkin
+Sprite	1	can
+Stirge	1	proboscis
+Swamp Elf	1	lilypad
+The Merman	1	trident
+The Pixies	1	dust
+Trixy Nixie	1	webbing
+Yellow Mold	1	spore
+4chan Troglodyte	2	tail
+Bearded Lizard Man	2	tail
+Dryad	2	acorn
+Garden Octopus	2	beak
+Geico Caveman	2	club
+Ghoul Scout	2	cookie
+Ghoulfriend	2	muscle
+Grassy Gnoll	2	collar
+Green Slimer	2	sample
+Home Sweet Homunculus	2	fluid
+Koala-fied	2	heart
+More A Eel	2	sashimi
+Multicell	2	dendrite
+Nine Imp Nails	2	tail
+Pack of Camels	2	filter
+Rob Zombie	2	forehead
+Stun Worm	2	trode
+Teen Wolf	2	paw
+Uruk-hai and dry	2	boot
+Whippet Good	2	collar
+Bed-Bug-Bear	3	skin
+Boogie	3	slime
+Carrion Pub Crawler	3	egg
+Closet Quasit	3	tail
+Demure Lemure	3	blob
+Drag Sea Hag	3	wart
+Harpy Marx	3	mascara
+Hippie-griff	3	egg
+Hogbird	3	curl
+Iron Peasant Past & Future	3	chaff
+Jumpskin	3	shin
+Nymph Node	3	hanky
+Prince Triton	3	scale
+Secret of the Ooze	3	gravy
+Shadow the Hedgehog	3	silhouette
+Silkie	3	fur
+Snow Piercer	3	tip
+Stink-Bug-Boar	3	tusk
+Sylph Milf	3	thigh
+The Last Boy Scout	3	merit badge
+Violent Violet Fungi	3	spore
+Weaker Shrieker	3	stalk
+Woman-o-war	3	tentacle
+A Ghast aghast	4	vomit
+Centaur for Disease Control	4	rib
+Cooler Yeti	4	fur
+Corn Man	4	juice
+David the Gnome	4	hat
+Doppelganger	4	face
+Eagle Scout	4	merit badge
+Gargoyle	4	gravel
+Gelatinous Cube	4	jam
+Grape Ape	4	ass
+Hippocampus	4	mane
+Mini Giant	4	pompadour
+Mutant Babies	4	diaper
+Peryton on a Peloton	4	antler
+Poroid	4	node
+Purrmaid	4	hairball
+Stink Blink Dog	4	eyelid
+Tactics Ogre	4	talon
+Unicornio the Mexican unicorn	4	blood
+Wight Said Fred	4	lung
+Wolog	4	lemma
+Bat out of Hell	5	meatloaf
+Beast with Two Axe	5	axe
+Bill Cosby	5	pudding pop
+Charizard	5	lawsuit
+Cockatrice	5	wattle
+Feral Muppet	5	fist
+Flail Bondsman	5	flail
+Gravy Elemental	5	stains
+Hell Hound	5	tongue
+Malebranche	5	fork
+Ogre Mage	5	apparel
+Owlbear	5	feather
+Rust Monster	5	shavings
+Savage Su-monster	5	tail
+Spider-Monkey	5	Mt. Dew
+Spitting Trouser Snake	5	infection
+Stun Bear	5	tooth
+Thirsty Satyr	5	hoof
+Windmills	5	*
+Wraith of God	5	finger
+Abominable Anhkheg	6	chitin
+Beefy Minotaur	6	map
+Butterscotch Custardbath	6	script
+Cantankerous Catoblepas	6	neck
+Embittered Erinyes	6	thong
+Grant Imahara's Sex Robot	6	dangly bits
+Iguanadon Nugget	6	thumb
+Leucrotta	6	hoof
+Manticore	6	spike
+Mork from Ork	6	egg
+Mummy Dearest	6	gauze
+Objectifying Medusa	6	eye
+Ochre Jelly	6	nucleus
+Playboy Bunny	6	ears
+Sponge Rob Hair Pants	6	pants
+Succubus	6	bra
+Sweet Gnome Alabama	6	incest
+Twiiter Troll	6	hide
+Vampire Bat	6	wing
+White Stripes Dragon	6	tooth
+Djinn Djarin	7	lamp
+Drop Bear	7	punked
+Forlorn Xorn	7	jaw
+Forum Ban-shee	7	larynx
+In a Vest a Gator	7	tooth
+Interest devourer	7	brain
+Lame Duck Dodgers	7	bill
+Marilith	7	arm
+Mitzvah Bat	7	yarmulke
+Morkoth	7	teeth
+Orc Twain	7	book
+Otyugh	7	organ
+Pega-sus Impostor	7	aileron
+Peter Griffon	7	nest
+Rakshasa	7	pajamas
+Rodents of Unusual Size	7	tail
+Smelly Pirate Hookers	7	infection
+Spectre of the Past Participle	7	vestige
+Teddy Ruxpin	7	cassette
+Three and a half babies	7	diapers
+Balor Texas	8	whip
+Barbie Devil	8	flame
+Blumpkin-Spiced Latte	8	cup
+Ether Bunny	8	rag
+Fart Garfunkel Elemental	8	gas
+Gorgon Zolla	8	testicle
+Hail Hydra	8	gyrum
+Instant Rice Giant	8	grain
+Jagged Juggalos	8	make-up
+Jedi Mind Flayer Trick	8	tentacle
+Joan of Orc	8	cross
+Monoclonius Nugget	8	horn
+Mostly-Invisible Stalker	8	*
+Pandering Pandaren	8	fur
+Rin Tin Tin Dragon	8	*
+Silent Hill Giant	8	corpse
+Slo-Mo-akum	8	frenum
+Sparkly Vampire	8	glitter
+Umber Hulk	8	claw
+Vrock and roll	8	neck
+Ace of Beige Dragon	9	*
+Ankylosaurus Nugget	9	tail
+Blue Screen of Death Dragon	9	*
+Boner Devil	9	hook
+Brass Monkey Dragon	9	pole
+Bronze Age Dragon	9	medal
+Chocobo	9	feather
+Couatl	9	wing
+Gone to Plaid Dragon	9	sporrin
+Hezrou	9	leg
+Howard the Duck Duck Goose	9	bill
+Iron Man Giant	9	sadness
+Jam and Jellyrock	9	seedling
+Mimic Mimic	9	hinge
+Naga	9	rattle
+Orc Ruffalo	9	script
+Porcelain Giant	9	fixture
+Rebecca Black Dragon	9	*
+Robot Unicorn	9	horn
+Rolling Stone Giant	9	hatchling
+Shedu	9	hoof
+Shitake Shrieker	9	fungi
+Wil-Wheaton-o'-the-Wisp	9	wisp
+4chan Lurker	10	sac
+Bacon Elemental	10	bit
+Black Sabbath Pudding	10	saliva
+Buffy Vampire	10	quips
+Darkwing Duck and Cover	10	bill
+Efreet Willy	10	cinder
+Glabrezu	10	collar
+Green Hornet Dragon	10	*
+Jack Frost Giant	10	snowman
+Lo and Beholder	10	eyestalk
+Moogle	10	fur
+Never Catch Me Copper Dragon	10	loafer
+Orc Hamill	10	script
+Patrick Swayze Ghost	10	*
+Pebble Beach Golf Sphinx	10	paw
+Quartz Giant	10	crystal
+Rainbow Brite Eyes	10	sprite
+Red Hot Chili Peppers Dragon	10	cocktail
+Shambling Mound	10	mulch
+Stay Gold Ponyboy Dragon	10	filling
+Threaten Ettin	10	fur
+Tree-ant-man and wasp	10	acorn
+A piñata full of fire bees	11	stinger
+Adventure Time Lord	11	screwdriver
+Beef Giant	11	steak
+Canadian 'Eh Holes	11	timbits
+Chimera Primavera	11	pasta
+Dread Gazebo	11	wood
+Flail Earnhardt	11	wreckage
+Jump Roper	11	twine
+Kindle Fire Giant	11	cigarettes
+King Triton	11	trident
+Lichie Lich	11	crown
+Nalfeshnee	11	tusk
+Neo-Otyugh	11	organ 
+Penis Guytrap	11	root
+Remorhaz	11	protrusion
+Sgt Poopers Lonely Farts Club Band	11	brown note
+Sharknado	11	fin
+Skeletor	11	bone
+Smallcox Outbreak	11	infection
+Vanilla Ice Devil	11	snow
+12-foot-tall skeleton	12	big bone
+A French Douchebaguette	12	crumbs
+Amazon Optimus Prime	12	cardboard
+Cloud Strife Giant	12	condensation
+Decidely Not Sexy Skeksis	12	beak
+Donkey Show-and-Tell	12	fur
+Feral snaggle-tooth crotch goblins	12	tooth
+Hairless ape with much anxiety	12	pills
+Hidden Valley Ranch-hand	12	bottle
+Humidity Giant	12	drops
+Jake from State Farm	12	khakis
+Je ne sais quoi	12	*
+Kentucky Fried Children	12	crispy bits
+Mastodon	12	tusk
+Megalosaurus Nugget	12	jaw
+Pentasaurus Nugget	12	head
+Porn Elemental	12	lube
+Silver Surfer Dragon	12	*
+Stubborn Adamantoise	12	shell
+Trapper Keeper	12	shag
+A 5th Grader smarter than you	13	book
+Cactuar	13	needle
+Chuck E Cheese Knife	13	cold dead eyes
+Cock Cockula	13	lips
+Conan O Brien the Bardbarian	13	hair
+Daddy Mothman	13	feather
+Dragon Teenage Mutant Ninja Turtle	13	shell
+Florida Man	13	gun
+Frank N Furter	13	fishnet
+Gorgosaurus Nugget	13	arm
+Hector the Love Nectar Injector	13	nectar
+Hulking Himbo	13	beefcake
+Lazarus Pit Fiend	13	seed
+Loki's horse baby	13	hooves
+Lord Adolphus Reginald Cockwomble Spunktrumpet the Third Esquire	13	ego
+Mr Planters	13	nuts
+Porg-stars	13	wing
+Teenage Mutant Ninja Squirtle	13	shell
+That sexy sexy Green M&M™	13	shell
+Why-vern?	13	question
+Albino howling shitgibbon	14	poo
+Baluchitherium	14	ear
+Baron Vladimir Fartonnen	14	fat
+Cardboard Golem	14	recycling
+Cheese Elemental	14	curd
+Gollum	14	precious
+Sherrif of Nottingham	14	taxes
+Ton-Tonberry	14	knife
+Tyrion Lannister	14	wine
+Wankpuffin Nobsocket Shitflute	14	flute
+Anacondas that love buns	15	buns
+Beer Golem	15	foam
+Elasmosaurus Nugget	15	neck
+Leather Golem	15	fob
+Malboro Light	15	vine
+Perfect Storm Giant	15	barometer
+Purple Worm	15	dung
+Salt N Pepperidge Farm	15	cookies
+Tinkerbell	15	attitude
+Trix Rabbit	15	cereal
+Chef Playboyardee	16	sauce
+Daffy Duck Confit	16	fat
+Hair Elemental	16	follicle
+Mongolian Death Worm	16	dung
+Nearly Headless Nick	16	head
+Rubber Golem	16	ball
+The Incredible Hulk Hogan	16	gamma radiation
+Triceratops Nugget	16	horn
+Turd Ferguson	16	hat
+Which-vern?	16	question
+Bigfoot Locker	17	blurry photo
+Caps Lock Ness Monster	17	tail
+Donald Duck Soup	17	broth
+Edward Rock-Paper-Scissorhands	17	scissors
+Jersey Devil	17	hockey jersey
+Jubilex	17	gel
+Oxygen Golem	17	platelet
+Schrödingers army of undead cats	17	quantum particle
+Skunk weed ape	17	hair
+What-vern?	17	question
+Animorph	18	paperback
+Batsquatch	18	talon
+Chupacabra	18	fang
+Corrosive Ooze	18	gunk
+Dwayne the Roc	18	wing
+Google Chromatic Dragon	18	scale
+Rolling in the Deep Stalker	18	saliva
+Stegosaurus Nugget	18	plate
+Tyrannosaurus Rex Nugget	18	forearm
+Where-vern?	18	question
+Astral Projection Stalker	19	silver cord
+Consentacle	19	slime
+Half-melted slushie	19	slime
+How-vern?	19	question
+Mosh Pit Howler	19	shirt
+Phantom Hound of the Opera	19	mask
+Punk Rockworm Hydra	19	pincer
+Sasquatch	19	jerky
+Trogdor	19	peasant
+Tropic Thunderbird	19	feather
+Ahriman	20	spirit
+Barely Disguised Fetish Monster	20	whip
+House of Wax Phantom	20	dripping
+Peppa Pigfolk	20	bacon
+Tennessee Titan	20	sandal
+Chairman of the Horde	21	private jet
+Grievous bodily harmicist	21	prescription
+Humphry Boggart	21	hat
+Undead Dragon Ball Z	21	dragonball
+Vorpal Bunny	21	teeth
+Cool Whip Scorpion	22	tub
+Cyborg Putin	22	rubles
+Demon Lord of the Flies	22	conch
+Dire Straits Wolf	22	video
+Hunger Games Daedra	22	whistle
+Behe-mothman	23	horn
+Dirty Laundry Golem	23	sock
+Dodge or Ram	23	horns
+Double Platinum Dragon	23	*
+Judge Dread Pirate Roberts	23	mask
+Diplodocus Nugget	24	fin
+Doomguard II BFG Edition	24	shotgun
+Lightning McQueen Elemental	24	kachow
+Manticore i9 Processor	24	thermal paste
+Shadow the Hedgehog Elemental	24	gun
+Ender Game Dragon	25	end portal
+Titanosaurus Nugget	25	fossil
+Void Tower of Terror	25	ash
+Which-Why-Were-Bear	25	paw
+Yeenoghu	25	flail
+Gelatinous Boob	26	jiggle
+One Winged Angel	26	feather
+Senior Vice President	26	business card
+Cadaver Collector Gadget	27	cadaver
+Health Inspector	27	citation
+Orcus Dorcus	27	wand
+Brontosaurus Nugget	28	brain
+He Who Must Not Be Deadnamed	28	name
+High-brow Drow Inquisitor	28	eyebrow
+Dispater	29	matches
+Elder Pinky and the Brain	29	braincell
+Zombie Dragula	29	fangs
+Geryon	30	cornucopia
+Green Day Abishai	30	album
+Mother-in-Law	30	expectations
+Gannondork	31	triforce
+Skittering Treehouse of Horror	31	episode
+Asteroid Spider-Man	32	webbing
+More-goth	32	horn
+Ancient Deep Throat Crow	33	spit
+Darth Shopping Mall	33	half-off coupon
+Arizona Tea Phoenix	34	can
+Dr Doom PhD	34	mask
+Darkseid	35	mother box
+Steel Sexual Predator	35	sexts
+Ashen Knight Rider	36	tires
+The Betty White Witch	36	dentures
+Licked Lichen Lich	37	saliva
+Wicked Witch of the Upper NW	37	broom
+Lord Farquaad	38	martini
+The Lord of Beyblades	38	nostalgia
+Captain Barbossa	39	apple
+Cosmic Rocky Horror	39	fishnet
+Mal if a cent	40	staff
+Peach Pit Fiend	40	pit
+The Dark One	41	darkness
+Prostetnic Vogon Jeltz	42	poetry
+Baalzebul	43	pants
+Hannibal Lecter	44	fava beans
+Grand Admiral Thrawn	45	art
+Low-key Loki	46	infinity stone
+Darth Vader	47	helmet
+Sauron	48	eye
+Kung Fu Chaos	49	insanity
+Mind Flayer Lich Itchybitch	50	tentacle
+Elder Tempest in a Teapot	51	ceramic chip
+Seattle Kraken	52	tentacle
+Bed Baphomet and Beyond	53	towel
+Orcus Porkus Dorcus	54	bacon
+Thanos	55	gauntlet
+Cthulu	56	tentacle
+Asmodeus	57	leathers
+Demogorgon	58	tentacle
+Vecna	59	head
+Strahd	60	dramatic-cape
+Tearassque	61	fart
+Tiamat	62	scale
+Greatwyrm	63	scale
+Death	64	cloak
+Procrastination	65	guilt

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="apple-touch-icon" sizes="180x180" href="https://enderandrew.com/ProgressQuest/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://enderandrew.com/ProgressQuest/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://enderandrew.com/ProgressQuest/favicon-16x16.png">
+<link rel="manifest" href="https://enderandrew.com/ProgressQuest/site.webmanifest">
+<link rel="mask-icon" href="https://enderandrew.com/ProgressQuest/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="shortcut icon" href="https://enderandrew.com/ProgressQuest/favicon.ico">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="msapplication-config" content="https://enderandrew.com/ProgressQuest/browserconfig.xml">
+<meta name="theme-color" content="#ffffff">
+<title>Progress Quest Remix - Roster</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/json2/20160511/json2.min.js" integrity="sha512-uWk2ZXl3GVrq6DZsrL5dSg1S/F3MNQ9VaDFigqXOoKUnWG58UxOuJGfTrzh5KjpoBvPiFniL2PahU2HUTFMJXw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/4.0.0-beta/jquery.min.js" integrity="sha512-qFOQ9YFAeGj1gDOuUD61g3D+tLDv3u1ECYWqT82WQoaWrOhAY+5mRMTTVsQdWutbA5FORCnkEPEgU0OF8IzGvA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="config.js"></script>
+<script src="roster.js"></script>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<style>
+
+.brag {
+  display: inline-block;
+  background-color: #ddddff;
+  margin: 5px;
+  border: solid 2px #ccccee;
+}
+.lit {
+  border: solid 2px #66ccee;
+}
+.brag td {
+  font-size: 9pt;
+  font-family: Tahoma, Helvetica, sans-serif;
+}
+div.rc {
+  font-size: 9pt;
+}
+
+div.bs {
+  font-size: 7pt;
+}
+
+.online {
+  background-color: #ddffdd;
+  border-color: #66eecc;
+}
+#newc {
+  text-align: center;
+}
+.brag a, .brag a:visited {
+  color: blue;
+  text-decoration: none;
+}
+a.icon.go {
+  font-size: 3em;
+}
+a.x, a.sheet {
+  font-size: 12pt;
+}
+a.save {
+  font-size: 8px;
+}
+.banter {
+  font-size: 11pt;
+}
+img {
+  border-style: none;
+}
+#dropinfo {
+  text-align: center;
+  font-style: italic;
+  font-size: smaller;
+  margin-bottom: 20px;
+}
+		body {
+			text-align: center;
+			background-image: url('battleback9.png');
+			background-size: cover;
+			background-repeat: no-repeat;
+		}
+		p {
+			margin-left: 10%;
+			margin-right: 10%;
+			text-align: left;
+		}
+		.sig {
+			text-align: center;
+			font-size: small;
+			color: #808080;
+		}
+		.sig a, .sig a:visited {
+			color: #808080;
+			text-decoration: none;
+		}
+		div {
+			background:#7f7f7f;
+			background:rgba(255,255,255,0.5);
+			margin-left: 15%;
+			margin-right: 15%;
+		}
+		.center {
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		#go {
+			font-size: 30pt;
+		}
+		img {
+			border-style: none;
+		}
+		th, td { text-align: left; padding-right: 2em; }
+		.good { color: #2a2; }
+		.ugly { color: #c82; }
+</style>
+</head>
+
+<body>
+
+<a href="https://ProgressQuest.EnderAndrew.com" style="text-decoration:none"><img style="border:0" src="pq.gif" width="512px" height="451px" id="logo" title="Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle" alt="Progress Quest Remix" class="center"></a>
+
+<div>
+	<h1>Character Roster</h1>
+	
+	<p id="roster" class="banter">
+	</p>
+	
+	<table class="brag">
+	<tr>
+		<td id="newc">
+		<b>New Character</b><br>
+		<img src="dicebar.jpg" alt="four dice"><br>
+		<button id="roll">Roll One Up</button>
+		</td>
+	</tr>
+	</table>
+	
+	<p id=dropinfo>You can also drop a saved game file on this page to add it to your roster.</p>
+	
+		<div align="center" id="nabar">
+			<a href="./">Home</a> &middot;
+			<a href="./info.php">Info</a> &middot;
+			<a href="./faq.php">FAQ</a> &middot;
+			<a href="./roster.html">Play</a> &middot;
+			<a href="./dl.php">Download</a> &middot;
+			<a href="http://progressquest.com/realms.php">Realms</a> &middot;
+			<a href="http://progressquest.com/acct.php">Accounts</a> &middot;
+			<a href="./news.php">News</a> &middot;
+			<a href="http://www.cafepress.com/pqm">Store</a> &middot;
+			<a href="http://forum.progressquest.com/">Forum</a> &middot;
+			<a href="./links.php">Links</a>
+		</div>
+		<br>
+		<div class="sig">
+			&copy;2001-2010 <a class=dim href="mailto:grumdrig@progressquest.com">grumdrig@progressquest.com</a> for original Progress Quest - &copy;2023 <a class=dim href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix
+		</div>
+	</body>
+	
+	
+	<script id="badge" type="text/html">
+	<table class="brag">
+		<tr>
+		<td><a class="icon go">&#x2694;</a></td>
+		<td>
+			<div>
+			<a class="go"><b>$Traits.Name</b></a> the $Traits.Race ($bestplot)
+			</div>
+			<div class="rc">Level $Traits.Level $Traits.Class</div>
+			<div class="bs">$bestequip / $bestspell / $beststat</div>
+		</td>
+		<td>
+			<a class="icon x" href="#" title="Delete game">&#x2620;</a><br>
+			<!-- <a class="sheet" href="#">&#x270F;</a> -->
+			<a class="save" href="#" title="Download a backup file">&#x1f4be;</a>
+		</td>
+		</tr>
+	</table>
+	</script>
+	
+	<script type="text/charsheet" id="sheet">
+	$Traits.Name the $Traits.Race [$hostname]
+	"$motto"
+	
+	Level $Traits.Level $Traits.Class (exp. $ExpBar.position/$ExpBar.max)
+	
+	Plot stage: $bestplot ($PlotBar.hint)
+	Quest: $bestquest ($QuestBar.hint)
+	
+	Stats:
+	STR $Stats.STR
+	CON $Stats.CON
+	DEX $Stats.DEX
+	INT $Stats.INT
+	WIS $Stats.WIS   HP Max $Stats.HP_Max
+	CHA $Stats.CHA   MP Max $Stats.MP_Max
+	
+	Equipment:
+	$Equips.___
+	Spell Book:
+	$Spells.___
+	Inventory ($EncumBar.hint):
+	$Inventory.___
+	-- $date
+	-- Progress Quest 6.3.web - https://enderandrew.com/ProgressQuest/
+	</script>
+</div>
+
+</html>
