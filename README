@@ -75,8 +75,7 @@ and longer fights take longer to watch. Outcomes:
 
 - win / close win: XP, quest and plot progress, and loot as before
 - flee (you ran, or you both lost interest): a quarter of the XP
-- defeat: a quarter of the XP, then a trip back to town to recover
-  (Prompt 6 gives defeat real consequences)
+- defeat: a quarter of the XP, and the consequences below
 
 What each stat does in a fight:
 
@@ -148,3 +147,24 @@ armor slots sets how much damage you shrug off.
 - CHA also raises the prices you get when selling.
 
 Tuning knobs are in K.Loot in combat.js.
+
+
+Defeat
+------
+
+Lose a fight and:
+
+- the monster goes through your pockets: 30-60% of your unbanked gold
+  and about a third of your unsold loot. Banked gold and the gear you
+  are wearing are never taken.
+- someone drags you back to town ("You are dragged back to town by a
+  Demi-Canadian Sailor Rune"), and you convalesce at a temple. The stay
+  is longer at higher levels and shorter with more CON.
+- the temple takes a tithe of 10% of your banked gold. That is small
+  change early on but a real dent once you are rich, and it is the main
+  brake on the late-game gold pile; it can never leave you broke.
+- you are Wounded for the next 2 fights (a little weaker, a little
+  softer), shown in red under the health bars along with your total
+  number of defeats.
+
+Tuning knobs are in K.Defeat in combat.js.

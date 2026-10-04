@@ -78,6 +78,22 @@ K.Combat = {
   RestBelow: 0.35
 };
 
+// Defeat (used by main.js)
+K.Defeat = {
+  // Share of the unbanked purse the monster takes (random in this range)
+  PurseLossMin: 0.3, PurseLossMax: 0.6,
+  // Chance each unbanked item is taken
+  ItemLossPercent: 33,
+  // Temple stay in seconds: (base + per level) / CON factor
+  RecoveryBase: 10, RecoveryPerLevel: 0.5,
+  // The temple's tithe: this share of your banked gold (and of what is
+  // left in your purse). Small change early on, a real dent once you are
+  // rich, and it can never leave you broke. 0 turns it off.
+  Tithe: 0.1,
+  // Fights spent Wounded afterwards, and what being Wounded costs
+  WoundedFights: 2, WoundedDamage: 0.92, WoundedTaken: 1.08
+};
+
 // Loot tuning (used by main.js)
 K.Loot = {
   // Chance a beaten monster drops its item: base, +per level the monster
@@ -175,6 +191,7 @@ function _log2(x) { return Math.log(x) / Math.LN2; }
 //         weapon, armor,        (gear power: weapon, and armor averaged
 //                                over shield and armor slots)
 //         physicality,          (0..1, from AttributeProfile)
+//         wounded,              (true after a recent defeat)
 //         spells: [{name, level, roman, type}] }  (type: see SpellType)
 // foe:  { name, level, qty }    (level is per monster; qty fight together)
 // seed: anything; the same seed replays the same fight
@@ -205,6 +222,11 @@ function ResolveCombat(hero, foe, seed) {
   var ratio = function (a, b) { return Math.max(a, 1) / Math.max(b, 1); };
   var weaponF = _clamp(1 + C.WeaponPerLevel * ((hero.weapon || 0) - L), 0.6, 1.6);
   var armorF = _clamp(1 - C.ArmorPerLevel * ((hero.armor || 0) - L), 0.6, 1.4);
+  // Still Wounded from a recent defeat: weaker blows, and hits hurt more
+  if (hero.wounded) {
+    weaponF *= K.Defeat.WoundedDamage;
+    armorF *= K.Defeat.WoundedTaken;
+  }
   var castChance = C.CastChanceArcane +
     (C.CastChanceMartial - C.CastChanceArcane) * (hero.physicality === undefined ? 0.5 : hero.physicality);
   var spells = hero.spells || [];

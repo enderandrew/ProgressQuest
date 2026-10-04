@@ -223,3 +223,5 @@ div.progress-container#MPBar > div.bar { background-color: #7cb0e9; }
 #Spells tr.spell-cc     td:first-child::after { content: "cc";     color: #b80; }
 
 div.profile#GearPower, div.profile#Purse { margin-bottom: 2px; }
+
+div.profile#Condition.wounded { color: #b33; font-weight: bold; }

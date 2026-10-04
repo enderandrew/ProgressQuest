@@ -419,6 +419,7 @@ function Dequeue() {
       }
       FinishFight();
     } else if (game.task == 'rest' || game.task == 'heal') {
+      if (game.task == 'heal') PayTemple();
       RestoreHealth();
     } else if (game.task == 'buying') {
       // buy some equipment, if the shop has anything better
@@ -519,6 +520,7 @@ function HeroSnapshot() {
     weapon: SlotPower('Weapon'),
     armor: ArmorPowerAvg(),
     physicality: CharProfile().physicality,
+    wounded: game.wounded > 0,
     spells: game.Spells.map(function (s) {
       return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
     })
@@ -547,10 +549,10 @@ function FinishFight() {
   MPBar.reposition(Max(0, MPBar.Position() - fight.mpSpent));
   $.each(fight.log, function (i, line) { Log(line); });
 
+  if (game.wounded > 0) { --game.wounded; ShowCondition(); }
+
   if (fight.outcome == 'defeat') {
-    // Placeholder until defeat gets real consequences
-    game.queue.push('task|4|Beaten senseless by ' + fight.foe + ', you wake up in a ditch');
-    game.queue.push('heal|6|Limping back to town to lick your wounds');
+    Defeated(fight);
   } else {
     if (fight.outcome == 'flee')
       game.queue.push('task|2|Running away from ' + fight.foe + ' as fast as you can');
@@ -559,6 +561,93 @@ function FinishFight() {
     MPBar.increment(regen.mp);
   }
   fight.done = true;
+}
+
+// ---- Defeat ---------------------------------------------------------------
+
+// Beaten: the monster goes through your pockets (unbanked gold and loot
+// only; banked gold and equipped gear are safe), someone drags you back to
+// town, and you convalesce at a temple, which charges for the privilege.
+// You stay Wounded for the next few fights.
+function Defeated(fight) {
+  var D = K.Defeat;
+  game.deaths = (game.deaths || 0) + 1;
+
+  // Pockets: a share of the purse and of each stack of loot
+  var lostGold = 0, lostItems = 0;
+  if (game.purse) {
+    lostGold = Math.round(game.purse * (D.PurseLossMin + Random(100) / 100 * (D.PurseLossMax - D.PurseLossMin)));
+    game.purse -= lostGold;
+  }
+  for (var i = game.Inventory.length - 1; i >= 1; --i) {
+    var name = game.Inventory[i][0];
+    var qty = StrToInt(game.Inventory[i][1]);
+    var lose = 0;
+    for (var u = 0; u < qty; ++u)
+      if (Random(100) < D.ItemLossPercent) ++lose;
+    if (lose) {
+      lostItems += lose;
+      Add(Inventory, name, -lose);
+      if (GetI(Inventory, name) <= 0) RemoveItem(name);
+    }
+  }
+  ShowPurse();
+  Log('Defeated by ' + fight.foe + '; lost ' + lostGold + ' gold and ' + lostItems + ' items');
+
+  var taken = [];
+  if (lostGold) taken.push(lostGold + ' gold');
+  if (lostItems) taken.push(lostItems + (lostItems == 1 ? ' item' : ' items'));
+  var robbed = taken.length ?
+    ' and makes off with ' + taken.join(' and ') :
+    ' and finds your pockets disappointingly empty';
+  var rescuer = Indefinite(Split(Pick(K.Races), 0) + ' ' + Split(Pick(K.Klasses), 0), 1);
+  var temple = 'the Temple of ' + Pick(K.ImpressiveTitles) + ' ' + GenerateName();
+  game.queue.push('task|4|' + ProperName(fight.foe) + ' leaves you for dead' + robbed);
+  game.queue.push('task|4|You are dragged back to town by ' + rescuer);
+  game.queue.push('heal|' + RecoveryTime() + '|Convalescing at ' + temple);
+  game.wounded = D.WoundedFights;
+  ShowCondition();
+}
+
+// Seconds at the temple: longer at higher levels, shorter with more CON
+function RecoveryTime() {
+  var D = K.Defeat;
+  var level = GetI(Traits,'Level');
+  var con = GetI(Stats,'CON') / ExpectedStat(level);
+  return Math.round((D.RecoveryBase + D.RecoveryPerLevel * level) / Min(2, Max(0.5, con)));
+}
+
+// The temple's tithe: a share of your purse and of your banked gold. The
+// richer you are, the more salvation costs.
+function PayTemple() {
+  var fromPurse = Math.floor((game.purse || 0) * K.Defeat.Tithe);
+  var fromBank = Math.floor(GetI(Inventory, 'Gold') * K.Defeat.Tithe);
+  game.purse = (game.purse || 0) - fromPurse;
+  if (fromBank) Add(Inventory, 'Gold', -fromBank);
+  if (fromPurse + fromBank) Log('Tithed ' + (fromPurse + fromBank) + ' gold to the temple');
+  ShowPurse();
+}
+
+// Remove an inventory row whose count has hit zero
+function RemoveItem(name) {
+  for (var i = 1; i < game.Inventory.length; ++i) {
+    if (game.Inventory[i][0] === name) {
+      game.Inventory.splice(i, 1);
+      if (Inventory.box) Inventory.box.find("tr").eq(i).remove();
+      Put(Inventory, 'Gold', GetI(Inventory, 'Gold'));  // refresh encumbrance
+      return;
+    }
+  }
+}
+
+// "Wounded (3 fights)" and the defeat count, under the health bars
+function ShowCondition() {
+  if (!document) return;
+  var deaths = game.deaths || 0;
+  $("#Condition").text(
+    (game.wounded > 0 ? "Wounded (" + game.wounded + (game.wounded == 1 ? " fight)" : " fights)") + " \u00b7 " : "") +
+    "Defeated " + deaths + (deaths == 1 ? " time" : " times"))
+    .toggleClass("wounded", game.wounded > 0);
 }
 
 function NeedsRest() {
@@ -926,6 +1015,9 @@ function ShopPower() {
   for (var extra = 0; extra < K.Loot.PremiumMax &&
        EquipPrice(power + 1) * 2 <= gold; ++extra)
     ++power;
+  // ...but never more than you can pay for
+  while (power > 0 && EquipPrice(power) > gold)
+    --power;
   return power;
 }
 
@@ -1497,6 +1589,7 @@ function LoadGame(sheet) {
   ShowProfile();
   ShowPurse();
   ShowGearPower();
+  ShowCondition();
   if (Kill)
     Kill.text(game.kill);
   ClearAllSelections();

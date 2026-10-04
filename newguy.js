@@ -190,6 +190,8 @@ function sold() {
   newguy.EquipPower = {};
   $.each(K.Equips, function (i,equip) { newguy.EquipPower[equip] = 0; });
   newguy.purse = 0;
+  newguy.deaths = 0;
+  newguy.wounded = 0;
 
 
   if (document && $("#multiplayer:checked").length > 0) {
