@@ -21,7 +21,7 @@ K.Combat = {
   MeleeHitsToKill: 4,
   SpellHitsToKill: 2.5,
   // A same-level monster hits an average hero this many times to kill him
-  MonsterHitsToKill: 13,
+  MonsterHitsToKill: 14,
 
   // How hard a stat ratio pushes damage (damage *= ratio ^ exponent)
   DamageExponent: 0.7,
@@ -39,11 +39,25 @@ K.Combat = {
   // much damage; each level of armor power above it removes this much
   WeaponPerLevel: 0.04, ArmorPerLevel: 0.025,
 
-  // Spells (Prompt 4 makes these richer)
+  // Spells. Each turn the hero may cast instead of swinging: 15% of the
+  // time for a purely martial character up to 60% for a purely arcane one,
+  // and only while MP lasts.
   CastChanceMartial: 0.15, CastChanceArcane: 0.6,
-  SpellCost: 0.05,            // of ExpectedPool(monster level), before level
-  SpellSuccessBase: 0.6, SpellSuccessSlope: 0.2,
-  SpellLevelBonus: 0.05,      // +5% damage and cost per spell level
+  SpellCost: 0.05,            // of ExpectedPool(monster level), at level 0
+  SpellSuccessBase: 0.75, SpellSuccessSlope: 0.2,   // WIS vs monster WIS
+  // A spell's roman-numeral level: +10% effect and +5% MP cost per level,
+  // so higher levels hit harder and are more efficient.
+  SpellPowerPerLevel: 0.1, SpellCostPerLevel: 0.05,
+  // heal: restores this share of max HP (scaled by WIS); cast below
+  // HealBelow of max HP
+  HealAmount: 0.3, HealBelow: 0.5,
+  // buff: you deal +X and take -X/2 damage for the rest of the fight;
+  // debuff: the monster deals -X/2, takes +X and hits less often.
+  // X = BuffBase at level 0, growing with spell level, at most BuffMax.
+  BuffBase: 0.35, BuffMax: 0.75, DebuffHitPenalty: 0.1,
+  // cc: if it lands (CHA vs monster WIS), the monster loses turns:
+  // CCTurns, plus 1 per CCLevelsPerTurn spell levels, at most CCMaxTurns
+  CCBase: 0.55, CCSlope: 0.2, CCTurns: 2, CCLevelsPerTurn: 4, CCMaxTurns: 4,
 
   // CHA: once a monster is below half health, each round it may give up
   GiveUpBase: 0.05, GiveUpMax: 0.3,
@@ -139,7 +153,7 @@ function _log2(x) { return Math.log(x) / Math.LN2; }
 // hero: { name, level, STR, CON, DEX, INT, WIS, CHA, hp, hpMax, mp, mpMax,
 //         weapon, armor,        (gear power, see WeaponPower/ArmorPower)
 //         physicality,          (0..1, from AttributeProfile)
-//         spells: [{name, level}] }
+//         spells: [{name, level, roman, type}] }  (type: see SpellType)
 // foe:  { name, level, qty }    (level is per monster; qty fight together)
 // seed: anything; the same seed replays the same fight
 //
@@ -174,32 +188,102 @@ function ResolveCombat(hero, foe, seed) {
   var spells = hero.spells || [];
   var name = foe.name || "the foe";
 
-  function heroTurn() {
-    // Spell?
-    if (spells.length && roll() < castChance) {
-      var spell = spells[Math.floor(roll() * spells.length)];
-      var cost = Math.max(1, Math.round(P * C.SpellCost * (1 + C.SpellLevelBonus * spell.level)));
-      if (mp >= cost) {
-        mp -= cost;
-        var ok = _clamp(C.SpellSuccessBase + C.SpellSuccessSlope * _log2(ratio(hero.WIS, mon.WIS)),
-                        C.HitMin, C.HitMax);
-        if (roll() < ok) {
-          var sdmg = perHP / C.SpellHitsToKill *
-            Math.pow(ratio(hero.INT, mon.INT), C.DamageExponent) *
-            (1 + C.SpellLevelBonus * spell.level) * between(0.8, 1.2);
-          monHP -= sdmg;
-          log.push("You cast " + spell.name + " for " + Show(sdmg));
-        } else {
-          log.push("Your " + spell.name + " fizzles");
-        }
-        return;
+  // Spell state for this fight
+  var buff = 0, debuff = 0, stunned = 0;
+  var levelF = function (spell) { return 1 + C.SpellPowerPerLevel * spell.level; };
+  var byType = {};
+  $.each(spells, function (i, spell) {
+    (byType[spell.type] = byType[spell.type] || []).push(spell);
+  });
+  // A spell of the given type, favoring higher levels
+  function pickSpell(type) {
+    var list = byType[type];
+    if (!list) return null;
+    var total = 0;
+    $.each(list, function (i, sp) { total += (1 + sp.level) * (1 + sp.level); });
+    var r = roll() * total;
+    for (var i = 0; i < list.length; ++i) {
+      r -= (1 + list[i].level) * (1 + list[i].level);
+      if (r < 0) return list[i];
+    }
+    return list[list.length - 1];
+  }
+  function flavor(lines) { return lines[Math.floor(roll() * lines.length)]; }
+  var Name = ProperName(name);
+
+  // What to cast this turn, if anything: heal when hurt, buff and debuff
+  // once each early on, crowd control a healthy monster, otherwise blast.
+  function chooseSpell() {
+    if (hp < hero.hpMax * C.HealBelow && byType.heal) return pickSpell("heal");
+    if (!buff && byType.buff && monHP > monMax * 0.3) return pickSpell("buff");
+    if (!debuff && byType.debuff && monHP > monMax * 0.5) return pickSpell("debuff");
+    if (!stunned && byType.cc && monHP > monMax * 0.4 && roll() < 0.5) return pickSpell("cc");
+    return pickSpell("damage");
+  }
+
+  function castSpell(spell) {
+    var cost = Math.max(1, Math.round(P * C.SpellCost * (1 + C.SpellCostPerLevel * spell.level)));
+    if (mp < cost) return false;
+    mp -= cost;
+    var label = spell.name + (spell.roman ? " " + spell.roman : "");
+    var ok = _clamp(C.SpellSuccessBase + C.SpellSuccessSlope * _log2(ratio(hero.WIS, mon.WIS)),
+                    C.HitMin, C.HitMax);
+    if (roll() >= ok) {
+      log.push("Your " + label + " fizzles");
+      return true;
+    }
+    var strength = Math.min(C.BuffMax, C.BuffBase * levelF(spell));
+    switch (spell.type) {
+    case "heal":
+      var healed = Math.min(hero.hpMax - hp, hero.hpMax * C.HealAmount * levelF(spell) *
+                            Math.pow(ratio(hero.WIS, ExpectedStat(hero.level)), 0.5));
+      hp += healed;
+      log.push("You cast " + label + " and recover " + Show(healed) + " HP");
+      break;
+    case "buff":
+      buff = Math.max(buff, strength);
+      log.push("You cast " + label + ". " + flavor([
+        "You feel mighty", "You feel fabulous", "You feel weirdly confident",
+        "You are ready for anything", "Your muscles get muscles"]));
+      break;
+    case "debuff":
+      debuff = Math.max(debuff, strength);
+      log.push("You cast " + label + ". " + Name + " " + flavor([
+        "looks worse for wear", "feels a little off", "is visibly uncomfortable",
+        "questions its life choices", "starts to sweat"]));
+      break;
+    case "cc":
+      var lands = _clamp(C.CCBase + C.CCSlope * _log2(ratio(hero.CHA, mon.WIS)), C.HitMin, C.HitMax);
+      if (roll() < lands) {
+        stunned = Math.min(C.CCMaxTurns, C.CCTurns + Math.floor(spell.level / C.CCLevelsPerTurn));
+        log.push("You cast " + label + ". " + Name + " is " + flavor([
+          "confused", "dazed", "charmed", "bewildered", "transfixed",
+          "stuck in place", "dancing against its will"]));
+      } else {
+        log.push("You cast " + label + ", but " + name + " shrugs it off");
       }
+      break;
+    default:  // damage
+      var sdmg = perHP / C.SpellHitsToKill *
+        Math.pow(ratio(hero.INT, mon.INT), C.DamageExponent) *
+        levelF(spell) * (1 + buff) * (1 + debuff) * between(0.8, 1.2);
+      monHP -= sdmg;
+      log.push("You cast " + label + " on " + name + " for " + Show(sdmg));
+    }
+    return true;
+  }
+
+  function heroTurn() {
+    if (spells.length && roll() < castChance) {
+      var spell = chooseSpell();
+      if (spell && castSpell(spell)) return;
     }
     // Melee
     var hit = _clamp(C.HeroHitBase + C.HitSlope * _log2(ratio(hero.DEX, mon.DEX)), C.HitMin, C.HitMax);
     if (roll() < hit) {
       var dmg = perHP / C.MeleeHitsToKill *
-        Math.pow(ratio(hero.STR, mon.STR), C.DamageExponent) * weaponF * between(0.8, 1.2);
+        Math.pow(ratio(hero.STR, mon.STR), C.DamageExponent) * weaponF *
+        (1 + buff) * (1 + debuff) * between(0.8, 1.2);
       monHP -= dmg;
       log.push("You hit for " + Show(dmg));
     } else {
@@ -208,23 +292,28 @@ function ResolveCombat(hero, foe, seed) {
   }
 
   function foeTurn() {
+    if (stunned > 0) {
+      --stunned;
+      log.push(Name + " does nothing useful");
+      return;
+    }
     var alive = Math.max(1, Math.ceil(monHP / perHP));
     for (var a = 0; a < alive && hp > 0; ++a) {
       var magic = roll() < C.MonsterMagicChance;
       var dodge = magic ? hero.WIS : hero.DEX;
       var resist = magic ? hero.WIS : hero.CON;
-      var hit = _clamp(C.MonsterHitBase + C.HitSlope * _log2(ratio(magic ? mon.INT : mon.DEX, dodge)),
-                       C.HitMin, C.HitMax);
+      var hit = _clamp(C.MonsterHitBase + C.HitSlope * _log2(ratio(magic ? mon.INT : mon.DEX, dodge)) -
+                       (debuff ? C.DebuffHitPenalty : 0), C.HitMin, C.HitMax);
       if (roll() < hit) {
         var dmg = P / C.MonsterHitsToKill *
           Math.pow(ratio(magic ? mon.INT : mon.STR, resist), C.DefenseExponent) *
-          (magic ? 1 : armorF) * between(0.8, 1.2);
+          (magic ? 1 : armorF) * (1 - buff / 2) * (1 - debuff / 2) * between(0.8, 1.2);
         // Damage stays fractional inside the fight (a level 1 monster hits
         // for well under 1 HP); only the log and the totals are rounded.
         hp -= dmg;
-        log.push(ProperName(name) + (magic ? " hexes you for " : " hits you for ") + Show(dmg));
+        log.push(Name + (magic ? " hexes you for " : " hits you for ") + Show(dmg));
       } else {
-        log.push(ProperName(name) + (magic ? "'s hex misses" : " misses"));
+        log.push(Name + (magic ? "'s hex misses" : " misses"));
       }
     }
   }
@@ -285,6 +374,33 @@ function ResolveCombat(hero, foe, seed) {
     foeFled: foeFled,
     log: log
   };
+}
+
+// Spell types, from K.Spells ("Name|type"). A spell without a valid type
+// gets a random one, always the same for the same name.
+K.SpellTypes = ["damage", "heal", "buff", "debuff", "cc"];
+K.SpellTypeHelp = {
+  damage: "damages the monster (INT)",
+  heal:   "restores your HP (WIS)",
+  buff:   "you hit harder and take less damage",
+  debuff: "the monster hits softer and takes more damage",
+  cc:     "the monster loses turns (CHA)"
+};
+var _spellTypes = null;
+function SpellType(name) {
+  if (!_spellTypes) {
+    _spellTypes = {};
+    $.each(K.Spells, function (i, entry) {
+      var parts = entry.split("|");
+      if (K.SpellTypes.indexOf(parts[1]) >= 0) _spellTypes[parts[0]] = parts[1];
+    });
+  }
+  if (_spellTypes[name]) return _spellTypes[name];
+  return K.SpellTypes[Math.floor(Mash()(name) * K.SpellTypes.length)];
+}
+
+function SpellName(entry) {
+  return entry.split("|")[0];
 }
 
 // HP/MP regained after a fight.

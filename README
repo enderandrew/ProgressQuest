@@ -99,4 +99,29 @@ Tuning knobs are in K.Combat at the top of combat.js. sim.js prints a
 fight summary; win rates measured with it (16 characters to level 30):
 
   monster level vs yours   -5    -2    0    +2    +5    +8
-  won                     100%  97%  94%   81%   54%   10%
+  won                      99%  96%  92%   82%   56%   18%
+
+
+Spells
+------
+
+Each spell in K.Spells (config.js) is "Name|type", and the type decides
+what it does in a fight. The spell book tags each spell with its type.
+
+  damage  hurts the monster; INT makes it hit harder
+  heal    restores HP; WIS makes it heal more
+  buff    for the rest of the fight you hit harder and take less damage
+  debuff  the monster hits softer, misses more and takes more damage
+  cc      crowd control: if it lands (CHA vs the monster's WIS) the
+          monster loses 2+ turns
+
+Every cast needs WIS to succeed and costs MP. The roman-numeral level
+matters: each level adds 10% to the effect but only 5% to the cost.
+How often a character casts depends on its profile (15% of turns for
+pure martial, 60% for pure arcane). When it does, it heals if badly
+hurt, buffs and debuffs once early in the fight, sometimes tries crowd
+control on a healthy monster, and otherwise casts a damage spell.
+Knowing a heal spell also halves the time spent resting.
+
+To change what a spell does, edit its type. A spell with no type (or a
+misspelled one) gets a random type, always the same for the same name.

@@ -209,3 +209,15 @@ div.profile {
 /* Health and mana */
 div.progress-container#HPBar > div.bar { background-color: #e98a7c; }
 div.progress-container#MPBar > div.bar { background-color: #7cb0e9; }
+
+/* Spell types in the spell book */
+#Spells tr td:first-child::after {
+  font-size: 7pt;
+  color: #888;
+  margin-left: 4px;
+}
+#Spells tr.spell-damage td:first-child::after { content: "dmg";    color: #b33; }
+#Spells tr.spell-heal   td:first-child::after { content: "heal";   color: #393; }
+#Spells tr.spell-buff   td:first-child::after { content: "buff";   color: #36b; }
+#Spells tr.spell-debuff td:first-child::after { content: "debuff"; color: #a5a; }
+#Spells tr.spell-cc     td:first-child::after { content: "cc";     color: #b80; }

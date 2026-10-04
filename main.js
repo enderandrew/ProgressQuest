@@ -472,7 +472,13 @@ function Dequeue() {
         game.task = 'heading';
       }
     } else if (NeedsRest()) {
-      Task('Catching your breath', RestTime());
+      // A heal spell gets you back on your feet twice as fast
+      var heals = game.Spells.filter(function (sp) { return SpellType(sp[0]) == 'heal'; });
+      if (heals.length) {
+        Task('Casting ' + Pick(heals)[0] + ' on yourself', RestTime() / 2);
+      } else {
+        Task('Catching your breath', RestTime());
+      }
       game.task = 'rest';
     } else {
       var nn = GetI(Traits, 'Level');
@@ -506,7 +512,7 @@ function HeroSnapshot() {
     armor: ArmorPower(game.Equips),
     physicality: CharProfile().physicality,
     spells: game.Spells.map(function (s) {
-      return { name: s[0], level: toArabic(s[1]) };
+      return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
     })
   };
   $.each(K.PrimeStats, function (i, stat) { hero[stat] = GetI(Stats, stat); });
@@ -688,6 +694,7 @@ function ListBox(id, columns, fixedkeys) {
 
     item.children().last().text(value);
     item.addClass("selected");
+    if (this.decorate) this.decorate(item, key);
     item.each(function () {this.scrollIntoView();});
   };
 
@@ -769,8 +776,8 @@ if (document)
 
 
 function WinSpell() {
-  AddR(Spells, K.Spells[RandomLow(Min(GetI(Stats,'WIS')+GetI(Traits,'Level'),
-                                      K.Spells.length))], 1);
+  AddR(Spells, SpellName(K.Spells[RandomLow(Min(GetI(Stats,'WIS')+GetI(Traits,'Level'),
+                                                K.Spells.length))]), 1);
 }
 
 function LPick(list, goal) {
@@ -1201,6 +1208,13 @@ function FormCreate() {
   Inventory = new ListBox("Inventory", 2);
   Plots =     new ListBox("Plots",  1);
   Quests =    new ListBox("Quests", 1);
+
+  // Tag each spell in the book with what it does in a fight
+  Spells.decorate = function (row, name) {
+    var type = SpellType(name);
+    row.attr("class", row.hasClass("selected") ? "selected" : "")
+       .addClass("spell-" + type).attr("title", name + ": " + K.SpellTypeHelp[type]);
+  };
 
   Plots.load = function (sheet) {
     for (var i = Max(0, game.act-99); i <= game.act; ++i)
