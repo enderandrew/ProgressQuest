@@ -400,10 +400,11 @@ function ProperCase(s) {
   return Copy(s,1,1).toUpperCase() + Copy(s,2,10000);
 }
 
-function EquipPrice() {
-  return  5 * GetI(Traits,'Level') * GetI(Traits,'Level') +
-    10 * GetI(Traits,'Level') +
-    20;
+// Price of gear of a given power (by default, gear at your level)
+function EquipPrice(power) {
+  if (power === undefined) power = GetI(Traits,'Level');
+  power = Max(0, power);
+  return 5 * power * power + 10 * power + 20;
 }
 
 function Dequeue() {
@@ -413,24 +414,31 @@ function Dequeue() {
         if (Split(game.task,3) == '*') {
           WinItem();
         } else if (Split(game.task,3)) {
-          Add(Inventory,LowerCase(Split(game.task,1) + ' ' +
-                                  ProperCase(Split(game.task,3))),1);
+          DropLoot(LowerCase(Split(game.task,1) + ' ' + Split(game.task,3)));
         }
       }
       FinishFight();
     } else if (game.task == 'rest' || game.task == 'heal') {
       RestoreHealth();
     } else if (game.task == 'buying') {
-      // buy some equipment
-      Add(Inventory,'Gold',-EquipPrice());
-      WinEquip();
+      // buy some equipment, if the shop has anything better
+      var offer = ShopPower();
+      if (WinEquip(offer, true)) {
+        Add(Inventory,'Gold',-EquipPrice(offer));
+      } else {
+        game.shopped = true;  // nothing worth buying until next trip
+      }
     } else if ((game.task == 'market') || (game.task == 'sell')) {
-      if (game.task == 'market')
+      if (game.task == 'market') {
         RestoreHealth();  // a night at the inn
+        BankPurse();
+        game.shopped = false;
+      }
       if (game.task == 'sell') {
         var amt = GetI(Inventory, 1) * GetI(Traits,'Level');
         if (Pos(' of ', Inventory.label(1)) > 0)
           amt *= (1+RandomLow(10)) * (1+RandomLow(GetI(Traits,'Level')));
+        amt = Math.round(amt * ChaFactor(K.Loot.PriceSlope, K.Loot.PriceMin, K.Loot.PriceMax));
         Inventory.remove1();
         Add(Inventory, 'Gold', amt);
       }
@@ -464,7 +472,7 @@ function Dequeue() {
       Task('Heading to market to sell viscera-covered loot',4 * 1000);
       game.task = 'market';
     } else if ((Pos('kill|',old) <= 0) && (old != 'heading') && (old != 'rest')) {
-      if (GetI(Inventory, 'Gold') > EquipPrice()) {
+      if (GetI(Inventory, 'Gold') > EquipPrice() && !game.shopped) {
         Task('Haggling over the price of better equipment', 5 * 1000);
         game.task = 'buying';
       } else {
@@ -508,8 +516,8 @@ function HeroSnapshot() {
     level: GetI(Traits,'Level'),
     hp: HPBar.Position(), hpMax: GetI(Stats,'HP Max'),
     mp: MPBar.Position(), mpMax: GetI(Stats,'MP Max'),
-    weapon: WeaponPower(game.Equips),
-    armor: ArmorPower(game.Equips),
+    weapon: SlotPower('Weapon'),
+    armor: ArmorPowerAvg(),
     physicality: CharProfile().physicality,
     spells: game.Spells.map(function (s) {
       return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
@@ -569,6 +577,61 @@ function RestoreHealth() {
   MPBar.reset(GetI(Stats,'MP Max'), GetI(Stats,'MP Max'));
 }
 
+// ---- Loot ---------------------------------------------------------------
+
+// CHA against what is typical for your level, turned into a multiplier:
+// 1 for an average character, more for a charming one, within [lo, hi].
+function ChaFactor(slope, lo, hi) {
+  var r = GetI(Stats,'CHA') / ExpectedStat(GetI(Traits,'Level'));
+  return Min(hi, Max(lo, 1 + slope * (r - 1)));
+}
+
+// Spoils of a won fight. Each monster may drop its item; tougher monsters
+// and more CHA mean better odds of a drop and of a rare one. Monsters may
+// also carry some gold. All of it is unbanked until sold at market.
+function DropLoot(part) {
+  var L = K.Loot;
+  var fight = game.combat || {};
+  var gap = (fight.foeLevel || GetI(Traits,'Level')) - GetI(Traits,'Level');
+  var cha = ChaFactor(1, 0, 3) - 1;   // -1 .. +2
+  var chance = Min(L.DropMax, Max(L.DropMin, L.DropBase + L.DropPerLevel * gap + L.DropPerCha * cha));
+  var rare = Min(L.RareMax, Max(L.RareMin, L.RareBase + L.RarePerLevel * gap + L.RarePerCha * cha));
+  var qty = fight.qty || 1;
+  for (var i = 0; i < qty; ++i) {
+    if (Random(1000) >= chance * 1000) continue;
+    if (Random(1000) < rare * 1000)
+      Add(Inventory, Pick(K.ItemAttrib) + ' ' + part + ' of ' + Pick(K.ItemOfs), 1);
+    else
+      Add(Inventory, part, 1);
+  }
+  if (Random(1000) < L.GoldChance * 1000) {
+    var gold = Math.round((fight.foeLevel || 1) * qty * (0.5 + Random(100) / 100) *
+                          ChaFactor(L.PriceSlope, L.PriceMin, L.PriceMax));
+    if (gold > 0) {
+      game.purse = (game.purse || 0) + gold;
+      Log('Looted ' + gold + ' gold');
+      ShowPurse();
+    }
+  }
+}
+
+// Market day: the purse goes in the bank
+function BankPurse() {
+  if (game.purse) {
+    Add(Inventory, 'Gold', game.purse);
+    game.purse = 0;
+  }
+  ShowPurse();
+}
+
+function ShowPurse() {
+  if (!document) return;
+  var items = 0;
+  $.each(game.Inventory.slice(1), function (i, row) { items += StrToInt(row[1]); });
+  $("#Purse").text("Unbanked: " + (game.purse || 0) + " gold, " + items +
+                   (items == 1 ? " item" : " items"));
+}
+
 function Put(list, key, value) {
   if (typeof key === typeof 1)
     key = list.label(key);
@@ -597,6 +660,7 @@ function Put(list, key, value) {
     MPBar.reset(value, MPBar.Position());
 
   if (list === Inventory) {
+    ShowPurse();
     var cubits = 0;
     $.each(game.Inventory.slice(1), function (index, item) {
       cubits += StrToInt(item[1]);
@@ -796,9 +860,10 @@ function Abs(x) {
   if (x < 0) return -x; else return x;
 }
 
-function WinEquip() {
-  var posn = Random(Equips.length());
-
+// The piece of gear for a slot at a given power: a base item near that
+// power, adjectives and a +N/-N making up the difference.
+function MakeEquip(posn, power) {
+  var stuff, better, worse;
   if (!posn) {
     stuff = K.Weapons;
     better = K.OffenseAttrib;
@@ -808,10 +873,10 @@ function WinEquip() {
     worse = K.DefenseBad;
     stuff = (posn == 1) ? K.Shields:  K.Armors;
   }
-  var name = LPick(stuff, GetI(Traits,'Level'));
+  var name = LPick(stuff, power);
   var qual = StrToInt(Split(name,1));
   name = Split(name,0);
-  var plus = GetI(Traits,'Level') - qual;
+  var plus = power - qual;
   if (plus < 0) better = worse;
   var count = 0;
   while (count < 2 && plus) {
@@ -826,10 +891,81 @@ function WinEquip() {
   }
   if (plus) name = plus + ' ' + name;
   if (plus > 0) name = '+' + name;
+  return name;
+}
 
+// Power of the gear in a slot ("Weapon", "Helm"...), stored when it was
+// equipped; read from its name for gear from older saves.
+function SlotPower(slot) {
+  if (game.EquipPower && game.EquipPower[slot] !== undefined)
+    return game.EquipPower[slot];
+  if (slot == 'Weapon')
+    return GearPower(game.Equips.Weapon, K.Weapons, K.OffenseAttrib, K.OffenseBad);
+  return GearPower(game.Equips[slot], slot == 'Shield' ? K.Shields : K.Armors,
+                   K.DefenseAttrib, K.DefenseBad);
+}
+
+// Average power of the shield and armor slots
+function ArmorPowerAvg() {
+  var total = 0, n = 0;
+  $.each(K.Equips, function (i, slot) {
+    if (slot == 'Weapon') return;
+    total += SlotPower(slot);
+    ++n;
+  });
+  return n ? total / n : 0;
+}
+
+// Power of what the shop offers: around your level, better with CHA. A
+// rich customer is shown the premium stock: up to K.Loot.PremiumMax more,
+// as long as it costs no more than half the gold on hand.
+function ShopPower() {
+  var power = GetI(Traits,'Level') + K.Loot.ShopMin + Random(K.Loot.ShopSpread) +
+    Math.round(ChaFactor(K.Loot.HaggleSlope, 0, K.Loot.HaggleMax) * Random(2));
+  var gold = GetI(Inventory,'Gold');
+  for (var extra = 0; extra < K.Loot.PremiumMax &&
+       EquipPrice(power + 1) * 2 <= gold; ++extra)
+    ++power;
+  return power;
+}
+
+// New gear for the weakest slot. It is equipped only if it beats what is
+// there; otherwise it goes in the pack to sell (or, when shopping, is
+// simply not bought). Returns whether anything was equipped.
+// power: defaults to a reward a little above your level.
+function WinEquip(power, shopping) {
+  if (power === undefined)
+    power = GetI(Traits,'Level') + K.Loot.RewardMin + Random(K.Loot.RewardSpread);
+  power = Max(0, power);
+
+  // weakest slot; ties broken at random
+  var weakest = [], low = Infinity;
+  $.each(K.Equips, function (i, slot) {
+    var p = SlotPower(slot);
+    if (p < low) { low = p; weakest = [i]; }
+    else if (p == low) weakest.push(i);
+  });
+  var posn = Pick(weakest);
+  var slot = K.Equips[posn];
+  var name = MakeEquip(posn, power);
+
+  if (power <= SlotPower(slot)) {
+    if (!shopping) Add(Inventory, 'spare ' + name, 1);
+    return false;
+  }
+  if (!game.EquipPower) game.EquipPower = {};
+  game.EquipPower[slot] = power;
   Put(Equips, posn, name);
   game.bestequip = name;
   if (posn > 1) game.bestequip += ' ' + Equips.label(posn);
+  ShowGearPower();
+  return true;
+}
+
+function ShowGearPower() {
+  if (!document) return;
+  $("#GearPower").text("Weapon power " + SlotPower('Weapon') +
+                       " \u00b7 Armor power " + ArmorPowerAvg().toFixed(1));
 }
 
 
@@ -1209,6 +1345,11 @@ function FormCreate() {
   Plots =     new ListBox("Plots",  1);
   Quests =    new ListBox("Quests", 1);
 
+  // Show each slot's gear power on hover
+  Equips.decorate = function (row, slot) {
+    row.attr("title", "Power " + SlotPower(slot));
+  };
+
   // Tag each spell in the book with what it does in a fight
   Spells.decorate = function (row, name) {
     var type = SpellType(name);
@@ -1354,6 +1495,8 @@ function LoadGame(sheet) {
   randseed(game.seed);
   $.each(AllBars.concat(AllLists), function (i, e) { e.load(game); });
   ShowProfile();
+  ShowPurse();
+  ShowGearPower();
   if (Kill)
     Kill.text(game.kill);
   ClearAllSelections();

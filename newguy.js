@@ -186,6 +186,10 @@ function sold() {
   $.each(K.Equips, function (i,equip) { newguy.Equips[equip] = ''; });
   newguy.Equips.Weapon = newguy.bestequip;
   newguy.Equips.Hauberk = "-3 Burlap";
+  // Gear power is stored per slot; a Pet Rock and burlap are worth nothing
+  newguy.EquipPower = {};
+  $.each(K.Equips, function (i,equip) { newguy.EquipPower[equip] = 0; });
+  newguy.purse = 0;
 
 
   if (document && $("#multiplayer:checked").length > 0) {

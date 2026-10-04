@@ -375,7 +375,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 2;
+var SaveVersion = 3;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -411,6 +411,21 @@ var SaveMigrations = [
     var mp = parseInt(sheet.Stats['MP Max'], 10) || 0;
     sheet.HPBar = { position: hp, max: hp };
     sheet.MPBar = { position: mp, max: mp };
+  },
+  // 2 -> 3: loot. Gear power is stored as a number (read from the item
+  // names here), and gold found on the Killing Fields is carried in a purse
+  // until it is banked at market.
+  function (sheet) {
+    sheet.EquipPower = {};
+    if (typeof GearPower === "function") {
+      $.each(K.Equips, function (i, slot) {
+        var name = sheet.Equips ? sheet.Equips[slot] : '';
+        sheet.EquipPower[slot] = slot == 'Weapon' ?
+          GearPower(name, K.Weapons, K.OffenseAttrib, K.OffenseBad) :
+          GearPower(name, slot == 'Shield' ? K.Shields : K.Armors, K.DefenseAttrib, K.DefenseBad);
+      });
+    }
+    sheet.purse = sheet.purse || 0;
   }
 ];
 

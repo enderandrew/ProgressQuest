@@ -21,7 +21,7 @@ K.Combat = {
   MeleeHitsToKill: 4,
   SpellHitsToKill: 2.5,
   // A same-level monster hits an average hero this many times to kill him
-  MonsterHitsToKill: 14,
+  MonsterHitsToKill: 12.5,
 
   // How hard a stat ratio pushes damage (damage *= ratio ^ exponent)
   DamageExponent: 0.7,
@@ -37,7 +37,7 @@ K.Combat = {
 
   // Gear: each level of weapon power above the monster's level adds this
   // much damage; each level of armor power above it removes this much
-  WeaponPerLevel: 0.04, ArmorPerLevel: 0.025,
+  WeaponPerLevel: 0.03, ArmorPerLevel: 0.02,
 
   // Spells. Each turn the hero may cast instead of swinging: 15% of the
   // time for a purely martial character up to 60% for a purely arcane one,
@@ -76,6 +76,27 @@ K.Combat = {
   RegenHP: 0.08, RegenMP: 0.08, RegenMax: 0.25,
   // The hero stops to rest when HP falls below this share of max
   RestBelow: 0.35
+};
+
+// Loot tuning (used by main.js)
+K.Loot = {
+  // Chance a beaten monster drops its item: base, +per level the monster
+  // is above you, +per unit of CHA above typical for your level
+  DropBase: 0.65, DropPerLevel: 0.04, DropPerCha: 0.15, DropMin: 0.3, DropMax: 0.95,
+  // Chance a drop is rare ("Glowing orc ear of Destiny"), which sells for
+  // far more
+  RareBase: 0.02, RarePerLevel: 0.01, RarePerCha: 0.02, RareMin: 0.005, RareMax: 0.2,
+  // Chance a beaten monster carries gold (about its level, per monster)
+  GoldChance: 0.4,
+  // CHA and sale prices / gold found: 1 + PriceSlope * (CHA ratio - 1)
+  PriceSlope: 0.5, PriceMin: 0.7, PriceMax: 1.6,
+  // Shop gear: your level + ShopMin + random(ShopSpread), and a charming
+  // haggler (CHA) may get up to HaggleMax more
+  ShopMin: -1, ShopSpread: 4, HaggleSlope: 1, HaggleMax: 2,
+  // Premium stock for the wealthy: up to this many levels better
+  PremiumMax: 5,
+  // Quest and act rewards: your level + RewardMin + random(RewardSpread)
+  RewardMin: 1, RewardSpread: 3
 };
 
 // What a typical character's core stat is at a given level (fitted to
@@ -151,7 +172,8 @@ function _log2(x) { return Math.log(x) / Math.LN2; }
 // Resolve one fight.
 //
 // hero: { name, level, STR, CON, DEX, INT, WIS, CHA, hp, hpMax, mp, mpMax,
-//         weapon, armor,        (gear power, see WeaponPower/ArmorPower)
+//         weapon, armor,        (gear power: weapon, and armor averaged
+//                                over shield and armor slots)
 //         physicality,          (0..1, from AttributeProfile)
 //         spells: [{name, level, roman, type}] }  (type: see SpellType)
 // foe:  { name, level, qty }    (level is per monster; qty fight together)

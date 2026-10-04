@@ -99,7 +99,7 @@ Tuning knobs are in K.Combat at the top of combat.js. sim.js prints a
 fight summary; win rates measured with it (16 characters to level 30):
 
   monster level vs yours   -5    -2    0    +2    +5    +8
-  won                      99%  96%  92%   82%   56%   18%
+  won                      99%  98%  94%   85%   63%   22%
 
 
 Spells
@@ -125,3 +125,26 @@ Knowing a heal spell also halves the time spent resting.
 
 To change what a spell does, edit its type. A spell with no type (or a
 misspelled one) gets a random type, always the same for the same name.
+
+
+Loot
+----
+
+Gear has a power, stored as a number (hover over a slot to see it):
+roughly the level it was made for. The weapon's power against the
+monster's level sets your damage; the average power of the shield and
+armor slots sets how much damage you shrug off.
+
+- New gear always goes to your weakest slot, and is only equipped if it
+  is better. Spare gear from quests goes in your pack to sell.
+- The shop's stock is around your level, a bit better with CHA. If you
+  have gold to spare it shows you premium stock, up to 5 levels better,
+  priced on the same curve. You only pay for an actual upgrade.
+- A beaten monster may drop its item (the chance rises with its level
+  and your CHA), and some drops are rare ("Glowing orc ear of Destiny")
+  and sell for much more. Monsters may also carry some gold.
+- Everything you pick up, gold included, is unbanked until you sell it
+  at market; the line under the inventory shows how much you carry.
+- CHA also raises the prices you get when selling.
+
+Tuning knobs are in K.Loot in combat.js.
