@@ -26,11 +26,11 @@ function RollEm() {
   stats.seed = randseed();
   total = 0;
   var best = -1;
-  $.each(K.PrimeStats, function () {
-    total += Roll(this);
-    if (best < stats[this]) {
-      best = stats[this];
-      stats.best = this;
+  $.each(K.PrimeStats, function (i, stat) {
+    total += Roll(stat);
+    if (best < stats[stat]) {
+      best = stats[stat];
+      stats.best = stat;
     }
   });
   stats['HP Max'] = Random(8) + stats.CON.div(6);
@@ -48,7 +48,7 @@ function RollEm() {
     Total.text(total);
     Total.css("background-color", color);
 
-    $("#Unroll").attr("disabled", !seedHistory.length);
+    $("#Unroll").prop("disabled", !seedHistory.length);
   }
 }
 
@@ -67,11 +67,15 @@ function fill(e, a, n) {
   var def = Random(a.length);
   for (var i = 0; i < a.length; ++i) {
     var v = a[i].split("|")[0];
-    var check = (def == i) ? " checked " : " ";
     if (def == i) traits[n] = v;
     if (document) {
-      $("<div><input type=radio id='" + v + "' name=\"" + n + "\" value=\"" + v + "\" " +
-        check  +"><label for='" + v + "'>" + v + "</label></div>").appendTo(e);
+      // Built as elements rather than an HTML string so names containing
+      // quotes or markup can't break the form.
+      var id = n + '-' + i;
+      $("<div>").append(
+        $("<input>", { type: "radio", id: id, name: n, value: v, checked: def == i }),
+        $("<label>", { "for": id, text: v })
+      ).appendTo(e);
     }
   }
 }
@@ -85,11 +89,11 @@ function NewGuyFormLoad() {
   fill("#classes", K.Klasses, "Class");
 
   if (document) {
-    $("#Reroll").click(RerollClick);
-    $("#Unroll").click(UnrollClick);
-    $("#RandomName").click(GenClick);
-    $('#Sold').click(sold);
-    $('#quit').click(cancel);
+    $("#Reroll").on("click", RerollClick);
+    $("#Unroll").on("click", UnrollClick);
+    $("#RandomName").on("click", GenClick);
+    $('#Sold').on("click", sold);
+    $('#quit').on("click", cancel);
 
     //var caption = 'Progress Quest Remix - New Character';
     //if (MainForm.GetHostName != '')
@@ -134,6 +138,7 @@ function sold() {
     PlotBar: { position: 0, max: 26 },
     QuestBar: { position: 0, max: 1 },
     TaskBar: { position: 0, max: 2000 },
+    saveVersion: SaveVersion,
     queue: [
       "task|6|Experiencing an enigmatic and foreboding night vision... Much is revealed about that wise Old Bastard™ you'd underestimated",
 	  "task|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",
@@ -158,14 +163,14 @@ function sold() {
   newguy.Equips.Hauberk = "-3 Burlap";
 
 
-  if ($("#multiplayer:checked").length > 0) {
+  if (document && $("#multiplayer:checked").length > 0) {
     newguy.online = {
       realm: "Alpaquil",
       host: "http://progressquest.com/alpaquil.php?",
       // host: "http://localhost:9001/alpaquil.php?",
     }
 
-    $("#sold").prop("disabled", true);
+    $("#Sold").prop("disabled", true);
     $("body").css("cursor", "progress");
 
     let url = newguy.online.host;
@@ -179,7 +184,7 @@ function sold() {
          newguy.online.passkey = parseInt(body.split('|')[1]);
          charIsBorn(newguy);
       } else {
-        $("#sold").prop("disabled", false);
+        $("#Sold").prop("disabled", false);
         $("body").css("cursor", "default");
         alert(body);
       }
@@ -192,7 +197,7 @@ function sold() {
 
 function charIsBorn(newguy) {
   storage.addToRoster(newguy, function () {
-    window.location.href = "main.html#" + escape(newguy.Traits.Name);
+    window.location.href = "main.html#" + EncodeName(newguy.Traits.Name);
   });
 }
 
@@ -203,6 +208,6 @@ function cancel() {
 function GenClick() {
   traits.Name = GenerateName();
   if (document)
-    $("#Name").attr("value", traits.Name);
+    $("#Name").val(traits.Name);
 }
 

@@ -1,8 +1,44 @@
-Progress Quest - Web
-====================
+Progress Quest Remix - Web
+==========================
 
 This is the in-browser edition of Progress Quest, ported from Delphi
-to JavaScript.
+to JavaScript, remixed.
 
-- Progress Quest Remix site:	http://enderandrew.com/ProgressQuest/
-- Original version:     		https://bitbucket.org/grumdrig/pq
+- Progress Quest Remix site:  https://enderandrew.com/ProgressQuest/
+- This fork:                  https://github.com/enderandrew/ProgressQuest
+- Original web version:       https://bitbucket.org/grumdrig/pq-web
+- Original game:              https://bitbucket.org/grumdrig/pq
+
+
+Running it
+----------
+
+Open roster.html through a web server (the game clock runs in a Web
+Worker, which browsers won't start from a file:// URL). For example:
+
+    python3 -m http.server
+    # then visit http://localhost:8000/roster.html
+
+jQuery 4 is bundled as jquery-4.0.0.min.js, so no network is needed.
+
+
+Simulator
+---------
+
+sim.js runs the real game scripts headlessly in Node, finishing every
+task instantly, so you can watch a character grow to level 50 in a few
+seconds. Runs with the same seed are identical.
+
+    node sim.js --levels 50 --seed pq
+    node sim.js --race "4chan Troll" --class "Barbarian Pretzel" --quiet
+    node sim.js --help
+
+Use it to check that a change behaves the way you expect before playing.
+
+
+Save format
+-----------
+
+Saves carry a saveVersion number (SaveVersion in config.js). When a
+change needs existing saves patched, bump SaveVersion and add a
+function to SaveMigrations; old saves are upgraded once when they load.

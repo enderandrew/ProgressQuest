@@ -244,9 +244,51 @@ var iPod = navigator.userAgent.match(/iPod/);
 var iPhone = navigator.userAgent.match(/iPhone/);
 var iOS = iPad || iPod || iPhone;
 
-var storage = ((window.localStorage && !iOS) ? new LocalStorage() :
+function HasLocalStorage() {
+  // Accessing window.localStorage can itself throw (e.g. blocked cookies).
+  try {
+    var k = '__pq_probe__';
+    window.localStorage.setItem(k, k);
+    window.localStorage.removeItem(k);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// localStorage everywhere it works. Older builds forced iOS onto WebSQL,
+// which browsers are removing; rosters saved there are copied over once
+// (see LocalStorage.getItem below).
+var storage = (HasLocalStorage() ? new LocalStorage() :
                window.openDatabase ? new SqlStorage() :
                new CookieStorage());
+
+if (storage instanceof LocalStorage && window.openDatabase) {
+  (function (getItem) {
+    storage.getItem = function (key, callback) {
+      var value = window.localStorage.getItem(key);
+      if (key !== 'roster' || value) return getItem.call(this, key, callback);
+      // Nothing in localStorage yet: look for a legacy WebSQL roster.
+      var done = false;
+      function finish(legacy) {
+        if (done) return;
+        done = true;
+        if (legacy) window.localStorage.setItem(key, legacy);
+        if (callback) callback(legacy || value);
+      }
+      try {
+        window.openDatabase("pqr", "", "Progress Quest Remix", 2500)
+          .readTransaction(function (tx) {
+            tx.executeSql("SELECT value FROM Storage WHERE key=?", [key],
+              function (tx, rs) { finish(rs.rows.length ? rs.rows.item(0).value : null); },
+              function () { finish(null); return false; });
+          }, function () { finish(null); });
+      } catch (e) {
+        finish(null);
+      }
+    };
+  })(storage.getItem);
+}
 
 storage.loadRoster = function (callback) {
   function gotItem(value) {
@@ -276,7 +318,9 @@ storage.storeRoster = function (roster, callback) {
   try {
     this.setItem("roster", JSON.stringify(roster), callback);
   } catch (err) {
-    if (err.toString().indexOf("QUOTA_EXCEEDED_ERR") != -1) {
+    if (err.name === "QuotaExceededError" ||
+        err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+        err.toString().indexOf("QUOTA_EXCEEDED_ERR") != -1) {
       alert("This browser lacks storage capacity to save this game. This game can continue but cannot be saved. (Mobile Safari, I'll wager?)");
       this.storeRoster = function (roster, callback) {
         setTimeout(callback, 0);
@@ -312,6 +356,66 @@ let RevString = '&rev=6';
 // rev=4 is pq6.2 the longstanding delphi client
 // rev=5 is pq6.3 presumably the lazarus port or other unofficial release
 // rev=6 is this here, pq-web multiplayer enabled
+
+// Character names travel in the URL hash (main.html#Name). New links use
+// encodeURIComponent; old links and bookmarks used escape(), so decoding
+// falls back to unescape() for those.
+function EncodeName(name) {
+  return encodeURIComponent(name);
+}
+
+function DecodeName(s) {
+  s = s || '';
+  try {
+    return decodeURIComponent(s);
+  } catch (e) {
+    return unescape(s);
+  }
+}
+
+// Save format version. Bump this and add an entry to SaveMigrations
+// whenever a change needs existing saves to be patched.
+var SaveVersion = 1;
+
+// SaveMigrations[n] upgrades a save from version n to n+1. Saves made
+// before versioning existed count as version 0.
+var SaveMigrations = [
+  // 0 -> 1: correctly spelled spells were showing up as new spells when
+  // the misspelled one was already in the spell book.
+  function (sheet) {
+    function patch(from, to) {
+      function count(spell) {
+        var t = sheet.Spells.filter(function (a) { return a[0] == spell; });
+        return t.length == 1 ? toArabic(t[0][1]) : 0;
+      }
+      var tf = count(from);
+      if (!tf) return;
+      var total = tf + count(to);
+      sheet.Spells = sheet.Spells.filter(function (a) { return a[0] != to; });
+      sheet.Spells.forEach(function (spell) {
+        if (spell[0] == from) {
+          spell[0] = to;
+          spell[1] = toRoman(total);
+        }
+      });
+    }
+    if (sheet.Spells) {
+      patch('Innoculate', 'Inoculate');
+      patch('Tonsilectomy', 'Tonsillectomy');
+    }
+  }
+];
+
+function MigrateSave(sheet) {
+  var v = sheet.saveVersion || 0;
+  if (v > SaveVersion)
+    throw new Error("This character was saved by a newer version of Progress Quest Remix (save v" +
+                    v + ", this is v" + SaveVersion + ").");
+  for (; v < SaveVersion; ++v)
+    SaveMigrations[v](sheet);
+  sheet.saveVersion = SaveVersion;
+  return sheet;
+}
 
 var K = {};
 

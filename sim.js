@@ -1,175 +1,208 @@
-// This is an in-console simulation of Progress Quest Remix. It's rather a
-// hack job.
+#!/usr/bin/env node
+// Headless Progress Quest Remix simulator.
 //
-// Run it with node.js like so:
-//   $ node sim.js
-// or using a modified v8 shell, like so:
-//   $ git clone git://github.com/grumdrig/v8
-//   $ (cd v8; scons sample=shell)
-//   $ v8/shell sim.js
+// Runs the real game scripts (config.js, main.js, newguy.js) in a sandbox
+// with no browser and no DOM, as fast as the CPU allows. Every task
+// finishes the instant it starts, so days of game time take seconds.
+// With the same --seed, a run is fully deterministic.
 //
-// It's not realtime - simulation runs at maximum speed and the
-// virtual time elapsed is displayed at each level-up.
+// Usage:
+//   node sim.js [options]
+//
+// Options:
+//   --levels N      stop when the character reaches level N   (default 50)
+//   --seed S        random seed for the character             (default "pq")
+//   --name NAME     character name                            (default random)
+//   --race RACE     race, e.g. "4chan Troll"                  (default random)
+//   --class CLASS   class, e.g. "Barbarian Pretzel"           (default random)
+//   --quiet         print only the final summary
+//   --json FILE     write the final character sheet as JSON to FILE
+//   --dir DIR       load the game scripts from DIR            (default: here)
+//
+// Example:
+//   node sim.js --levels 30 --seed alpha --race "Demi-Canadian"
 
-var CHARACTER = "Shienzid";
-//var guy = window.location.href.split("#")[1];
+"use strict";
 
-var window = {
-  location: {href: "#Woogle"},
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
 
-  localStorage: {
-    items: null,
-
-    getItem: function(key) {
-      if (!this.items) {
-        try {
-          this.items = JSON.parse(read("local.storage"));
-        } catch (e) {
-          print(e);
-          this.items = {};
-        }
-      }
-      return this.items[key];
-    },
-  
-    setItem: function (key, value) {
-      this.items[key] = value;
-      write("local.storage", JSON.stringify(this.items));
-    },
-
-    removeItem: function (key) {
-      delete this.items[key];
-      write("local.storage", JSON.stringify(this.items));
+function parseArgs(argv) {
+  const opts = { levels: 50, seed: "pq", quiet: false, dir: __dirname };
+  for (let i = 0; i < argv.length; ++i) {
+    const a = argv[i];
+    const next = () => {
+      if (i + 1 >= argv.length) usage(`Missing value for ${a}`);
+      return argv[++i];
+    };
+    switch (a) {
+      case "--levels": opts.levels = parseInt(next(), 10); break;
+      case "--seed":   opts.seed = next(); break;
+      case "--name":   opts.name = next(); break;
+      case "--race":   opts.race = next(); break;
+      case "--class":  opts.klass = next(); break;
+      case "--quiet":  opts.quiet = true; break;
+      case "--json":   opts.json = next(); break;
+      case "--dir":    opts.dir = path.resolve(next()); break;
+      case "-h": case "--help": usage(); break;
+      default: usage(`Unknown option ${a}`);
     }
-  },
-};
-
-var navigator = { userAgent: "v8" };
-
-var location = window.location;
-
-var $ = function () { return null; };
-$.isFunction = function (obj) {
-  return toString.call(obj) === "[object Function]";
-},
-$.isArray = function (obj) {
-  return toString.call(obj) === "[object Array]";
-}
-$.each = function (object, callback) {
-  var name, i = 0,
-    length = object.length,
-    isObj = length === undefined || $.isFunction(object);
-  
-  if (isObj) {
-      for (name in object) {
-	if (callback.call(object[name], name, object[name]) === false)
-	  break;
-      }
-  } else {
-    for (var value = object[0];
-	 i < length && callback.call(value, i, value) !== false; 
-         value = object[++i]) { }
   }
-  return object;
+  if (!(opts.levels >= 1)) usage("--levels must be a positive number");
+  return opts;
 }
 
-var document = null;
+function usage(err) {
+  const text = fs.readFileSync(__filename, "utf8")
+    .split("\n").slice(1).filter(l => l.startsWith("//"))
+    .map(l => l.replace(/^\/\/ ?/, "")).join("\n");
+  if (err) console.error(err + "\n");
+  console.log(text);
+  process.exit(err ? 1 : 0);
+}
 
-if (typeof process !== "undefined") {
-  // Node
-  var fs = require("fs");
-  var sys = require("sys");
-  var load = function (filename) {
-    var content = fs.readFileSync(filename);
-    require("vm").runInThisContext(content, filename);
-    //global.eval.call(global, String(content));
+// ---------------------------------------------------------------------------
+// Sandbox: just enough browser for the game scripts to run with no DOM.
+
+function makeSandbox() {
+  const items = {};
+  const localStorage = {
+    getItem: k => (k in items ? items[k] : null),
+    setItem: (k, v) => { items[k] = String(v); },
+    removeItem: k => { delete items[k]; },
   };
-  var print = function () {
-    for (var i = 0, len = arguments.length; i < len; ++i) {
-      sys.print(arguments[i] + " ");
+
+  // The game's tick comes from a Web Worker (clock.js). Here the simulator
+  // drives Timer1Timer directly, so the worker only needs to exist.
+  class Worker {
+    addEventListener() {}
+    postMessage() {}
+  }
+
+  // No DOM: $(...) returns null, so the game's UI code paths are skipped
+  // exactly as they were designed to be. Only the utilities are real.
+  const $ = function () { return null; };
+  $.each = function (obj, callback) {
+    if (Array.isArray(obj) || typeof obj === "string") {
+      for (let i = 0; i < obj.length; ++i)
+        if (callback.call(obj[i], i, obj[i]) === false) break;
+    } else {
+      for (const k in obj)
+        if (callback.call(obj[k], k, obj[k]) === false) break;
     }
-    sys.puts("");
+    return obj;
   };
-  var read = function (f) { return fs.readFileSync(f); };
-  var write = function (f,c) { fs.writeFileSync(f,c); };
+  $.ajax = function () {
+    throw new Error("Network calls are not available in the simulator");
+  };
 
-  global.window = window;
-  global.document = document;
-  global.navigator = navigator;
-  global.$ = $;
-  print("node");
-} else {
-  // V8 shell
-  global = this;  
-  print("v8");
+  const sandbox = {
+    console,
+    document: null,
+    navigator: { userAgent: "node" },
+    location: { href: "sim.html" },
+    localStorage,
+    Worker,
+    $,
+    jQuery: $,
+    alert: m => console.log("ALERT: " + m),
+    prompt: () => null,
+    setTimeout: (fn) => { fn(); return 0; },
+    clearTimeout: () => {},
+    escape, unescape,
+  };
+  sandbox.window = sandbox;
+  return vm.createContext(sandbox);
 }
 
-var alert = global.alert = function (m) { print("ALERT: " + m); };
-
-var now = 0;
-var timers = [{}];
-var setInterval  = global.setInterval = function (callback, interval) {
-  timers.push({callback:callback, interval:interval});
-  return timers.length-1;
-};
-var setTimeout = global.setTimeout = setInterval;  // TODO: distinguish!
-
-load("config.js");
-
-var cs = 0;
-storage.loadRoster(function (cs) { for (var c in cs) cs++; });
-print(cs, "characters");
-
-
-var timeGetTime = global.timeGetTime = function () {
-  return now;
+function load(ctx, dir, file) {
+  const filename = path.join(dir, file);
+  vm.runInContext(fs.readFileSync(filename, "utf8"), ctx, { filename });
 }
 
-load("main.js");
-FormCreate();
+// ---------------------------------------------------------------------------
 
-function charsheet(game) {
-  print(game.Traits.Name, 
-        game.Traits.Level,
-        game.tasks,
-        RoughTime(game.elapsed));
-}
+function run(opts) {
+  const ctx = makeSandbox();
+  const g = (code) => vm.runInContext(code, ctx);
 
-// It takes 18 sec to simulate 18 hours of play when I just checked (to 
-// level 10)
+  load(ctx, opts.dir, "config.js");
+  load(ctx, opts.dir, "main.js");
+  load(ctx, opts.dir, "newguy.js");
 
-for (var j = 1, t = 0; j < 1001; ++j) {
-  t += LevelUpTime(j);
-  if (j % 100 == 0)
-    print(j, RoughTime(LevelUpTime(j))+",", RoughTime(t));
-}
+  // Virtual clock
+  let now = 0;
+  ctx.timeGetTime = () => now;
 
-var tmpl = read("charsheet.txt");
-storage.loadSheet(CHARACTER, function (sheet) {
-  if (!sheet) {
-    load("newguy.js");
-    NewGuyFormLoad();
-    traits.Name = CHARACTER;
-    sold();
-    sheet = storage.games[CHARACTER];
-  }
-  //write("local.storage", JSON.stringify(window.localStorage.items));
+  // Character creation, in the same order as NewGuyFormLoad() so a given
+  // seed rolls the same character it would in the browser.
+  ctx.__seed = opts.seed;
+  g("seed = new Alea(__seed); RollEm(); GenClick();" +
+    "fill(null, K.Races, 'Race'); fill(null, K.Klasses, 'Class');");
 
-  game = sheet;
-  LoadGame(game);
-  print(template(''+tmpl, sheet));
+  const pickFrom = (list, want, label) => {
+    const names = g(list).map(s => s.split("|")[0]);
+    const hit = names.find(n => n.toLowerCase() === want.toLowerCase());
+    if (!hit) usage(`Unknown ${label} "${want}". Choices:\n  ` + names.join("\n  "));
+    return hit;
+  };
+  if (opts.name)  ctx.traits.Name = opts.name;
+  if (opts.race)  ctx.traits.Race = pickFrom("K.Races", opts.race, "race");
+  if (opts.klass) ctx.traits.Class = pickFrom("K.Klasses", opts.klass, "class");
 
-  var l = 0;
-  for (var i = 0; i < 1000000000; ++i) {
-    if (game.Traits.Level != l) {
-      SaveGame();
-      charsheet(game);
-      l = game.Traits.Level;
-      //if (l >= 5) break;
+  g("sold()");          // adds the character to the roster, sets location
+  g("FormCreate()");    // loads the game from the roster and starts it
+
+  const game = () => ctx.game;
+  const level = () => parseInt(game().Traits.Level, 10);
+  const stats = () => ctx.K.Stats.map(s => `${s.replace(" Max", "")} ${game().Stats[s]}`).join("  ");
+  const gold = () => (game().Inventory.find(r => r[0] === "Gold") || [0, 0])[1];
+
+  const t = game().Traits;
+  console.log(`${t.Name} the ${t.Race} ${t.Class}  (seed "${opts.seed}")`);
+  if (!opts.quiet) console.log(`Lv  1  ${stats()}`);
+
+  const started = Date.now();
+  let lastLevel = level();
+  const MAX_TASKS = 50 * 1000 * 1000;
+  let n = 0;
+  while (level() < opts.levels) {
+    if (++n > MAX_TASKS) throw new Error("Simulation did not finish; is the game stuck?");
+    // Finish the current task instantly, then let the game react.
+    const bar = ctx.TaskBar;
+    now += Math.max(0, bar.Max() - bar.Position());
+    bar.reposition(bar.Max());
+    ctx.Timer1Timer();
+
+    if (!opts.quiet && level() !== lastLevel) {
+      lastLevel = level();
+      console.log(`Lv ${String(lastLevel).padStart(2)}  ${stats()}  ` +
+                  `gold ${gold()}  ${ctx.RoughTime(game().elapsed)} played  ` +
+                  `${game().tasks} tasks`);
     }
-    //assert(timers.length == 2);// TODO: this is for simplicity
-    now += timers[1].interval;
-    timers[1].callback();
   }
-});
+  ctx.SaveGame();
 
+  const s = game();
+  console.log("");
+  console.log(`Reached level ${level()} in ${ctx.RoughTime(s.elapsed)} of game time ` +
+              `(${s.tasks} tasks, ${(Date.now() - started) / 1000}s real time)`);
+  console.log(`Stats:   ${stats()}`);
+  console.log(`Gold:    ${gold()}`);
+  console.log(`Plot:    ${s.bestplot}`);
+  console.log(`Best:    ${s.bestequip} / ${s.bestspell} / ${s.beststat}`);
+  console.log(`Spells:  ${s.Spells.length} known`);
+
+  if (opts.json) {
+    fs.writeFileSync(opts.json, JSON.stringify(s, null, 2));
+    console.log(`Wrote ${opts.json}`);
+  }
+  return s;
+}
+
+if (require.main === module) {
+  run(parseArgs(process.argv.slice(2)));
+}
+
+module.exports = { run };

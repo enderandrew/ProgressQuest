@@ -189,8 +189,8 @@ function InterplotCinematic() {
 	var lover1 = ImpressiveGuy();
 	var lover2 = ImpressiveGuy();
 	Q('task|4|The kingdoms of ' + kingdom1 + ' and ' + kingdom2 + ' have long been at war.');
-    Q('task|4|The rulers negoiated peace and would unite with the wedding of ' + lover1 + ' and ' + lover2);
-    Q('task|4|The wedding was called off after accusations of infidelity and now war seems eminent.');
+    Q('task|4|The rulers negotiated peace and would unite with the wedding of ' + lover1 + ' and ' + lover2);
+    Q('task|4|The wedding was called off after accusations of infidelity and now war seems imminent.');
     Q('task|4|Only a hero of your caliber can restore the peace and prevent this bloody conflict.');
     Q('task|4|You seduce ' + lover1 + ' and then also seduce ' + lover2);
     Q('task|4|Both are satiated and content for the moment. Peace is restored for the time being.');
@@ -237,7 +237,7 @@ function InterplotCinematic() {
   case 9:
     Q('task|4|You feel accomplished. That was quite the quest you just finished.');
     Q('task|4|This feels like a natural stopping point as if some chapter or act finished.');
-    Q('task|4|But you cant stop. You just take a brief break.');
+    Q('task|4|But you can\'t stop. You just take a brief break.');
     Q('task|4|You use the chamber pot. You forage for snacks.');
 	Q('task|4|You are ready to continue this super-epic journey. The Old Bastard™ will pay!');
     break;
@@ -252,7 +252,7 @@ function InterplotCinematic() {
     var nemesis1 = NamedMonster(GetI(Traits,'Level')+3);
 	var nemesis2 = NamedMonster(GetI(Traits,'Level')+3);
     Q('task|4|You wipe the blood off your weapon. Actually you are covered in gore.');
-    Q('task|4|There are bits of  ' + nemesis1 + ' on your boots.');
+    Q('task|4|There are bits of ' + nemesis1 + ' on your boots.');
     Q('task|4|You never could quite wash the viscera from ' + nemesis2 + ' out of your hair.');
     Q('task|4|You have come so far in your journey, but you also probably need a good bath.');
 	Q('task|4|Not time for a bath because you must get that Old Bastard™!');
@@ -553,8 +553,9 @@ function ListBox(id, columns, fixedkeys) {
 
   this.AddUI = function (caption) {
     if (!this.box) return;
-    var tr = $("<tr><td><input type=checkbox disabled> " +
-               caption + "</td></tr>");
+    var tr = $("<tr>").append(
+      $("<td>").append($("<input>", { type: "checkbox", disabled: true }),
+                       document.createTextNode(" " + caption)));
     tr.appendTo(this.box);
     tr.each(function () {this.scrollIntoView();});
     return tr;
@@ -571,7 +572,7 @@ function ListBox(id, columns, fixedkeys) {
       return Key(this) === key;
     });
     if (!item.length) {
-      item = $("<tr><td>" + key + "</td><td/></tr>");
+      item = $("<tr>").append($("<td>").text(key), $("<td>"));
       this.box.append(item);
     }
 
@@ -591,12 +592,11 @@ function ListBox(id, columns, fixedkeys) {
 
   this.CheckAll = function (butlast) {
     if (this.box) {
-      if (butlast)
-        this.rows().find("input:checkbox").not(':last').attr("checked","true");
-      else
-        this.rows().find("input:checkbox").attr("checked","true");
+      var boxes = this.rows().find("input:checkbox");
+      if (butlast) boxes = boxes.slice(0, -1);
+      boxes.prop("checked", true);
     }
-   };
+  };
 
   this.length = function () {
     return (this.fixedkeys || game[this.id]).length;
@@ -752,7 +752,7 @@ function BoringItem() {
 
 function WinItem() {
   if (Max(250, Random(999)) < Inventory.length()) {
-    Add(Inventory, Pick(Inventory.rows()).firstChild.innerText, 1);
+    Add(Inventory, Pick(game.Inventory)[0], 1);
   } else {
     Add(Inventory, SpecialItem(), 1);
   }
@@ -859,7 +859,7 @@ function toRoman(n) {
 }
 
 function toArabic(s) {
-  n = 0;
+  var n = 0;
   s = s.toUpperCase();
   function _arab(ds,dn) {
     if (!Starts(s, ds)) return false;
@@ -1073,33 +1073,22 @@ function FormCreate() {
   if (document) {
     Kill = $("#Kill");
 
-    $("#quit").click(quit);
+    $("#quit").on("click", quit);
 
-    $(document).keypress(FormKeyDown);
+    $(document).on("keydown", FormKeyDown);
 
-    $(document).bind('beforeunload', function () {
-      if (!storage)
-        return "Are you sure you want to quit? All your progress will be lost!";
-    });
-
-    $(window).on('unload', function (event) {
-      StopTimer();
-      SaveGame();
-      if (storage.async) {
-        // Have to give SQL transaction a chance to complete
-        if (window.showModalDialog)
-          pause(100);
-
-        // Just accept some data loss - alert is too ugly. Maybe increase save
-        // frequency.
-        // else alert("Game saved");
-      }
+    // Save whenever the page is hidden or closed. 'unload' is being removed
+    // from browsers and is unreliable on mobile; pagehide and
+    // visibilitychange are the supported replacements.
+    $(window).on("pagehide.pqsave", function () { SaveGame(); });
+    $(document).on("visibilitychange.pqsave", function () {
+      if (document.visibilityState === "hidden") SaveGame();
     });
 
     if (iOS) $("body").addClass("iOS");
   }
 
-  var name = unescape(window.location.href.split('#')[1]);
+  var name = DecodeName(window.location.href.split('#')[1]);
   storage.loadSheet(name, LoadGame);
 
   if (window.opener) {
@@ -1121,13 +1110,12 @@ function prepPopup() {
           x: e.pageX,
           y: e.pageY
       };
-      console.log(delta);
   });
 
   $("html").on("mouseup", e => { delta = null; });
 
   $("html").on("mousemove", e => {
-    if (!e.which) delta = null;
+    if (!e.buttons) delta = null;
     if (delta) {
         window.moveBy(e.pageX - delta.x,
                       e.pageY - delta.y);
@@ -1136,16 +1124,13 @@ function prepPopup() {
 }
 
 
-function pause(msec) {
-  window.showModalDialog("javascript:document.writeln ('<script>window.setTimeout(" +
-                         "function () { window.close(); }," + msec + ");</script>')",
-                         null,
-                         "dialogWidth:0;dialogHeight:0;dialogHide:yes;unadorned:yes;"+
-                  "status:no;scroll:no;center:no;dialogTop:-10000;dialogLeft:-10000");
+function SuspendAutosave() {
+  $(window).off(".pqsave");
+  $(document).off(".pqsave");
 }
 
 function quit() {
-  $(window).unbind('unload');
+  SuspendAutosave();
   SaveGame(() => {
     if (window.opener) {
       window.close();
@@ -1197,7 +1182,13 @@ function LoadGame(sheet) {
     return;
   }
 
-  game = sheet;
+  try {
+    game = MigrateSave(sheet);
+  } catch (err) {
+    alert(err.message);
+    window.location.href = "roster.html";
+    return;
+  }
 
   if (document) {
     var title = "Progress Quest Remix - " + GameSaveName();
@@ -1214,29 +1205,6 @@ function LoadGame(sheet) {
   $.each([Plots,Quests], function () {
     this.CheckAll(true);
   });
-
-  // Patch correctly spelled spells showing up as new spells when
-  // the incorretly spelled spell was there already.
-  function patch(from, to) {
-    function count(spell) {
-      let t = game.Spells.filter(a => a[0] == spell);
-      return t.length == 1 ? toArabic(t[0][1]) : 0;
-    }
-    let tf = count(from);
-    if (!tf) return;
-    let tt = count(to);
-    let total = tf + tt;
-    console.log('Patching ' + from + ' to ' + to);
-    game.Spells = game.Spells.filter(a => a[0] != to);
-    for (let spell of game.Spells) {
-      if (spell[0] == from) {
-        spell[0] = to;
-        spell[1] = toRoman(total);
-      }
-    }
-  }
-  patch('Innoculate', 'Inoculate');
-  patch('Tonsilectomy', 'Tonsillectomy');
 
   Log('Loaded game: ' + game.Traits.Name);
   if (!game.elapsed)
@@ -1287,13 +1255,17 @@ window.onerror = function(message, source, lineno, colno, error) {
   $("#bsod_source").text(source);
   $("#bsod_lineno").text(lineno);
   $("#bsod_colno").text(colno);
-  $("#bsod_error").text(error.stack);
+  $("#bsod_error").text(error && error.stack ? error.stack : '');
 
   $("#bsodmom").show();
 };
 
 function FormKeyDown(e) {
   $("#bsodmom").hide();
+
+  // keydown also fires for shortcuts (Ctrl+S, Cmd+Q...) and auto-repeat,
+  // which the old keypress handler never saw. Leave those to the browser.
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
 
   if (e.key === 'd') {
     alert("Your character's genome is " + ToDna(game.dna + ""));
@@ -1338,11 +1310,10 @@ function FormKeyDown(e) {
 
   if (e.key === 'w') {
     if (window.opener) return;
-    $(window).unbind('unload');  // we're about to save it anyway
+    SuspendAutosave();  // we're about to save it anyway
     SaveGame(() => {
       let ext = window.open(window.location.href, "Progress Quest Remix",
         `resizable,width=${$("#main")[0].offsetWidth},height=${$("#main")[0].offsetHeight},popup,location=0`);
-      console.log(ext);
       if(ext && !ext.closed && typeof ext.closed !== 'undefined') {
         // popup was apparently not blocked
         window.location.href = "roster.html";  // this window can go back to the roster
@@ -1395,7 +1366,7 @@ function Brag(trigger, andSeeIt) {
     // }, "json");
 
     let url = game.online.host + 'cmd=b&t=' + trigger;
-    for (trait in game.Traits) {
+    for (let trait in game.Traits) {
       url += '&' + LowerCase(trait.substr(0,1)) + '=' + UrlEncode(game.Traits[trait]);
     }
     url += '&x=' + IntToStr(ExpBar.Position());
@@ -1429,7 +1400,7 @@ function Guildify(guild) {
   game.guild = guild;
 
   let url = game.online.host + 'cmd=guild';
-  for (trait in game.Traits) {
+  for (let trait in game.Traits) {
     url += '&' + LowerCase(trait.substr(0,1)) + '=' + UrlEncode(game.Traits[trait]);
   }
   url += '&h=' + UrlEncode(game.online.realm);

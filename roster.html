@@ -12,8 +12,7 @@
 <meta name="msapplication-config" content="https://enderandrew.com/ProgressQuest/browserconfig.xml">
 <meta name="theme-color" content="#ffffff">
 <title>Progress Quest Remix - Roster</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/json2/20160511/json2.min.js" integrity="sha512-uWk2ZXl3GVrq6DZsrL5dSg1S/F3MNQ9VaDFigqXOoKUnWG58UxOuJGfTrzh5KjpoBvPiFniL2PahU2HUTFMJXw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/4.0.0-beta/jquery.min.js" integrity="sha512-qFOQ9YFAeGj1gDOuUD61g3D+tLDv3u1ECYWqT82WQoaWrOhAY+5mRMTTVsQdWutbA5FORCnkEPEgU0OF8IzGvA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="jquery-4.0.0.min.js"></script>
 <script src="config.js"></script>
 <script src="roster.js"></script>
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -136,6 +135,12 @@ img {
 	</table>
 	
 	<p id=dropinfo>You can also drop a saved game file on this page to add it to your roster.</p>
+
+	<dialog id="copy">
+		<p>Save data for <span></span> &mdash; copy this somewhere safe:</p>
+		<pre style="text-align:left; font-size:8pt"></pre>
+		<button type="button">Close</button>
+	</dialog>
 	
 		<div align="center" id="nabar">
 			<a href="./">Home</a> &middot;

@@ -28,7 +28,7 @@ function Cheats() {
 
 
   cheat("Pause", function () {
-    if (timerid) {
+    if (clock && clock.running) {
       StopTimer();
     } else {
       StartTimer();
