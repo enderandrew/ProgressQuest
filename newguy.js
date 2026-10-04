@@ -67,6 +67,7 @@ function fill(e, a, n) {
   var def = Random(a.length);
   for (var i = 0; i < a.length; ++i) {
     var v = a[i].split("|")[0];
+    var tags = (a[i].split("|")[1] || "").split(",");
     if (def == i) traits[n] = v;
     if (document) {
       // Built as elements rather than an HTML string so names containing
@@ -74,10 +75,29 @@ function fill(e, a, n) {
       var id = n + '-' + i;
       $("<div>").append(
         $("<input>", { type: "radio", id: id, name: n, value: v, checked: def == i }),
-        $("<label>", { "for": id, text: v })
+        $("<label>", { "for": id, text: v,
+                       title: "Primary: " + tags[0] + ", secondary: " + tags[1] })
       ).appendTo(e);
     }
   }
+}
+
+// Mark the chosen race and class attributes on the stats table and show
+// the martial/arcane split.
+function ShowNewGuyProfile() {
+  var p = AttributeProfile($("input:radio[name=Race]:checked").val(),
+                           $("input:radio[name=Class]:checked").val());
+  $("#stats th").each(function () {
+    var stat = $(this).text().trim();
+    $(this).toggleClass("primary", p.primary.indexOf(stat) >= 0)
+           .toggleClass("secondary", p.secondary.indexOf(stat) >= 0);
+  });
+  var pools = [];
+  $.each(["HP Max", "MP Max"], function (i, stat) {
+    if (p.primary.indexOf(stat) >= 0) pools.push(stat + " \u2605");
+    else if (p.secondary.indexOf(stat) >= 0) pools.push(stat + " \u2606");
+  });
+  $("#Profile").text(ProfileSummary(p) + (pools.length ? " \u00b7 " + pools.join(", ") : ""));
 }
 
 function NewGuyFormLoad() {
@@ -94,6 +114,8 @@ function NewGuyFormLoad() {
     $("#RandomName").on("click", GenClick);
     $('#Sold').on("click", sold);
     $('#quit').on("click", cancel);
+    $("#races, #classes").on("change", "input:radio", ShowNewGuyProfile);
+    ShowNewGuyProfile();
 
     //var caption = 'Progress Quest Remix - New Character';
     //if (MainForm.GetHostName != '')

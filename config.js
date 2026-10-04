@@ -424,6 +424,81 @@ K.Traits = ["Name", "Race", "Class", "Level"];
 K.PrimeStats = ["STR","CON","DEX","INT","WIS","CHA"];
 K.Stats = K.PrimeStats.slice(0).concat(["HP Max","MP Max"]);
 
+// Attribute profiles
+// ------------------
+// Every race and class lists a primary and a secondary attribute
+// ("Name|PRIMARY,SECONDARY"). A character's profile adds them up: the
+// primary is worth K.PrimaryWeight, the secondary K.SecondaryWeight, and
+// an attribute listed by both race and class counts twice.
+K.PhysicalStats = ["STR","CON","DEX","HP Max"];
+K.ArcaneStats   = ["INT","WIS","CHA","MP Max"];
+K.PrimaryWeight = 2;
+K.SecondaryWeight = 1;
+
+// How strongly a profile attribute is favored when a stat point is won.
+// Every stat starts at K.StatPickBase, plus its profile weight, so with the
+// defaults a primary is picked 5:3 as often as an unlisted stat and a
+// secondary 4:3. Lower it for a stronger bias (2 makes a primary 2:1).
+K.StatPickBase = 3;
+
+// Extra HP/MP on level-up, in percent per point of profile weight, when
+// HP Max or MP Max is in the profile (primary +30%, secondary +15%).
+K.PoolGrowthPerWeight = 15;
+
+// The tags of a race or class by name, e.g. ["STR","INT"]; [] if unknown.
+function StatTags(list, name) {
+  for (var i = 0; i < list.length; ++i) {
+    var parts = list[i].split("|");
+    if (parts[0] === name)
+      return parts[1] ? parts[1].split(",") : [];
+  }
+  return [];
+}
+
+// Profile of a race/class combination:
+//   weights      { stat: weight } for every stat in K.Stats (0 if unlisted)
+//   primary      stats that are a primary for the race or the class
+//   secondary    stats that are a secondary (and not also a primary)
+//   physical     total weight on K.PhysicalStats
+//   arcane       total weight on K.ArcaneStats
+//   physicality  physical / (physical + arcane): 1 is pure brawn, 0 is pure
+//                magic. 0.5 if the race and class are both unknown.
+function AttributeProfile(race, klass) {
+  var weights = {};
+  $.each(K.Stats, function (i, stat) { weights[stat] = 0; });
+  var primary = [], secondary = [];
+  $.each([StatTags(K.Races, race), StatTags(K.Klasses, klass)], function (i, tags) {
+    $.each(tags, function (j, stat) {
+      if (!(stat in weights)) return;
+      weights[stat] += j === 0 ? K.PrimaryWeight : K.SecondaryWeight;
+      if (j === 0) {
+        if (primary.indexOf(stat) < 0) primary.push(stat);
+      } else if (secondary.indexOf(stat) < 0) {
+        secondary.push(stat);
+      }
+    });
+  });
+  secondary = secondary.filter(function (s) { return primary.indexOf(s) < 0; });
+
+  var physical = 0, arcane = 0;
+  $.each(K.PhysicalStats, function (i, s) { physical += weights[s]; });
+  $.each(K.ArcaneStats, function (i, s) { arcane += weights[s]; });
+  return {
+    weights: weights,
+    primary: primary,
+    secondary: secondary,
+    physical: physical,
+    arcane: arcane,
+    physicality: (physical + arcane) ? physical / (physical + arcane) : 0.5
+  };
+}
+
+// "Martial 67% / Arcane 33%"
+function ProfileSummary(profile) {
+  var m = Math.round(100 * profile.physicality);
+  return "Martial " + m + "% / Arcane " + (100 - m) + "%";
+}
+
 K.Equips = ["Weapon",
             "Shield",
             "Helm",

@@ -59,3 +59,9 @@ fieldset table td {
   width: 75px;
   margin: 4px;
 }
+
+/* Race/class attributes */
+#stats th.primary::after { content: " \2605"; color: #b8860b; }
+#stats th.secondary::after { content: " \2606"; color: #b8860b; }
+#stats th { white-space: nowrap; }
+div.profile { font-size: 8pt; color: #555; margin-top: 4px; height: 2.5em; }

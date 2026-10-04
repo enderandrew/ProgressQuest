@@ -42,3 +42,21 @@ Save format
 Saves carry a saveVersion number (SaveVersion in config.js). When a
 change needs existing saves patched, bump SaveVersion and add a
 function to SaveMigrations; old saves are upgraded once when they load.
+
+
+Attribute profiles
+------------------
+
+Every race and class names a primary and a secondary attribute
+("4chan Troll|STR,INT"). Together they give each character a profile:
+the primary counts 2, the secondary 1, and an attribute named by both
+race and class counts twice. On the character sheet, primaries get a
+filled star and secondaries an open one.
+
+- Profile attributes are more likely to go up when a stat is won
+  (K.StatPickBase in config.js controls how much more).
+- HP Max and MP Max in the profile grow 15% faster per point of weight
+  on level-up (K.PoolGrowthPerWeight).
+- The martial/arcane split (STR, CON, DEX, HP Max vs INT, WIS, CHA,
+  MP Max) is shown under the stats; later it decides how often a
+  character casts spells.

@@ -161,6 +161,11 @@ function run(opts) {
 
   const t = game().Traits;
   console.log(`${t.Name} the ${t.Race} ${t.Class}  (seed "${opts.seed}")`);
+  if (typeof ctx.AttributeProfile === "function") {
+    const p = ctx.AttributeProfile(t.Race, t.Class);
+    console.log(`${ctx.ProfileSummary(p)}  primary: ${p.primary.join(", ")}` +
+                (p.secondary.length ? `  secondary: ${p.secondary.join(", ")}` : ""));
+  }
   if (!opts.quiet) console.log(`Lv  1  ${stats()}`);
 
   const started = Date.now();

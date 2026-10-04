@@ -190,3 +190,18 @@ div#paused {
   font-size: 160px;
   opacity: 0.5;
 }
+/* Race/class attributes on the character sheet */
+#Stats tr.primary td:first-child::after {
+  content: " \2605";
+  color: #b8860b;
+}
+#Stats tr.secondary td:first-child::after {
+  content: " \2606";
+  color: #b8860b;
+}
+div.profile {
+  font-size: 8pt;
+  color: #555;
+  margin-top: 2px;
+  cursor: help;
+}

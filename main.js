@@ -718,10 +718,27 @@ function WinEquip() {
 
 function Square(x) { return x * x; }
 
+// The current character's attribute profile (see AttributeProfile).
+function CharProfile() {
+  return AttributeProfile(Get(Traits,'Race'), Get(Traits,'Class'));
+}
+
 function WinStat() {
   var i;
   if (Odds(1,2))  {
-    i = Pick(K.Stats);
+    // Favor the race and class attributes: each stat's chance is
+    // K.StatPickBase plus its profile weight.
+    var weights = CharProfile().weights;
+    var t = 0;
+    $.each(K.Stats, function (index, key) {
+      t += K.StatPickBase + weights[key];
+    });
+    t = Random(t);
+    $.each(K.Stats, function (index, key) {
+      i = key;
+      t -= K.StatPickBase + weights[key];
+      if (t < 0) return false;
+    });
   } else {
     // Favor the best stat so it will tend to clump
     var t = 0;
@@ -967,10 +984,16 @@ function Max(a,b) {
   return a > b ? a : b;
 }
 
+// HP/MP gained on level-up, boosted when that pool is in the profile.
+function PoolGain(base, weight) {
+  return base + Math.round(base * weight * K.PoolGrowthPerWeight / 100);
+}
+
 function LevelUp() {
+  var weights = CharProfile().weights;
   Add(Traits,'Level',1);
-  Add(Stats,'HP Max', GetI(Stats,'CON').div(3) + 1 + Random(4));
-  Add(Stats,'MP Max', GetI(Stats,'INT').div(3) + 1 + Random(4));
+  Add(Stats,'HP Max', PoolGain(GetI(Stats,'CON').div(3) + 1 + Random(4), weights['HP Max']));
+  Add(Stats,'MP Max', PoolGain(GetI(Stats,'INT').div(3) + 1 + Random(4), weights['MP Max']));
   WinStat();
   WinStat();
   WinSpell();
@@ -1199,6 +1222,7 @@ function LoadGame(sheet) {
 
   randseed(game.seed);
   $.each(AllBars.concat(AllLists), function (i, e) { e.load(game); });
+  ShowProfile();
   if (Kill)
     Kill.text(game.kill);
   ClearAllSelections();
@@ -1210,6 +1234,22 @@ function LoadGame(sheet) {
   if (!game.elapsed)
     Brag('s');
   StartTimer();
+}
+
+// Mark the race/class attributes on the character sheet and show the
+// martial/arcane split.
+function ShowProfile() {
+  if (!document) return;
+  var p = CharProfile();
+  $("#Stats tr").each(function () {
+    var stat = Key(this);
+    $(this).toggleClass("primary", p.primary.indexOf(stat) >= 0)
+           .toggleClass("secondary", p.secondary.indexOf(stat) >= 0);
+  });
+  $("#Profile").text(ProfileSummary(p))
+    .attr("title", "Race and class attributes. Primary (\u2605): " +
+          (p.primary.join(", ") || "none") + ". Secondary (\u2606): " +
+          (p.secondary.join(", ") || "none") + ".");
 }
 
 function GameSaveName() {
