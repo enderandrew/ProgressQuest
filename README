@@ -60,3 +60,43 @@ filled star and secondaries an open one.
 - The martial/arcane split (STR, CON, DEX, HP Max vs INT, WIS, CHA,
   MP Max) is shown under the stats; later it decides how often a
   character casts spells.
+
+
+Combat
+------
+
+Every monster on the Killing Fields is now actually fought. combat.js
+holds the rules as a pure function, ResolveCombat(hero, foe, seed): the
+same character, monster and seed always give the same fight, so a
+server can one day replay a character's history to catch cheaters.
+
+The fight is settled when the task starts; the task bar plays it out,
+and longer fights take longer to watch. Outcomes:
+
+- win / close win: XP, quest and plot progress, and loot as before
+- flee (you ran, or you both lost interest): a quarter of the XP
+- defeat: a quarter of the XP, then a trip back to town to recover
+  (Prompt 6 gives defeat real consequences)
+
+What each stat does in a fight:
+
+  STR     melee damage
+  DEX     hit chance, dodging, acting first, getting away
+  CON     softens physical hits, faster HP regen and resting
+  INT     spell damage
+  WIS     spell success, dodging and softening monster magic, MP regen
+  CHA     beaten monsters may give up and run off
+  HP Max  health, which now carries over from fight to fight
+  MP Max  mana for spells; arcane characters cast more often
+
+Monsters are as strong as a typical character of their level
+(ExpectedStat and ExpectedPool, fitted to simulated characters).
+K.MonMods adjectives ("+4 Giant", "-2 Fairly Stupid") make a quarter of
+monsters stronger or weaker, by at most a third of their level. Gear
+counts too: the weapon's and armor's power against the monster's level.
+
+Tuning knobs are in K.Combat at the top of combat.js. sim.js prints a
+fight summary; win rates measured with it (16 characters to level 30):
+
+  monster level vs yours   -5    -2    0    +2    +5    +8
+  won                     100%  97%  94%   81%   54%   10%

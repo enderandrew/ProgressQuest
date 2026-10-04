@@ -299,6 +299,7 @@ function ImpressiveGuy() {
 
 function MonsterTask(level) {
   var definite = false;
+  var npc = false;
   for (var i = level; i >= 1; --i) {
     if (Odds(2,5))
       level += RandSign();
@@ -317,6 +318,7 @@ function MonsterTask(level) {
       definite = true;
     }
     lev = level;
+    npc = true;
     monster = monster + '|' + IntToStr(level) + '|*';
   } else if (game.questmonster && Odds(1,4)) {
     // Use the quest monster
@@ -368,11 +370,26 @@ function MonsterTask(level) {
     result = Special(level-lev,result);
   }
 
-  lev = level;
-  level = lev * qty;
+  // K.MonMods: now and then the monster gets an adjective that makes it
+  // stronger or weaker than it would otherwise be ("+4 Giant *").
+  // An adjective may shift the level by at most a third of it (at least 1),
+  // so a level 2 rat can be Greater but not Kaiju; all of them are in play
+  // from about level 15.
+  var mod = 0;
+  if (!npc && Odds(1,4)) {
+    var cap = Max(1, Math.floor(level / 3));
+    var mods = K.MonMods.filter(function (m) { return Abs(StrToInt(m)) <= cap; });
+    var mm = Pick(mods);
+    mod = StrToInt(Split(mm, 0, ' '));
+    result = mm.substr(mm.indexOf(' ') + 1).replace('*', result);
+  }
 
+  lev = Max(1, level + mod);   // level of each opponent
+  level = lev * qty;           // total puissance: sets XP and fight length
+
+  var foe = { name: definite ? result : Definite(result, qty), level: lev, qty: qty };
   if (!definite) result = Indefinite(result, qty);
-  return { 'description': result, 'level': level };
+  return { 'description': result, 'level': level, 'foe': foe };
 }
 
 function LowerCase(s) {
@@ -392,17 +409,24 @@ function EquipPrice() {
 function Dequeue() {
   while (TaskDone()) {
     if (Split(game.task,0) == 'kill') {
-      if (Split(game.task,3) == '*') {
-        WinItem();
-      } else if (Split(game.task,3)) {
-        Add(Inventory,LowerCase(Split(game.task,1) + ' ' +
-                                ProperCase(Split(game.task,3))),1);
+      if (FightWon()) {
+        if (Split(game.task,3) == '*') {
+          WinItem();
+        } else if (Split(game.task,3)) {
+          Add(Inventory,LowerCase(Split(game.task,1) + ' ' +
+                                  ProperCase(Split(game.task,3))),1);
+        }
       }
+      FinishFight();
+    } else if (game.task == 'rest' || game.task == 'heal') {
+      RestoreHealth();
     } else if (game.task == 'buying') {
       // buy some equipment
       Add(Inventory,'Gold',-EquipPrice());
       WinEquip();
     } else if ((game.task == 'market') || (game.task == 'sell')) {
+      if (game.task == 'market')
+        RestoreHealth();  // a night at the inn
       if (game.task == 'sell') {
         var amt = GetI(Inventory, 1) * GetI(Traits,'Level');
         if (Pos(' of ', Inventory.label(1)) > 0)
@@ -425,20 +449,21 @@ function Dequeue() {
       var a = Split(game.queue[0],0);
       var n = StrToInt(Split(game.queue[0],1));
       var s = Split(game.queue[0],2);
-      if (a == 'task' || a == 'plot') {
+      if (a == 'task' || a == 'plot' || a == 'heal') {
         game.queue.shift();
         if (a == 'plot') {
           CompleteAct();
           s = 'Loading ' + game.bestplot;
         }
         Task(s, n * 1000);
+        if (a == 'heal') game.task = 'heal';
       } else {
         throw 'bah!' + a;
       }
     } else if (EncumBar.done()) {
       Task('Heading to market to sell viscera-covered loot',4 * 1000);
       game.task = 'market';
-    } else if ((Pos('kill|',old) <= 0) && (old != 'heading')) {
+    } else if ((Pos('kill|',old) <= 0) && (old != 'heading') && (old != 'rest')) {
       if (GetI(Inventory, 'Gold') > EquipPrice()) {
         Task('Haggling over the price of better equipment', 5 * 1000);
         game.task = 'buying';
@@ -446,16 +471,97 @@ function Dequeue() {
         Task('Heading to the Killing Fields™', 4 * 1000);
         game.task = 'heading';
       }
+    } else if (NeedsRest()) {
+      Task('Catching your breath', RestTime());
+      game.task = 'rest';
     } else {
       var nn = GetI(Traits, 'Level');
       var t = MonsterTask(nn);
       var InventoryLabelAlsoGameStyleTag = 3;
       nn = Math.floor((2 * InventoryLabelAlsoGameStyleTag * t.level * 1000) / nn);
-      Task('Executing ' + t.description, nn);
+      // The fight is settled now; the task bar just plays it out. Harder
+      // fights (more rounds) take longer to watch.
+      var fight = ResolveCombat(HeroSnapshot(), t.foe, Random(0x7fffffff));
+      fight.foe = t.foe.name;
+      fight.foeLevel = t.foe.level;
+      fight.qty = t.foe.qty;
+      fight.xp = nn / 1000;
+      game.combat = fight;
+      Task('Executing ' + t.description, Math.round(nn * FightLength(fight)));
     }
   }
 }
 
+
+// ---- Combat glue ------------------------------------------------------
+
+// Snapshot of the character for ResolveCombat().
+function HeroSnapshot() {
+  var hero = {
+    name: Get(Traits,'Name'),
+    level: GetI(Traits,'Level'),
+    hp: HPBar.Position(), hpMax: GetI(Stats,'HP Max'),
+    mp: MPBar.Position(), mpMax: GetI(Stats,'MP Max'),
+    weapon: WeaponPower(game.Equips),
+    armor: ArmorPower(game.Equips),
+    physicality: CharProfile().physicality,
+    spells: game.Spells.map(function (s) {
+      return { name: s[0], level: toArabic(s[1]) };
+    })
+  };
+  $.each(K.PrimeStats, function (i, stat) { hero[stat] = GetI(Stats, stat); });
+  return hero;
+}
+
+// Did the fight that just played out end in victory? Fights from saves made
+// before combat existed count as wins.
+function FightWon() {
+  return !game.combat || game.combat.outcome == 'win' || game.combat.outcome == 'close';
+}
+
+// A typical fight lasts about 6 rounds and takes as long as fights always
+// have; longer fights take longer to watch, short ones are over quickly.
+function FightLength(fight) {
+  return Min(2, Max(0.6, fight.rounds / 6));
+}
+
+// Apply the fight's toll, then regain a little between fights.
+function FinishFight() {
+  var fight = game.combat;
+  if (!fight) return;
+  HPBar.reposition(Max(0, HPBar.Position() - fight.hpLost));
+  MPBar.reposition(Max(0, MPBar.Position() - fight.mpSpent));
+  $.each(fight.log, function (i, line) { Log(line); });
+
+  if (fight.outcome == 'defeat') {
+    // Placeholder until defeat gets real consequences
+    game.queue.push('task|4|Beaten senseless by ' + fight.foe + ', you wake up in a ditch');
+    game.queue.push('heal|6|Limping back to town to lick your wounds');
+  } else {
+    if (fight.outcome == 'flee')
+      game.queue.push('task|2|Running away from ' + fight.foe + ' as fast as you can');
+    var regen = CombatRegen(HeroSnapshot());
+    HPBar.increment(regen.hp);
+    MPBar.increment(regen.mp);
+  }
+  fight.done = true;
+}
+
+function NeedsRest() {
+  return HPBar.Position() < HPBar.Max() * K.Combat.RestBelow;
+}
+
+// Resting takes 3-8 seconds depending on how hurt you are; more CON, less.
+function RestTime() {
+  var hurt = 1 - HPBar.Position() / Max(1, HPBar.Max());
+  var con = GetI(Stats,'CON') / ExpectedStat(GetI(Traits,'Level'));
+  return Math.round(1000 * (3 + 5 * hurt) / Min(2, Max(0.5, con)));
+}
+
+function RestoreHealth() {
+  HPBar.reset(GetI(Stats,'HP Max'), GetI(Stats,'HP Max'));
+  MPBar.reset(GetI(Stats,'MP Max'), GetI(Stats,'MP Max'));
+}
 
 function Put(list, key, value) {
   if (typeof key === typeof 1)
@@ -479,6 +585,10 @@ function Put(list, key, value) {
 
   if (key === 'STR')
     EncumBar.reset(10 + value, EncumBar.Position());
+  if (key === 'HP Max')
+    HPBar.reset(value, HPBar.Position());
+  if (key === 'MP Max')
+    MPBar.reset(value, MPBar.Position());
 
   if (list === Inventory) {
     var cubits = 0;
@@ -642,7 +752,7 @@ function ListBox(id, columns, fixedkeys) {
 }
 
 
-var ExpBar, PlotBar, TaskBar, QuestBar, EncumBar;
+var ExpBar, PlotBar, TaskBar, QuestBar, EncumBar, HPBar, MPBar;
 var Traits,Stats,Spells,Equips,Inventory,Plots,Quests;
 var Kill;
 var AllBars, AllLists;
@@ -997,6 +1107,7 @@ function LevelUp() {
   WinStat();
   WinStat();
   WinSpell();
+  RestoreHealth();  // a new level, a fresh start
   ExpBar.reset(LevelUpTime(GetI(Traits,'Level')));
   Brag('l');
 }
@@ -1031,13 +1142,17 @@ function Timer1Timer() {
     if (game.kill == 'Loading....')
       TaskBar.reset(0);  // Not sure if this is still the ticket
 
-    // gain XP / level up
-    var gain = Pos('kill|', game.task) == 1;
-    if (gain) {
+    // gain XP / level up. Wins earn the monster's full worth; running away
+    // or losing still teaches you something.
+    var fought = Pos('kill|', game.task) == 1;
+    var gain = fought && FightWon();
+    var reward = (fought && game.combat && game.combat.xp !== undefined) ?
+      game.combat.xp : TaskBar.Max() / 1000;
+    if (fought) {
       if (ExpBar.done())
         LevelUp();
       else
-        ExpBar.increment(TaskBar.Max() / 1000);
+        ExpBar.increment(gain ? reward : reward * K.Combat.LossXP);
     }
 
     // advance quest
@@ -1045,7 +1160,7 @@ function Timer1Timer() {
       if (QuestBar.done() || !Quests.length()) {
         CompleteQuest();
       } else {
-        QuestBar.increment(TaskBar.Max() / 1000);
+        QuestBar.increment(reward);
       }
     }
 
@@ -1054,7 +1169,7 @@ function Timer1Timer() {
       if (PlotBar.done())
         InterplotCinematic();
       else
-        PlotBar.increment(TaskBar.Max() / 1000);
+        PlotBar.increment(gain ? reward : TaskBar.Max() / 1000);
     }
 
     Dequeue();
@@ -1074,8 +1189,10 @@ function FormCreate() {
   PlotBar =  new ProgressBar("PlotBar", "$time remaining");
   QuestBar = new ProgressBar("QuestBar", "$percent% complete");
   TaskBar =  new ProgressBar("TaskBar", "$percent%");
+  HPBar =    new ProgressBar("HPBar", "$position/$max HP");
+  MPBar =    new ProgressBar("MPBar", "$position/$max MP");
 
-  AllBars = [ExpBar,PlotBar,TaskBar,QuestBar,EncumBar];
+  AllBars = [ExpBar,PlotBar,TaskBar,QuestBar,EncumBar,HPBar,MPBar];
 
   Traits =    new ListBox("Traits",    2, K.Traits);
   Stats =     new ListBox("Stats",     2, K.Stats);

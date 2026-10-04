@@ -205,3 +205,7 @@ div.profile {
   margin-top: 2px;
   cursor: help;
 }
+
+/* Health and mana */
+div.progress-container#HPBar > div.bar { background-color: #e98a7c; }
+div.progress-container#MPBar > div.bar { background-color: #7cb0e9; }

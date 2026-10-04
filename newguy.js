@@ -33,8 +33,9 @@ function RollEm() {
       stats.best = stat;
     }
   });
-  stats['HP Max'] = Random(8) + stats.CON.div(6);
-  stats['MP Max'] = Random(8) + stats.INT.div(6);
+  // HP and MP start at 3 or more: with combat, a 1 HP hero never wins.
+  stats['HP Max'] = 3 + Random(8) + stats.CON.div(6);
+  stats['MP Max'] = 3 + Random(8) + stats.INT.div(6);
 
   var color =
     (total >= (63+18)) ? 'red'    :
@@ -160,6 +161,8 @@ function sold() {
     PlotBar: { position: 0, max: 26 },
     QuestBar: { position: 0, max: 1 },
     TaskBar: { position: 0, max: 2000 },
+    HPBar: { position: stats['HP Max'], max: stats['HP Max'] },
+    MPBar: { position: stats['MP Max'], max: stats['MP Max'] },
     saveVersion: SaveVersion,
     queue: [
       "task|6|Experiencing an enigmatic and foreboding night vision... Much is revealed about that wise Old Bastard™ you'd underestimated",

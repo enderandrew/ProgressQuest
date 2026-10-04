@@ -128,6 +128,7 @@ function run(opts) {
   const g = (code) => vm.runInContext(code, ctx);
 
   load(ctx, opts.dir, "config.js");
+  if (fs.existsSync(path.join(opts.dir, "combat.js"))) load(ctx, opts.dir, "combat.js");
   load(ctx, opts.dir, "main.js");
   load(ctx, opts.dir, "newguy.js");
 
@@ -172,6 +173,8 @@ function run(opts) {
   let lastLevel = level();
   const MAX_TASKS = 50 * 1000 * 1000;
   let n = 0;
+  let lastFight = null;
+  const fights = { total: 0 };
   while (level() < opts.levels) {
     if (++n > MAX_TASKS) throw new Error("Simulation did not finish; is the game stuck?");
     // Finish the current task instantly, then let the game react.
@@ -179,12 +182,21 @@ function run(opts) {
     now += Math.max(0, bar.Max() - bar.Position());
     bar.reposition(bar.Max());
     ctx.Timer1Timer();
+    const f = game().combat;
+    if (f && f !== lastFight) {
+      lastFight = f;
+      fights[f.outcome] = (fights[f.outcome] || 0) + 1;
+      fights.total++;
+    }
+    if (opts.onTask) opts.onTask(ctx);
 
-    if (!opts.quiet && level() !== lastLevel) {
+    if (level() !== lastLevel) {
       lastLevel = level();
-      console.log(`Lv ${String(lastLevel).padStart(2)}  ${stats()}  ` +
-                  `gold ${gold()}  ${ctx.RoughTime(game().elapsed)} played  ` +
-                  `${game().tasks} tasks`);
+      if (opts.onLevel) opts.onLevel(game(), ctx);
+      if (!opts.quiet)
+        console.log(`Lv ${String(lastLevel).padStart(2)}  ${stats()}  ` +
+                    `gold ${gold()}  ${ctx.RoughTime(game().elapsed)} played  ` +
+                    `${game().tasks} tasks`);
     }
   }
   ctx.SaveGame();
@@ -198,6 +210,11 @@ function run(opts) {
   console.log(`Plot:    ${s.bestplot}`);
   console.log(`Best:    ${s.bestequip} / ${s.bestspell} / ${s.beststat}`);
   console.log(`Spells:  ${s.Spells.length} known`);
+  if (fights.total) {
+    const pct = k => Math.round(100 * (fights[k] || 0) / fights.total) + "%";
+    console.log(`Fights:  ${fights.total}: won ${pct("win")} cleanly, ${pct("close")} narrowly; ` +
+                `fled ${pct("flee")}, defeated ${pct("defeat")}`);
+  }
 
   if (opts.json) {
     fs.writeFileSync(opts.json, JSON.stringify(s, null, 2));
