@@ -193,7 +193,8 @@ function sold() {
   $.each(K.Equips, function (i,equip) { newguy.EquipPower[equip] = 0; });
   newguy.purse = 0;
   newguy.story = prologue;
-  newguy.storyLog = [{ act: 0, key: prologue.key, title: prologue.title, purpose: prologue.purpose }];
+  newguy.storyLog = [{ act: 0, key: prologue.key, title: prologue.title, purpose: prologue.purpose,
+                       taunt: prologue.taunt }];
   newguy.deaths = 0;
   newguy.wounded = 0;
 

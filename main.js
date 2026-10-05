@@ -450,9 +450,16 @@ function StoryFor(act) {
   return null;
 }
 
-// "Act II: The Heist" (or just "Act II" for Acts from before stories)
+// "Act II: The Heist" (or just "Act II" for Acts from before stories), and
+// for the Prologue, the Old Bastard™'s taunt: "Prologue: Thou paltry
+// evil-eyed varlet"
 function ActCaption(act) {
-  if (!act) return 'Prologue';
+  if (!act) {
+    var prologue = StoryFor(0);
+    var taunt = prologue && (prologue.taunt ||
+      (prologue.purpose.match(/\u201c(Thou [^\u201d]*)\u201d/) || [])[1]);
+    return taunt ? 'Prologue: ' + taunt.replace(/!$/, '') : 'Prologue';
+  }
   var entry = StoryFor(act);
   return 'Act ' + toRoman(act) + (entry ? ': ' + entry.title : '');
 }
@@ -461,7 +468,8 @@ function ActCaption(act) {
 function BeginStory(story) {
   game.story = story;
   if (!game.storyLog) game.storyLog = [];
-  game.storyLog.push({ act: story.act, key: story.key, title: story.title, purpose: story.purpose });
+  game.storyLog.push({ act: story.act, key: story.key, title: story.title, purpose: story.purpose,
+                      taunt: story.taunt });
   while (game.storyLog.length > 100) game.storyLog.shift();
   ShowStory();
 }
