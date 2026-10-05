@@ -375,7 +375,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 4;
+var SaveVersion = 5;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -431,6 +431,11 @@ var SaveMigrations = [
   function (sheet) {
     sheet.deaths = sheet.deaths || 0;
     sheet.wounded = sheet.wounded || 0;
+  },
+  // 4 -> 5: stories. Each Act gets a story when it begins (the current
+  // one is picked when the save loads; see EnsureStory in main.js).
+  function (sheet) {
+    sheet.storyLog = sheet.storyLog || [];
   }
 ];
 
@@ -3009,7 +3014,7 @@ K.DefenseBad = [
   "Magnetized-to-Blades|-6",
   "Embarrassingly-Sheer|-6",
   "Crushed|-6",
-  "Catastrophic|-6"
+  "Catastrophic|-6",
   "Decrepid|-6",
   "Worthless|-6",
   "Decayed|-6",

@@ -133,138 +133,11 @@ function Special(m, s) {
     return prefix(['Mecha-','Underdark ','Battle-','Deadite ','Demon '], m, s, '');
 }
 
-// from 3 to 13 InterplotCinematics
+// The current Act is over: play the ending of its story, then move on to
+// the next Act (see story.js).
 function InterplotCinematic() {
-  switch (Random(13)) {
-  case 0:
-    Q('task|4|Exhausted from endless questing, you arrive at a friendly oasis in a hostile land.');
-    Q('task|4|You greet old friends and meet new allies. Those NPCs are the DMs former PCs.');
-    Q('task|4|You are privy to a council of powerful do-gooders. There is much to be done.');
-    Q('task|4|Unsurprisingly, you are chosen to go forth. Time to Progress more!');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 1:
-    Q('task|4|Your quarry is in sight, but a mighty enemy bars your path!');
-    var nemesis = NamedMonster(GetI(Traits,'Level')+3);
-    Q('task|4|A desperate struggle commences with ' + nemesis);
-    var s = Random(3);
-    for (var i = 1; i <= Random(1 + game.act + 1); ++i) {
-      s += 1 + Random(2);
-      switch (s % 3) {
-      case 0: Q('task|4|Locked in grim combat with ' + nemesis); break;
-      case 1: Q('task|4|' + nemesis + ' seems to have the upper hand'); break;
-      case 2: Q('task|4|You seem to gain the advantage over ' + nemesis); break;
-      }
-    }
-    Q('task|4|Victory! ' + nemesis + ' is slain! Exhausted, you lose consciousness');
-    Q('task|4|You awake in a friendly place, but the road awaits');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 2:
-    var nemesis2 = ImpressiveGuy();
-    Q("task|4|Oh sweet relief! You've reached the kind protection of " + nemesis2);
-    Q('task|4|There is rejoicing, and an unnerving encounter with ' + nemesis2 + ' in private');
-    Q('task|4|You forget your ' + BoringItem() + ' and go back to get it');
-    Q("task|4|What's this!? You overhear something shocking!");
-    Q('task|4|Could ' + nemesis2 + ' be a dirty double-dealer?');
-    Q('task|4|Who can possibly be trusted with this news!? -- Oh yes, of course');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 3:
-    var maguffin = SpecialItem();
-	var giver = PickLow(K.Titles) + ' ' + GenerateName();
-	var liar = ImpressiveGuy();
-	var kingdom = GenerateName();
-	Q('task|4|You were asked by ' + giver + ' to find the sacred ' + maguffin + ' to save their village.');
-    Q('task|4|You were told by ' + liar + ' that it could be found in the lands of ' + kingdom);
-    Q('task|4|You searched high and low only to find out that ' + liar + ' intentionally misled you.');
-    Q('task|4|Apparently ' + liar + ' already stole and sold ' + maguffin + ' on Ye Olde eBay.');
-    Q('task|4|I guess ' + giver + ' and their suffering village will just have to go without.');
-    Q('task|4|You decide that the real ' + maguffin + ' was the friends you made along the way.');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 4:
-    var kingdom1 = GenerateName();
-	var kingdom2 = GenerateName();
-	var lover1 = ImpressiveGuy();
-	var lover2 = ImpressiveGuy();
-	Q('task|4|The kingdoms of ' + kingdom1 + ' and ' + kingdom2 + ' have long been at war.');
-    Q('task|4|The rulers negotiated peace and would unite with the wedding of ' + lover1 + ' and ' + lover2);
-    Q('task|4|The wedding was called off after accusations of infidelity and now war seems imminent.');
-    Q('task|4|Only a hero of your caliber can restore the peace and prevent this bloody conflict.');
-    Q('task|4|You seduce ' + lover1 + ' and then also seduce ' + lover2);
-    Q('task|4|Both are satiated and content for the moment. Peace is restored for the time being.');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 5:
-    var kingdom = GenerateName();
-	var kidnapped = ImpressiveGuy();
-	var ruler = ImpressiveGuy();
-	var nemesis = NamedMonster(GetI(Traits,'Level')+3);
-	Q('task|4|You have been tasked with rescuing ' + kidnapped + ' of the ' + kingdom + ' kingdom.');
-    Q('task|4|Their ruler ' + ruler + ' tells you ' + nemesis + ' kidnapped ' + kidnapped);
-    Q('task|4|You go off to slay the mighty ' + nemesis + ' and rescue ' + kidnapped);
-    Q('task|4|It is a dangerous journey but you continue undaunted.');
-    Q('task|4|You discover they eloped and are about to wed. This is awkward.');
-    Q('task|4|You tell ' + ruler + ' that ' + kidnapped + ' is dead so they can continue their secret love.');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 6:
-    Q('task|4|You feel your great quest is at a crucial turning point.');
-    Q('task|4|Have you grown so strong in your questing that you are prepared?');
-    Q('task|4|Can you defeat your nemesis and right the wrong that started all of this?');
-    Q('task|4|You are no longer the same person who initially set out.');
-	Q('task|4|You know that true change comes from within.');
-	Q('task|4|Or is that gas?');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 7:
-    Q('task|4|WAIT. Is that him?');
-    Q('task|4|Is that the Old Bastard™ from your vision?');
-    Q('task|4|Is this the moment you have been questing for?');
-    Q('task|4|You brace yourself for the final battle. One way or another, this ends now.');
-	Q('task|4|errrr....');
-	Q('task|4|Nevermind, that is just the fishmonger. Moving on.');
-	Q('task|4|You resume your quest to go after that Old Bastard™ from your vision.');
-    break;
-  case 8:
-    Q('task|4|You cannot sleep. The nightmares continue.');
-    Q('task|4|That Old Bastard™ haunts your visions.');
-    Q('task|4|But deep down you know you are not ready for the final showdown.');
-    Q('task|4|All epic tales need grinding.');
-	Q('task|4|Let us grind longer. The Old Bastard™ from your vision can wait.');
-    break;
-  case 9:
-    Q('task|4|You feel accomplished. That was quite the quest you just finished.');
-    Q('task|4|This feels like a natural stopping point as if some chapter or act finished.');
-    Q('task|4|But you can\'t stop. You just take a brief break.');
-    Q('task|4|You use the chamber pot. You forage for snacks.');
-	Q('task|4|You are ready to continue this super-epic journey. The Old Bastard™ will pay!');
-    break;
-  case 10:
-    Q('task|4|You pause and take stock of your current situation.');
-    Q('task|4|You have come so far but you have not stopped the Old Bastard™.');
-    Q('task|4|But you did kill a lot of monsters and you have a sack of gold.');
-    Q('task|4|You could buy a tavern, retire and live a quiet, happy life speaking of your adventures.');
-	Q('task|4|No, you will continue until you get that Old Bastard™!');
-    break;
-  case 11:
-    var nemesis1 = NamedMonster(GetI(Traits,'Level')+3);
-	var nemesis2 = NamedMonster(GetI(Traits,'Level')+3);
-    Q('task|4|You wipe the blood off your weapon. Actually you are covered in gore.');
-    Q('task|4|There are bits of ' + nemesis1 + ' on your boots.');
-    Q('task|4|You never could quite wash the viscera from ' + nemesis2 + ' out of your hair.');
-    Q('task|4|You have come so far in your journey, but you also probably need a good bath.');
-	Q('task|4|Not time for a bath because you must get that Old Bastard™!');
-    break;
-  case 12:
-    Q('task|4|You pause and a thought occurs to you.');
-    Q('task|4|You spend all your time on the Killing Fields™ and have yet to find the Old Bastard™.');
-    Q('task|4|Should you look somewhere else?');
-    Q('task|4|But there are lots of monsters on the killing field and they drop lots of gold.');
-	Q('task|4|You like gold, so back to the Killing Fields™!');
-    break;
-  }
+  var story = game.story && game.story.act == game.act ? game.story : NewStory(game.act);
+  $.each(StoryEnding(story), function (i, line) { Q('task|4|' + line); });
   Q('plot|1|Loading ...');
 }
 
@@ -565,6 +438,44 @@ function FinishFight() {
   }
   fight.done = true;
   ShowFight();
+}
+
+// ---- Story ----------------------------------------------------------------
+
+// The story of a given Act (0 is the Prologue), if it was recorded
+function StoryFor(act) {
+  var log = game.storyLog || [];
+  for (var i = log.length - 1; i >= 0; --i)
+    if (log[i].act == act) return log[i];
+  return null;
+}
+
+// "Act II: The Heist" (or just "Act II" for Acts from before stories)
+function ActCaption(act) {
+  if (!act) return 'Prologue';
+  var entry = StoryFor(act);
+  return 'Act ' + toRoman(act) + (entry ? ': ' + entry.title : '');
+}
+
+// Make a story the current one, remember it, and show it
+function BeginStory(story) {
+  game.story = story;
+  if (!game.storyLog) game.storyLog = [];
+  game.storyLog.push({ act: story.act, key: story.key, title: story.title, purpose: story.purpose });
+  while (game.storyLog.length > 100) game.storyLog.shift();
+  ShowStory();
+}
+
+// Saves from before stories: give the current Act one
+function EnsureStory() {
+  if (game.story && game.story.act == game.act) return;
+  BeginStory(game.act ? NewStory(game.act) : PrologueStory());
+}
+
+function ShowStory() {
+  if (!document || !game.story) return;
+  $("#StoryTitle").text(ActCaption(game.act));
+  $("#StoryText").text(game.story.purpose);
 }
 
 // ---- Watching the fight -------------------------------------------------
@@ -889,6 +800,7 @@ function ListBox(id, columns, fixedkeys) {
                        document.createTextNode(" " + caption)));
     tr.appendTo(this.box);
     tr.each(function () {this.scrollIntoView();});
+    if (this.decorate) this.decorate(tr, caption);
     return tr;
   };
 
@@ -1193,47 +1105,11 @@ function CompleteQuest() {
     Quests.remove0();
 
   game.questmonster = '';
-  var caption;
-  switch (Random(5)) {
-  case 0:
-    var level = GetI(Traits,'Level');
-    var lev = 0;
-    for (var i = 1; i <= 4; ++i) {
-      var montag = Random(K.Monsters.length);
-      var m = K.Monsters[montag];
-      var l = StrToInt(Split(m,1));
-      if (i == 1 || Abs(l - level) < Abs(lev - level)) {
-        lev = l;
-        game.questmonster = m;
-        game.questmonsterindex = montag;
-      }
-    }
-    caption = 'Exterminate ' + Definite(Split(game.questmonster,0),2);
-    break;
-  case 1:
-    caption = 'Seek ' + Definite(InterestingItem(), 1);
-    break;
-  case 2:
-    caption = 'Deliver this ' + BoringItem();
-    break;
-  case 3:
-    caption = 'Fetch me ' + Indefinite(BoringItem(), 1);
-    break;
-  case 4:
-    var mlev = 0;
-    level = GetI(Traits,'Level');
-    for (var ii = 1; ii <= 2; ++ii) {
-      montag = Random(K.Monsters.length);
-      m = K.Monsters[montag];
-      l = StrToInt(Split(m,1));
-      if ((ii == 1) || (Abs(l - level) < Abs(mlev - level))) {
-        mlev = l;
-        game.questmonster = m;
-      }
-    }
-    caption = 'Placate ' + Definite(Split(game.questmonster,0),2);
-    game.questmonster = '';  // We're trying to placate them, after all
-    break;
+  var quest = MakeQuest();
+  var caption = quest.caption;
+  if (quest.monster) {
+    game.questmonster = quest.monster;
+    game.questmonsterindex = quest.monsterIndex;
   }
   if (!game.Quests) game.Quests = [];
   while (game.Quests.length > 99) game.Quests.shift();
@@ -1315,7 +1191,9 @@ function CompleteAct() {
   Plots.CheckAll();
   game.act += 1;
   PlotBar.reset(60 * 60 * (1 + 5 * game.act)); // 1 hr + 5/act
-  Plots.AddUI((game.bestplot = 'Act ' + toRoman(game.act)));
+  game.bestplot = 'Act ' + toRoman(game.act);
+  BeginStory(NewStory(game.act));
+  Plots.AddUI(ActCaption(game.act));
 
   if (game.act > 1) {
     WinItem();
@@ -1500,6 +1378,12 @@ function FormCreate() {
   Plots =     new ListBox("Plots",  1);
   Quests =    new ListBox("Quests", 1);
 
+  // Each Act in the list shows its story on hover
+  Plots.decorate = function (row, caption) {
+    var entry = StoryFor(row.index());
+    if (entry) row.attr("title", entry.purpose);
+  };
+
   // Show each slot's gear power on hover
   Equips.decorate = function (row, slot) {
     row.attr("title", "Power " + SlotPower(slot));
@@ -1514,8 +1398,7 @@ function FormCreate() {
 
   Plots.load = function (sheet) {
     for (var i = Max(0, game.act-99); i <= game.act; ++i)
-      this.AddUI(i ? 'Act ' + toRoman(i) : "Prologue");
-
+      this.AddUI(ActCaption(i));
   };
 
   AllLists = [Traits,Stats,Spells,Equips,Inventory,Plots,Quests];
@@ -1656,7 +1539,9 @@ function LoadGame(sheet) {
   }
 
   randseed(game.seed);
+  EnsureStory();
   $.each(AllBars.concat(AllLists), function (i, e) { e.load(game); });
+  ShowStory();
   ShowProfile();
   ShowPurse();
   ShowGearPower();

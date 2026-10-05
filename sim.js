@@ -129,6 +129,7 @@ function run(opts) {
 
   load(ctx, opts.dir, "config.js");
   if (fs.existsSync(path.join(opts.dir, "combat.js"))) load(ctx, opts.dir, "combat.js");
+  if (fs.existsSync(path.join(opts.dir, "story.js"))) load(ctx, opts.dir, "story.js");
   load(ctx, opts.dir, "main.js");
   load(ctx, opts.dir, "newguy.js");
 

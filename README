@@ -191,3 +191,25 @@ Checked by simulating one character for every race x class combination
 (576) to level 20. Every combination wins at least 73% of its fights;
 races and classes are each within 4 percentage points of one another;
 martial, arcane and mixed characters within half a point.
+
+
+Story
+-----
+
+Every Act has a story, picked when the Act begins and shown in a box
+under Plot Development ("Act II: The Heist - {guy} hires you to steal
+the {item} from the vaults of {kingdom}. It is definitely not a setup.").
+When the Act's bar fills, that same story's ending plays out as the
+cinematic, with the same people and places, and the next Act begins
+with a new story. Hover over an Act in the list to see what it was
+about. The Prologue is always the Old Bastard(TM) taunting you in your
+dreams, with a freshly generated Shakespearean insult.
+
+Quests come from a much longer list (hunt a monster, placate it,
+unionize it, escort someone, return an overdue library book...), and
+about a third come from the current Act's story ("Listen to an episode
+of {nemesis}'s podcast").
+
+All of it lives in story.js: K.Stories (setup, ending and quests for
+each story), K.Quests, and K.Insults. Placeholders are listed at the
+top of the file. Add a story or a quest by adding an entry.
