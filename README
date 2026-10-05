@@ -214,3 +214,30 @@ of {nemesis}'s podcast").
 All of it lives in story.js: K.Stories (setup, ending and quests for
 each story), K.Quests, and K.Insults. Placeholders are listed at the
 top of the file. Add a story or a quest by adding an entry.
+
+
+Narration
+---------
+
+The important things are read aloud with the browser's speech
+synthesis: the Prologue, each new Act's story, the cinematic that ends
+an Act, and random events. Fights, loot and errands are not. Press N or
+click "Narration" under the task bar to turn it off or on (remembered
+per browser). Browsers won't speak until you have clicked or pressed a
+key on the page; until then the link says "click to enable", and the
+first few held lines are read once you do.
+
+
+Random events
+-------------
+
+Now and then something happens: while you rest, on the road to the
+Killing Fields(TM), in town, or after a fight. Events are narrated, and
+most give a small reward or cost (gold, an item, +1 to a stat, a spell,
+a piece of gear, healing, a few fights Wounded, a little XP).
+
+They live in events.js. Each one is an entry in K.Events with where it
+can happen, a weight, its lines and its effect; the format is described
+at the top of the file, and story placeholders ({guy}, {kingdom},
+{nemesis}...) work in the lines. K.EventChance and K.EventCooldown set
+how often they happen (about one every 10 minutes of play by default).

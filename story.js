@@ -57,19 +57,19 @@ K.Stories = [
       'Exhausted from endless questing, you arrive at a friendly oasis in a hostile land.',
       'You greet old friends and meet new allies. Those NPCs are the DM’s former PCs.',
       'You are privy to a council of powerful do-gooders. There is much to be done.',
-      'Unsurprisingly, you are chosen to go forth. Time to Progress more!',
+      'Unsurprisingly, you are chosen to go forth. Time to Progress™ more!',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Bring snacks for the council of do-gooders', 'Learn the secret handshake of the do-gooders'] },
 
   { key: 'nemesis', title: 'The Nemesis',
-    setup: '{nemesis} stands between you and the Old Bastard™. Grow strong enough to face them.',
+    setup: '{nemesis} stands between you and the Old Bastard™, literally. Grow strong enough to face them.',
     ending: [
       'Your quarry is in sight, but a mighty enemy bars your path!',
       'A desperate struggle commences with {nemesis}',
-      '*fight*',
-      'Victory! {nemesis} is slain! Exhausted, you lose consciousness',
-      'You awake in a friendly place, but the road awaits',
-      'You resume your quest to go after that Old Bastard™ from your vision.'],
+      '*Mortal Kombat theme plays*',
+      'Victory! {nemesis} is slain! Old Bastard™ hits you with pocket sand!',
+      'They escape! They really are a bastard!',
+      'You follow the trail of Old Bastard™ and vow not to fall for pocket sand again.'],
     quests: ['Spy on {nemesis}', 'Find out what {nemesis} is weak to', 'Sharpen your weapon for {nemesis}'] },
 
   { key: 'doubledealer', title: 'The Double-Dealer',
@@ -124,7 +124,7 @@ K.Stories = [
       'Can you defeat your nemesis and right the wrong that started all of this?',
       'You are no longer the same person who initially set out.',
       'You know that true change comes from within.',
-      'Or is that gas?',
+      'Or is that gas? Time for a massive Baja Blast.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Meditate on your journey so far', 'Journal about your feelings'] },
 
@@ -135,8 +135,8 @@ K.Stories = [
       'Is that the Old Bastard™ from your vision?',
       'Is this the moment you have been questing for?',
       'You brace yourself for the final battle. One way or another, this ends now.',
-      'errrr....',
-      'Nevermind, that is just the fishmonger. Moving on.',
+      'You stab them right in the back!',
+      'Nevermind, that was just the fishmonger. Their widow cries.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Stake out the docks of {kingdom}', 'Interview the fishmongers of {kingdom}'] },
 
@@ -146,7 +146,7 @@ K.Stories = [
       'You cannot sleep. The nightmares continue.',
       'That Old Bastard™ haunts your visions: “{insult}”',
       'But deep down you know you are not ready for the final showdown.',
-      'All epic tales need grinding.',
+      'All epic tales need a grinding montage.',
       'Let us grind longer. The Old Bastard™ from your vision can wait.'],
     quests: ['Buy a dreamcatcher', 'Think of a good comeback to “{insult}”'] },
 
@@ -165,9 +165,9 @@ K.Stories = [
     ending: [
       'You pause and take stock of your current situation.',
       'You have come so far but you have not stopped the Old Bastard™.',
-      'But you did kill a lot of monsters and you have a sack of gold.',
-      'You could buy a tavern, retire and live a quiet, happy life speaking of your adventures.',
-      'No, you will continue until you get that Old Bastard™!'],
+      'You invest all the gold and dream of a happy retirement.',
+      'Old Bastard™ tanks the stock market in some crypto scheme and you are broke.',
+      'Time to hunt down Old Bastard™!'],
     quests: ['Tour a tavern for sale in {kingdom}', 'Ask {guy} about a small business loan'] },
 
   { key: 'bath', title: 'The Bath',
@@ -206,7 +206,7 @@ K.Stories = [
     ending: [
       'You arrive at the Grand Tournament of {kingdom} to thunderous indifference.',
       'Your first opponent is {nemesis}.',
-      '*fight*',
+      '*Mortal Kombat theme music*',
       'You win! Your opponent in the final forgets to show up. You win again!',
       'Your prize is a lifetime supply of {boring}. It fits in one hand.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
@@ -224,13 +224,13 @@ K.Stories = [
     quests: ['Get the prophecy notarized', 'Find out who Juan is'] },
 
   { key: 'escort', title: 'The Escort',
-    setup: 'Escort {guy} safely to {kingdom}. They walk slower than you and keep wandering off.',
+    setup: 'Escort {guy} safely to {kingdom}. They are faster than your walk but slower than your run.',
     ending: [
       '{guy} stops to look at every single shop on the way to {kingdom}.',
       '{guy} wanders into a nest of {race}. You clean up the mess.',
       '{guy} asks if you are there yet. You are not there yet.',
       'At long last, you arrive in {kingdom}. {guy} tips you a {boring}.',
-      'You swear you will never escort anyone again.',
+      'You curse the devs who put in an escort quest.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Wait for {guy} to catch up', 'Find {guy}, who has wandered off again'] },
 
@@ -250,19 +250,19 @@ K.Stories = [
     ending: [
       'You meet the union rep for the {race} of {kingdom}, {guy}.',
       'Their demands: dental, and the head of {nemesis}, who has been crossing the picket line.',
-      '*fight*',
-      'A deal is reached. The bridge is guarded once more. The dental plan is mediocre.',
+      '*Highlander Theme Music*',
+      '{nemesis} loses their head. The bridge is guarded. The dental plan is mediocre.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement'] },
 
   { key: 'dungeon', title: 'The Dungeon Crawl',
     setup: '{guy} has drawn you a map to the Dungeon of {kingdom}. Several squares are labeled "probably fine".',
     ending: [
-      'You descend into the Dungeon of {kingdom}, ten-foot pole in hand.',
+      'You descend into the Dungeon of {kingdom}, next to Carl and Princess Donut.',
       'The squares marked "probably fine" were not fine.',
       'A treasure chest turns out to be a mimic. It eats your {boring}.',
       'At the bottom waits {nemesis}.',
-      '*fight*',
+      '*Mortal Kombat theme music*',
       'The treasure is a coupon. It has expired.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Buy a ten-foot pole', 'Check the map for squares marked "probably fine"'] },
@@ -291,20 +291,20 @@ K.Stories = [
   { key: 'ancientevil', title: 'The Ancient Evil',
     setup: 'Something ancient and evil stirs beneath {kingdom}. It is probably not the Old Bastard™, but you had better check.',
     ending: [
-      'You descend beneath {kingdom} into the dark.',
+      'You descend beneath {kingdom} into the dark. You forgot your torch.',
       'The ancient evil is {nemesis}. It has a podcast.',
-      '*fight*',
+      '*Plug the episode sponsor*',
       'It was not the Old Bastard™. You unsubscribe.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Listen to an episode of {nemesis}’s podcast', 'Find the way beneath {kingdom}'] },
 
   { key: 'imposter', title: 'The Imposter',
-    setup: 'Someone in {kingdom} is pretending to be you, and they are doing a better job of it. Unmask the imposter.',
+    setup: 'Someone in {kingdom} is pretending to be you, and they have more social media followers. Unmask the imposter.',
     ending: [
       'You track the imposter through the streets of {kingdom}.',
-      'It is {guy}, in a wig.',
+      'It is {guy}, with bards live-singing to their fans.',
       'Honestly, they are better at being you than you are.',
-      'You agree to a job share.',
+      'You license your identity IP for a cut of the profits.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Collect reviews of "you" in {kingdom}', 'Practice being yourself'] },
 
@@ -314,7 +314,7 @@ K.Stories = [
       'You are audited by the Royal Treasury of {kingdom}.',
       'You claim the viscera on your boots as a business expense.',
       'The Treasury sends its enforcer, {nemesis}.',
-      '*fight*',
+      '*Itemize This!*',
       'You receive a refund of three copper pieces.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Find your receipts', 'Itemize your {boring} collection'] },
@@ -324,7 +324,7 @@ K.Stories = [
     ending: [
       'The postmark says {kingdom}. You go to {kingdom}.',
       'The Old Bastard™ has moved. He left a forwarding address.',
-      'The forwarding address is a P.O. box in {kingdom2}.',
+      'It is the bed chambers of your mother in {kingdom2}.',
       'You send a strongly worded letter back.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Ask the postmaster of {kingdom} about a forwarding address', 'Draft a strongly worded reply'] },
@@ -348,7 +348,125 @@ K.Stories = [
       'You pay {guy} to write a different song.',
       'The new song is worse. It is catchy, though.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bribe {guy}', 'Learn the words to “The Ballad of {hero}”'] }
+    quests: ['Bribe {guy}', 'Learn the words to “The Ballad of {hero}”'] },
+
+  { key: 'codex', title: 'Knights of Good',
+    setup: 'The Knights of Good need help defending Cheesybeards in {kingdom}.',
+    ending: [
+      '{guy} complains to Zaboo that Cheesybeards should not be able to market in game.',
+      'Tinkerballs is fending off trolls who are trying to burn the place down.',
+      'Vork charges {guy} a heating bill for being close to the fire.',
+      'Codex arrives in {kingdom} just in time. Together you save Cheesybeards.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Find Cheesybeards {kingdom} in Google Maps', 'Steal the portrait of Codex and Fawkes from {hero}'] },
+
+  { key: 'pyramid', title: 'The Multi-Level Opportunity',
+    setup: '{guy} in {kingdom} promises untold wealth and passive income while tracking down the Old Bastard™. Attend their informational seminar.',
+    ending: [
+      'You sit through a four-hour presentation about essential healing ointments.',
+      'To unlock the Old Bastard™’s coordinates, you must recruit three friends.',
+      'You try to recruit {nemesis}. They take personal offense.',
+      '*fight*',
+      'You are now an Emerald Executive, but your inventory is full of unsold {boring}.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Sit through {guy}’s seminar in {kingdom}', 'Try to recruit {nemesis} into your downline'] },
+
+  { key: 'hoa', title: 'The Neighborhood Association',
+    setup: 'The Homeowners Association of {kingdom} cites your questing camp for having weeds taller than two inches. Pay the fine or fight City Hall.',
+    ending: [
+      'You appear before the disciplinary board of {kingdom}.',
+      'The board president is {nemesis}, wearing a high-visibility sash.',
+      '*fight*',
+      'The citations are cleared, though you are still banned from parking your horse on the grass.',
+      'You pack up your camp and resolve never to buy property.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Mow the moat outside {kingdom}', 'Appeal your citation to {nemesis}'] },
+
+  { key: 'influencer', title: 'The Brand Deal',
+    setup: 'A lifestyle brand in {kingdom} wants to sponsor your crusade against the Old Bastard™. Keep up your engagement metrics.',
+    ending: [
+      'You post dramatic portraits of your questing across {kingdom}.',
+      'The sponsor demands you wear a branded {item} during combat.',
+      'Your audience accuses you of selling out. Your follower count plummets.',
+      'You cancel the sponsorship deal and throw the {item} into a swamp.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Record an unboxing video of your new {item}', 'Tag {kingdom} in your battle selfies'] },
+
+  { key: 'cursedsword', title: 'The Sentient Weapon',
+    setup: 'You loot a talking blade that promises ancient forbidden lore about the Old Bastard™. Put up with its constant commentary.',
+    ending: [
+      'The blade will not shut up. It critiques your footwork in every tavern.',
+      'It claims it once served the Old Bastard™ as a decorative letter opener.',
+      'It insists on singing off-key sea shanties whenever you try to sleep.',
+      'You trade the annoying sword to {guy} for a slightly rusty {boring}.',
+      'Blessed silence returns at last.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Muffle the talking blade with a dirty towel', 'Ask the blade what it knows about the Old Bastard™'] },
+
+  { key: 'bakeoff', title: 'The Great Kingdom Bake-Off',
+    setup: 'Rumor has it the Old Bastard™’s grandmother is judging the annual pastry tournament in {kingdom}. Bake your way to victory.',
+    ending: [
+      'Your technical bake suffers from a soggy bottom.',
+      'In the showstopper round, you construct an edible effigy of {nemesis}.',
+      'The judges are horrified, but praise the crumb structure.',
+      'You win second prize: a commemorative {boring}.',
+      'The grandmother was actually just {guy} wearing a floral apron.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Knead dough until your arms give out', 'Sabotage {nemesis}’s sourdough starter'] },
+
+  { key: 'jury', title: 'Civic Duty',
+    setup: 'A courier serves you a summons for jury selection in the municipal courts of {kingdom}. You cannot skip civic duty.',
+    ending: [
+      'You spend three weeks trapped in a windowless room debating sheep zoning laws.',
+      'The defendant turns out to be {nemesis}, accused of grand theft {boring}.',
+      '*fight*',
+      'The judge declares a mistrial due to excessive battlefield violence.',
+      'You are compensated with two copper pieces and a voucher for dry cleaning.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Report to the courthouse in {kingdom}', 'Try to get dismissed during jury selection'] },
+
+  { key: 'dmv', title: 'Cart Registration',
+    setup: 'The road authorities of {kingdom} impound your war wagon for expired tags. Navigate the bureaucratic abyss.',
+    ending: [
+      'You pull ticket number 406. The clerk is currently helping number 12.',
+      'You wait six hours only to be told you filled out the form for pack mules instead of horses.',
+      'The regional inspector bars the exit. It is {nemesis}.',
+      '*fight*',
+      'Your wagon registration is renewed, but you forgot to get your emissions sticker.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Take a number and wait in {kingdom}', 'Fill out Form 1040-EZ in triplicate'] },
+
+  { key: 'hauntedinn', title: 'The Bed and Breakfast',
+    setup: 'Exhausted, you book a room at a quaint country inn near {kingdom}. The listing failed to mention the haunting.',
+    ending: [
+      'The phantom roams the hallway every hour on the hour clanking rusty spoons.',
+      'It complains that the Old Bastard™ skipped out on an unpaid bar tab in 1482.',
+      'You conduct an impromptu exorcism using a {boring} and salt.',
+      'The innkeeper, {guy}, still charges you a cleaning fee.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Ask the ghost to keep it down', 'Argue with {guy} about the hidden resort fee'] },
+
+  { key: 'dating', title: 'The Blind Date',
+    setup: '{guy} sets you up on a blind date in {kingdom}, promising they know someone with dirt on the Old Bastard™.',
+    ending: [
+      'The date arrives. It is {nemesis}.',
+      'The dinner conversation is strained, punctuated by polite glares.',
+      'They chew with their mouth open and keep talking about their ex.',
+      '*fight*',
+      'You split the bill and slip out through the kitchen window.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Put on your least blood-spattered clothes', 'Endure awkward small talk with {nemesis}'] },
+
+  { key: 'subscription', title: 'The Free Trial',
+    setup: 'You signed up for a 30-day trial of Guild Membership in {kingdom} to find the Old Bastard™. Now you must cancel it.',
+    ending: [
+      'There is no option to cancel online or by messenger bird.',
+      'You are forced to travel to the top of Mount Doom to speak with Retention Services.',
+      'The retention manager, {nemesis}, refuses to let you close the account.',
+      '*fight*',
+      'Your card is still charged for next month anyway.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Navigate the automated guild switchboard', 'Demand to speak to {nemesis}’s supervisor'] },
 ];
 
 // Fill a story's placeholders. vars is made once per Act by StoryVars().

@@ -167,10 +167,10 @@ function sold() {
     MPBar: { position: stats['MP Max'], max: stats['MP Max'] },
     saveVersion: SaveVersion,
     queue: [
-      "task|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",
-	  "task|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",
-	  'task|6|You tell your loved ones that you will be back soon. Surely this will be quick and not an endless quest you never finish',
-	  'task|6|Where is the Old Bastard™ from your vision? You will look on the Killing Fields™!',
+      "scene|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",
+	  "scene|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",
+	  'scene|6|You tell your loved ones that you will be back soon. Surely this will be quick and not an endless quest you never finish',
+	  'scene|6|Where is the Old Bastard™ from your vision? You will look on the Killing Fields™!',
       'plot|2|Loading ...'
     ]
   };
@@ -195,7 +195,7 @@ function sold() {
   newguy.story = prologue;
   // The Prologue's "ending" is its opening scenes, for the Acts list tooltip
   var prologueScenes = newguy.queue
-    .filter(function (q) { return q.split('|')[0] == 'task'; })
+    .filter(function (q) { return q.split('|')[0] == 'scene'; })
     .map(function (q) { return q.split('|').slice(2).join('|'); });
   newguy.storyLog = [{ act: 0, key: prologue.key, title: prologue.title, purpose: prologue.purpose,
                        taunt: prologue.taunt, ending: prologueScenes }];

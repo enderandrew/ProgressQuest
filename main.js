@@ -145,7 +145,7 @@ function InterplotCinematic() {
     entry.ending = ending;
     RefreshActTooltips();
   }
-  $.each(ending, function (i, line) { Q('task|4|' + line); });
+  $.each(ending, function (i, line) { Q('scene|4|' + line); });
   Q('plot|1|Loading ...');
 }
 
@@ -299,9 +299,15 @@ function Dequeue() {
         }
       }
       FinishFight();
+      if (FightWon()) MaybeEvent('field', game.task);
     } else if (game.task == 'rest' || game.task == 'heal') {
       if (game.task == 'heal') PayTemple();
       RestoreHealth();
+      if (game.task == 'rest') MaybeEvent('rest', 'rest');
+    } else if (game.task == 'heading') {
+      MaybeEvent('road', 'heading');
+    } else if (Split(game.task,0) == 'event') {
+      FinishEvent();
     } else if (game.task == 'buying') {
       // buy some equipment, if the shop has anything better
       var offer = ShopPower();
@@ -315,6 +321,7 @@ function Dequeue() {
         RestoreHealth();  // a night at the inn
         BankPurse();
         game.shopped = false;
+        MaybeEvent('town', 'market');
       }
       if (game.task == 'sell') {
         var amt = GetI(Inventory, 1) * GetI(Traits,'Level');
@@ -334,12 +341,14 @@ function Dequeue() {
     }
 
     var old = game.task;
+    if (Split(old,0) == 'event') old = game.eventResume || '';
     game.task = '';
     if (game.queue.length > 0) {
       var a = Split(game.queue[0],0);
       var n = StrToInt(Split(game.queue[0],1));
       var s = Split(game.queue[0],2);
-      if (a == 'task' || a == 'plot' || a == 'heal') {
+      if (a == 'task' || a == 'plot' || a == 'heal' || a == 'scene') {
+        var last = Split(game.queue[0],3);
         game.queue.shift();
         if (a == 'plot') {
           CompleteAct();
@@ -347,6 +356,8 @@ function Dequeue() {
         }
         Task(s, n * 1000);
         if (a == 'heal') game.task = 'heal';
+        if (a == 'scene') Narrate(s);
+        if (last == 'event') game.task = 'event';
       } else {
         throw 'bah!' + a;
       }
@@ -446,6 +457,144 @@ function FinishFight() {
   }
   fight.done = true;
   ShowFight();
+}
+
+// ---- Narration ------------------------------------------------------------
+
+// Read the important things aloud (cinematics, new Acts, random events)
+// with the browser's speech synthesis, since an idle game is easy to miss.
+// Toggle with N or the "Narration" link; remembered per browser.
+var _narrationQueued = 0;
+function NarrationOn() {
+  try { return window.localStorage.getItem("pq.narrate") !== "0"; } catch (e) { return true; }
+}
+
+function Narrate(text) {
+  if (!document || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+  if (!NarrationOn()) return;
+  if (_narrationQueued > 12) return;   // don't pile up hours of backlog
+  var speech = String(text)
+    .replace(/\u2122/g, '')                 // ™
+    .replace(/\.\.\.+$/, '')
+    .replace(/[\u201c\u201d]/g, '"');
+  var u = new SpeechSynthesisUtterance(speech);
+  u.rate = 1;
+  u.onend = function () { _narrationQueued = Max(0, _narrationQueued - 1); };
+  u.onerror = function (e) {
+    _narrationQueued = Max(0, _narrationQueued - 1);
+    // Browsers won't speak until the player has clicked or pressed a key on
+    // the page. Hold the lines and say them at the first interaction.
+    if (e.error == 'not-allowed') {
+      if (_narrationHeld.length < 6) _narrationHeld.push(speech);
+      WaitForNarrationGesture();
+    }
+  };
+  ++_narrationQueued;
+  window.speechSynthesis.speak(u);
+}
+
+var _narrationHeld = [], _narrationWaiting = false;
+function WaitForNarrationGesture() {
+  if (_narrationWaiting) return;
+  _narrationWaiting = true;
+  $("#NarrateToggle").text("Narration: click to enable");
+  $(document).one("pointerdown.narrate keydown.narrate", function () {
+    $(document).off(".narrate");
+    _narrationWaiting = false;
+    ShowNarration();
+    var held = _narrationHeld;
+    _narrationHeld = [];
+    $.each(held, function (i, line) { Narrate(line); });
+  });
+}
+
+function ToggleNarration() {
+  var on = !NarrationOn();
+  try { window.localStorage.setItem("pq.narrate", on ? "1" : "0"); } catch (e) {}
+  if (!on && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    _narrationQueued = 0;
+  }
+  ShowNarration();
+  if (on) Narrate("Narration on.");
+}
+
+function ShowNarration() {
+  if (!document) return;
+  $("#NarrateToggle").text(NarrationOn() ? "Narration: on" : "Narration: off")
+    .toggle(!!window.speechSynthesis);
+}
+
+// ---- Random events --------------------------------------------------------
+
+// Maybe start a random event (see events.js). where: 'rest', 'road',
+// 'town' or 'field'. resume: the task to carry on from afterwards.
+function MaybeEvent(where, resume) {
+  if (!K.Events || game.queue.length) return;
+  if (game.tasks - (game.lastEvent || 0) < K.EventCooldown) return;
+  if (Random(1000) >= (K.EventChance[where] || 0) * 1000) return;
+  var level = GetI(Traits,'Level');
+  var choices = K.Events.filter(function (e) {
+    return e.where.indexOf(where) >= 0 &&
+      (!e.minLevel || level >= e.minLevel) && (!e.maxLevel || level <= e.maxLevel);
+  });
+  if (!choices.length) return;
+  var total = 0;
+  $.each(choices, function (i, e) { total += e.weight || 1; });
+  var r = Random(1000) / 1000 * total, event = choices[choices.length - 1];
+  for (var i = 0; i < choices.length; ++i) {
+    r -= choices[i].weight || 1;
+    if (r < 0) { event = choices[i]; break; }
+  }
+
+  // Fill in the details now, so the lines and the effect agree
+  var effect = event.effect || {};
+  var vars = StoryVars();
+  var instance = { key: event.key, effect: effect };
+  if (effect.gold) {
+    instance.gold = Max(1, Math.round(Abs(effect.gold) * level * (0.5 + Random(100) / 100)));
+    vars.gold = instance.gold;
+  }
+  if (effect.item) {
+    instance.loot = effect.item == 'special' ? SpecialItem() : BoringItem();
+    vars.loot = Indefinite(instance.loot, 1);
+  }
+  game.event = instance;
+  game.eventResume = resume;
+  game.lastEvent = game.tasks;
+  $.each(event.lines, function (i, line) {
+    var text = ProperName(StoryText(line, vars)).replace(/([^.])\.$/, '$1');
+    game.queue.push('scene|3|' + text.replace(/\|/g, '/') + (i == event.lines.length - 1 ? '|event' : ''));
+  });
+}
+
+// The event's last line has played: apply what it does
+function FinishEvent() {
+  var ev = game.event;
+  game.event = null;
+  if (!ev) return;
+  var fx = ev.effect || {};
+  if (fx.gold > 0) {
+    game.purse = (game.purse || 0) + ev.gold;
+    ShowPurse();
+  } else if (fx.gold < 0) {
+    var fromPurse = Min(game.purse || 0, ev.gold);
+    game.purse = (game.purse || 0) - fromPurse;
+    var fromBank = Min(GetI(Inventory,'Gold'), ev.gold - fromPurse);
+    if (fromBank) Add(Inventory, 'Gold', -fromBank);
+    ShowPurse();
+  }
+  if (fx.item && ev.loot) Add(Inventory, ev.loot, 1);
+  if (fx.stat) Add(Stats, fx.stat == 'random' ? Pick(K.Stats) : fx.stat, 1);
+  if (fx.spell) WinSpell();
+  if (fx.equip) WinEquip();
+  if (fx.heal) RestoreHealth();
+  if (fx.wounded) {
+    game.wounded = Max(game.wounded || 0, fx.wounded);
+    ShowCondition();
+  }
+  if (fx.xp) ExpBar.increment(ExpBar.Max() * fx.xp);
+  Log('Event: ' + ev.key);
 }
 
 // ---- Story ----------------------------------------------------------------
@@ -1234,6 +1383,7 @@ function CompleteAct() {
   PlotBar.reset(60 * 60 * (1 + 5 * game.act)); // 1 hr + 5/act
   game.bestplot = 'Act ' + toRoman(game.act);
   BeginStory(NewStory(game.act));
+  Narrate(ActCaption(game.act) + '. ' + game.story.purpose);
   Plots.AddUI(ActCaption(game.act));
 
   if (game.act > 1) {
@@ -1452,6 +1602,11 @@ function FormCreate() {
       e.preventDefault();
       ToggleCombatLog();
     });
+    $("#NarrateToggle").on("click", function (e) {
+      e.preventDefault();
+      ToggleNarration();
+    });
+    ShowNarration();
     try {
       if (window.localStorage.getItem("pq.combatlog") === "1")
         $("body").addClass("show-log");
@@ -1696,6 +1851,10 @@ function FormKeyDown(e) {
 
   if (e.key === 'c') {
     ToggleCombatLog();
+  }
+
+  if (e.key === 'n') {
+    ToggleNarration();
   }
 
   if (e.key === 'p') {
