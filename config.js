@@ -375,7 +375,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 5;
+var SaveVersion = 6;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -436,6 +436,11 @@ var SaveMigrations = [
   // one is picked when the save loads; see EnsureStory in main.js).
   function (sheet) {
     sheet.storyLog = sheet.storyLog || [];
+  },
+  // 5 -> 6: event buffs (temporary stat boosts) and the last event.
+  function (sheet) {
+    sheet.buffs = sheet.buffs || [];
+    sheet.recentEvent = sheet.recentEvent || null;
   }
 ];
 
@@ -3035,57 +3040,57 @@ K.DefenseBad = [
 
 // from 21 to 24 Races
 K.Races = [
-  "4chan Troll|STR,INT",
-  "Aware-Wolf|STR,WIS",
-  "Demi-Canadian|WIS,CHA",
+  "4chan Troll|CHA,INT",
+  "Aware-Wolf|WIS,STR",
+  "Demi-Canadian|WIS,DEX",
   "Double-Wookiee|CON,CHA",
   "Double-sided Bad Dragon|STR,MP Max",
   "Enchanted Talking Chamberpot|DEX,CHA",
   "Erotic Sonic Fan-Fic Abomination|HP Max,MP Max",
-  "Filthy Stinkin Lich|STR,CON",
+  "Filthy Stinkin Lich|MP Max,CON",
   "Goblin-Mode Satyr|MP Max,DEX",
-  "High Treant|CON,MP Max",
+  "High Treant|CON,STR",
   "Hungry Hungry Hobbit|DEX,CON",
   "I No Longer Care Bear|INT,WIS",
   "Miniature Giant Space Hamster|DEX,HP Max",
-  "My Little Pygmy|DEX,WIS",
+  "My Little Pygmy|CHA,WIS",
   "Nympho Nymph|CON,WIS",
-  "Odorous Oompa Loompa|DEX,INT",
-  "Only Somewhat Racist Dwarf|CON,HP Max",
-  "Pixie Ironically with a Pixie-Cut|INT,CHA",
-  "Poultrygeist|INT,MP Max",
+  "Odorous Oompa Loompa|HP Max,INT",
+  "Only Somewhat Racist Dwarf|HP Max,CON",
+  "Pixie Ironically with a Pixie-Cut|MP Max,INT",
+  "Poultrygeist|INT,DEX",
   "Reverse-Centaur|STR,CHA",
   "Sharkasaurus|STR,HP Max",
   "Stupid Sexy Elf|CHA,MP Max",
-  "Thirsty Cyberman|INT,HP Max",
+  "Thirsty Cyberman|INT,STR",
   "Travelocity Gnome|WIS,HP Max",];
 
 // from 18 to 24 Klasses
 K.Klasses = [
-  "99th Degree Stonecutter|CON,MP Max",
-  "Barbarian Pretzel|STR,CON",
+  "99th Degree Stonecutter|CON,STR",
+  "Barbarian Pretzel|HP Max,CON",
   "Big Bad Voodoo Daddy|CHA,HP Max",
   "Blood-Sucking Lunatic|CHA,MP Max",  
   "Boston Cream Strangler|INT,HP Max",
-  "Drug Healer|WIS,CHA",
+  "Drug Healer|WIS,INT",
   "Drunken Forest Friar|STR,WIS",
-  "Electric Monk|WIS,INT",
+  "Electric Monk|MP Max,INT",
   "Erotical Illusionist|INT,CHA",
   "Fatal Flatulist|INT,CON",
-  "Grimdark Double-Hell Slayer|CON,HP Max",
+  "Grimdark Double-Hell Slayer|CON,DEX",
   "Hamburglar|DEX,CHA",
   "Internal Combustion Felon|STR,HP Max",
   "Paperback Fighter|STR,INT",
   "Paula Deen Paladin|WIS,CON",
-  "Pinball Wizard|INT,DEX",
-  "Sailor Rune|DEX,MP Max",
-  "Shovel Knight|STR,DEX",
+  "Pinball Wizard|MP Max,DEX",
+  "Sailor Rune|DEX,STR",
+  "Shovel Knight|HP Max,DEX",
   "Sorcerer Supreme Pizza|WIS,MP Max",
   "Stranger Ranger|DEX,WIS",
   "Stubborn Jackass|HP Max,MP Max",
-  "Super Show-off Saiyan|STR,MP Max",
-  "Thief Executive Officer|DEX,CON",
-  "United States Coast Bard|CHA,HP Max",];
+  "Super Show-off Saiyan|MP Max,STR",
+  "Thief Executive Officer|CON,CHA",
+  "United States Coast Bard|CHA,WIS",];
 
 // from 9 to 76 Titles
 K.Titles = [

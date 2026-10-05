@@ -166,6 +166,8 @@ function sold() {
     HPBar: { position: stats['HP Max'], max: stats['HP Max'] },
     MPBar: { position: stats['MP Max'], max: stats['MP Max'] },
     saveVersion: SaveVersion,
+    buffs: [],
+    recentEvent: null,
     queue: [
       "scene|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",
 	  "scene|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",

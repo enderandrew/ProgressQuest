@@ -1,76 +1,40 @@
-Prompt 1: Modernize and fix bugs (no gameplay changes)
-
-Switch to jQuery 4.0.x final, replace removed or deprecated APIs, and fix the event-binding bugs.
-Pick one copy of jQuery and remove the other, and fix the README links.
-Make the save format versioned. LoadGame already has a patch() helper for this, so every later prompt can add new fields without breaking old saves.
-Turn sim.js into a headless Node runner that can simulate thousands of levels in seconds. Every later balance decision gets checked with it.
-Done when: the game plays the same as before, old saves load, and node sim.js runs a character to level 50.
-
-Prompt 2: Attribute profiles and level-up growth
-
-Read the STAT,STAT tags from K.Races and K.Klasses. Give each primary attribute a weight of 2 and each secondary a weight of 1, so every race and class combo has 6 weight points in total.
-physicality = physical weight (STR, CON, DEX, HP Max) ÷ 6. It ranges from 0 to 1.
-The same stat appearing on both the race and the class adds up, e.g. a STR/CON troll who is also a STR/CON barbarian.
-Change WinStat() so profile stats are more likely to be picked. The current "favor the best stat" clumping already exists and can be rebalanced.
-Change LevelUp() so HP gain and MP gain each get a bonus when HP Max or MP Max is in the profile.
-Show the profile on the character sheet (e.g. Martial 67% / Arcane 33%).
-
-Prompt 3: Combat engine (a pure function plus the simulator)
-
-Implement K.MonMods
-ResolveCombat(character, monster, seed) → {outcome, rounds, hpLost, mpSpent, log[]}. It touches no screen elements and has no side effects.
-Monster stats come from its level, the level gap, and its modifiers. "Sick" and "Young" weaken it, "Big" and "Special" strengthen it.
-One possible job for each stat, giving every stat one combat role and one non-combat role so it's balanced:
-Stat	Combat	Non-combat
-STR	Weapon damage	Carrying capacity (existing)
-DEX	Hit chance, dodge, who acts first	Chance to flee from a fight you're losing
-CON	Reduces damage taken	HP gain on level-up (existing), recovery speed
-INT	Spell damage and strength	MP gain on level-up (existing)
-WIS	Chance a spell succeeds, resisting monster magic	Spell learning (existing), MP regen
-CHA	Chance a monster gives up or runs	Gold and sale prices, quest rewards
-HP Max	Health for the fight	—
-MP Max	Mana for the fight	—
-Possible outcomes: clean win, close win, flee, or defeat. Harder fights make the task bar take longer, which gives you something to watch.
-Use the simulator to tune win rates (for example, about 95% against monsters at your level and about 50% at +5 levels) and to check that no single race or class dominates.
-
-Prompt 4: Spellcasting
-
-Cast chance each round depends on physicality, e.g. 15% for an all-physical build up to 60% for an all-arcane one, and only while MP lasts.
-Give each of the roughly 220 spells in K.Spells an effect type: damage, heal, buff, debuff, or crowd control. This can be done automatically from a hash of the spell name, with hand-picked types for the funniest names.
-A spell's roman-numeral level scales how strong it is. Higher levels hit harder and cost more MP.
-Spells show up in the combat log, e.g. "You cast Holy Batpole III. The Sick Orc is confused."
-
-Prompt 5: Loot
-
-Store gear bonuses as numbers. The +3 in an equipment name currently just gets parsed back out of text. Weapons add damage, and armor and shields reduce damage taken.
-A monster's drop item has a chance to drop. Quality scales with the level gap and CHA, and rare drops get the "Special"/"of X" naming.
-Separate "unbanked" loot carried on this run from gold already banked. Selling at market banks it.
-Upgrade gear only when the new item is actually better, instead of the current random slot swap.
-
-Prompt 6: Defeat and recovery
-
-On defeat, you lose a percentage of unbanked loot and gold, but never banked gold or equipped gear.
-You get a new task chain, e.g. "Dragged back to town by a passing Demi-Canadian" → "Convalescing at the Temple of …". It lasts longer at higher level and shorter with more CON.
-Possibly a temporary "Wounded" debuff that's shown on the character sheet and wears off over the next few fights.
-Track your death count, ready for the future scoreboard.
-
-Prompt 7: Balance pass and UI polish
-
-Run the full simulator across every race × class combo (24 × 24) and adjust the constants.
-Add a short combat summary on the task line, plus an optional combat log panel.
-Update the release notes and FAQ to explain the new systems in PQ's deadpan tone.
-
-Prompt 8: Expand the lists
-
-Prompt 9: Expand the quest systems
-
 Prompt 10: Narrator
 
 Prompt 11: Responsive layout / mobile background
 
 Prompt 12: Share your character
 
-
 Later: the server
 
 Accounts, realms and guilds, and high scores, with cheat detection that replays the seeded combat.
+
+Progress Quest - more quest types
+MonMods - *
+
+Leveling is slower. Reaching level 30 now takes about 15 hours of game time instead of about 10, because of resting and losses. If you'd rather keep the old pace, the quick fix is to raise K.Combat.LossXP or shorten fights.
+Race and class balance is reasonable but not even. In a sweep of every race and class, the weakest averaged about 74% wins and the strongest about 95%. Defensive attributes (CON, HP Max) come out strongest because HP now carries over, and INT weakest, so I made spells cheaper. Prompt 7's full 24 × 24 pass should finish this.
+
+
+Old Bastard™ finale: the Prologue promises vengeance, so make level 50 a boss fight with a cinematic. Retiring or starting New Game+ follows from it. Ascension tiers could make him tougher on each repeat, each adding one modifier.
+Mutators or conducts:
+	No spells.
+	No shopping.
+	Glass cannon.
+	Pacifist, where monsters give up.
+	Ironman, with no reloads.
+	Speedrun.
+Weekly mutator and an endless descent: the descent has no cap, so it ranks players by depth.
+	Codex and achievements:
+	A bestiary of the 526 monsters.
+	A spellbook of 404.
+	An event journal. Your content-ceiling work makes this valuable, since events repeat about 18 times each.
+Hall of the Fallen and Ghost rivals: dead characters leave tombstones and obituaries, and an earlier character can return as an NPC rival.
+Heirlooms: one item survives the character's death.
+Later, with the server: shared guild goals and spectating replays.
+
+1. Level-50 ending and Retire, plus an account-level Hall of Legends.
+2. Legacy data and the new-character screen.
+3. Event choices and the tactics panel.
+4. Hardcore, with the death roll and obituaries.
+5. Seeds, the daily and mutators.
+6. Codex and achievements.

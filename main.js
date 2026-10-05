@@ -357,6 +357,7 @@ function Dequeue() {
         Task(s, n * 1000);
         if (a == 'heal') game.task = 'heal';
         if (a == 'scene') Narrate(s);
+        if (last == 'ev' || last == 'event') RevealEventLine();
         if (last == 'event') game.task = 'event';
       } else {
         throw 'bah!' + a;
@@ -418,7 +419,7 @@ function HeroSnapshot() {
       return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
     })
   };
-  $.each(K.PrimeStats, function (i, stat) { hero[stat] = GetI(Stats, stat); });
+  $.each(K.PrimeStats, function (i, stat) { hero[stat] = EffStat(stat); });
   return hero;
 }
 
@@ -562,39 +563,250 @@ function MaybeEvent(where, resume) {
   game.event = instance;
   game.eventResume = resume;
   game.lastEvent = game.tasks;
-  $.each(event.lines, function (i, line) {
-    var text = ProperName(StoryText(line, vars)).replace(/([^.])\.$/, '$1');
-    game.queue.push('scene|3|' + text.replace(/\|/g, '/') + (i == event.lines.length - 1 ? '|event' : ''));
+  instance.where = where;
+  instance.shown = 0;
+  instance.lines = event.lines.map(function (line) {
+    return ProperName(StoryText(line, vars)).replace(/([^.])\.$/, '$1').replace(/\|/g, '/');
+  });
+  // One task per line. Each line is shown (RevealEventLine) as its task
+  // starts; 'event' marks the last one, after which the effect is applied.
+  $.each(instance.lines, function (i, text) {
+    game.queue.push('scene|3|' + text + '|' + (i == instance.lines.length - 1 ? 'event' : 'ev'));
   });
 }
 
-// The event's last line has played: apply what it does
+// The event's last line has played: apply what it does, and note what
+// happened for the pop-up and the "Last event" box.
 function FinishEvent() {
   var ev = game.event;
   game.event = null;
   if (!ev) return;
   var fx = ev.effect || {};
+  var result = [];
   if (fx.gold > 0) {
     game.purse = (game.purse || 0) + ev.gold;
     ShowPurse();
+    result.push('Found ' + ev.gold + ' gold');
   } else if (fx.gold < 0) {
     var fromPurse = Min(game.purse || 0, ev.gold);
     game.purse = (game.purse || 0) - fromPurse;
     var fromBank = Min(GetI(Inventory,'Gold'), ev.gold - fromPurse);
     if (fromBank) Add(Inventory, 'Gold', -fromBank);
     ShowPurse();
+    result.push('Lost ' + (fromPurse + fromBank) + ' gold');
   }
-  if (fx.item && ev.loot) Add(Inventory, ev.loot, 1);
-  if (fx.stat) Add(Stats, fx.stat == 'random' ? Pick(K.Stats) : fx.stat, 1);
-  if (fx.spell) WinSpell();
-  if (fx.equip) WinEquip();
-  if (fx.heal) RestoreHealth();
+  if (fx.item && ev.loot) {
+    Add(Inventory, ev.loot, 1);
+    result.push('Got ' + Indefinite(ev.loot, 1));
+  }
+  if (fx.stat) {
+    var stat = fx.stat == 'random' ? Pick(K.PrimeStats) : fx.stat;
+    var amount = AddBuff(stat);
+    result.push('+' + amount + ' ' + stat + ' for ' + K.BuffMinutes + ' minutes');
+  }
+  if (fx.spell) {
+    var spell = WinSpell();
+    result.push('Learned ' + spell + ' (now ' + Get(Spells, spell) + ')');
+  }
+  if (fx.equip) {
+    result.push(WinEquip() ? 'Equipped ' + game.bestequip : 'Got a spare piece of gear to sell');
+  }
+  if (fx.heal) {
+    RestoreHealth();
+    result.push('Fully healed');
+  }
   if (fx.wounded) {
     game.wounded = Max(game.wounded || 0, fx.wounded);
     ShowCondition();
+    result.push('Wounded for ' + fx.wounded + (fx.wounded == 1 ? ' fight' : ' fights'));
   }
-  if (fx.xp) ExpBar.increment(ExpBar.Max() * fx.xp);
+  if (fx.xp) {
+    ExpBar.increment(ExpBar.Max() * fx.xp);
+    result.push('+' + Math.round(fx.xp * 100) + '% of the way to the next level');
+  }
   Log('Event: ' + ev.key);
+
+  var shown = game.recentEvent;
+  if (!shown || shown.key != ev.key || shown.result.length)
+    shown = game.recentEvent = { key: ev.key, where: ev.where, lines: ev.lines || [],
+                                 at: game.elapsed || 0 };
+  shown.result = result;
+  ShowRecentEvent();
+  ShowEventPopup(true);
+}
+
+// ---- Temporary buffs --------------------------------------------------------
+
+// Stat events give a buff for K.BuffMinutes of game time (game.elapsed
+// counts seconds of tasks played, so a paused game does not run it down).
+// game.buffs is a list of { stat, amount, until }.
+
+// Raise a core stat by K.BuffPercent of what is typical at your level. The
+// same stat again refreshes the timer (and keeps the larger amount); other
+// stats stack. Returns the amount.
+function AddBuff(stat) {
+  var amount = Max(1, Math.round(ExpectedStat(GetI(Traits,'Level')) * K.BuffPercent));
+  var until = (game.elapsed || 0) + K.BuffMinutes * 60;
+  var buffs = ActiveBuffs(), found = null;
+  $.each(buffs, function (i, b) { if (b.stat == stat) found = b; });
+  if (found) {
+    found.amount = Max(found.amount, amount);
+    found.until = until;
+    amount = found.amount;
+  } else {
+    buffs.push({ stat: stat, amount: amount, until: until });
+  }
+  game.buffs = buffs;
+  ShowBuffs();
+  return amount;
+}
+
+// The buffs still running (and forget the ones that have worn off)
+function ActiveBuffs() {
+  var now = game.elapsed || 0, buffs = game.buffs || [];
+  var live = buffs.filter(function (b) { return b.until > now; });
+  if (live.length != buffs.length) {
+    $.each(buffs, function (i, b) { if (b.until <= now) Log('Your ' + b.stat + ' buff wears off'); });
+    game.buffs = live;
+  }
+  return live;
+}
+
+function BuffAmount(stat) {
+  var total = 0;
+  $.each(ActiveBuffs(), function (i, b) { if (b.stat == stat) total += b.amount; });
+  return total;
+}
+
+// A stat as it counts right now, buffs included
+function EffStat(stat) {
+  return GetI(Stats, stat) + BuffAmount(stat);
+}
+
+// "Buffed: +14 STR (9:41) +12 WIS (3:20)" under the health bars, and the
+// affected stats marked on the character sheet
+var _buffShown = null;
+function ShowBuffs() {
+  if (!document) return;
+  var now = (game.elapsed || 0) + (TaskBar ? TaskBar.Position() / 1000 : 0);
+  var live = ActiveBuffs().filter(function (b) { return b.until > now; });
+  var text = live.map(function (b) {
+    var left = Math.ceil(b.until - now);
+    return '+' + b.amount + ' ' + b.stat + ' (' + Math.floor(left / 60) + ':' +
+           ('0' + (left % 60)).slice(-2) + ')';
+  }).join('  ');
+  if (text === _buffShown) return;
+  _buffShown = text;
+  $("#Buffs").text(text ? 'Buffed: ' + text : '')
+    .attr("title", text ? "Temporary buffs from events. They count in fights, prices, resting " +
+                          "and recovery, not for carrying capacity or level-ups." : "");
+  $("#Stats tr").each(function () {
+    var stat = Key(this), amount = 0;
+    $.each(live, function (i, b) { if (b.stat == stat) amount += b.amount; });
+    $(this).toggleClass("buffed", amount > 0)
+           .attr("title", amount > 0 ? "+" + amount + " from an event, for a limited time" : null);
+  });
+}
+
+// ---- Event pop-up and "Last event" box -------------------------------------
+
+K.EventWhere = { rest: 'While resting', road: 'On the road', town: 'In town',
+                 field: 'On the Killing Fields™' };
+
+// Called as each line of an event starts: remember what has been shown so
+// far, and show it.
+function RevealEventLine() {
+  var ev = game.event;
+  if (!ev || !ev.lines) return;
+  ev.shown = Min(ev.lines.length, (ev.shown || 0) + 1);
+  game.recentEvent = { key: ev.key, where: ev.where, lines: ev.lines.slice(0, ev.shown),
+                       result: [], at: game.elapsed || 0 };
+  ShowRecentEvent();
+  ShowEventPopup(false);
+}
+
+function EventPopupsOn() {
+  try { return window.localStorage.getItem("pq.eventpopup") !== "0"; } catch (e) { return true; }
+}
+
+function ToggleEventPopups() {
+  var on = !EventPopupsOn();
+  try { window.localStorage.setItem("pq.eventpopup", on ? "1" : "0"); } catch (e) {}
+  if (!on) CloseEventPopup();
+  ShowEventPopupToggle();
+}
+
+function ShowEventPopupToggle() {
+  if (!document) return;
+  $("#EventPopupToggle").text(EventPopupsOn() ? "Event pop-ups: on" : "Event pop-ups: off");
+}
+
+// Fill in a box with an event: where, the lines so far, and what it did
+function RenderEvent(ev, $where, $lines, $result) {
+  $where.text(ev ? (K.EventWhere[ev.where] || 'Something happened') : '');
+  $lines.empty();
+  $result.text('');
+  if (!ev) return;
+  $.each(ev.lines || [], function (i, line) { $lines.append($("<div>").text(line)); });
+  $result.text((ev.result || []).join(' · '));
+}
+
+function ShowRecentEvent() {
+  if (!document) return;
+  var ev = game.recentEvent;
+  $("#RecentEvent").toggleClass("empty", !ev);
+  if (!ev) {
+    $("#RecentWhere").text('');
+    $("#RecentLines").text('Nothing eventful has happened yet.');
+    $("#RecentResult").text('');
+    return;
+  }
+  RenderEvent(ev, $("#RecentWhere"), $("#RecentLines"), $("#RecentResult"));
+  ShowRecentAge();
+}
+
+// "(14 minutes ago)" next to the heading, refreshed as the game runs
+var _recentAge = null;
+function ShowRecentAge() {
+  if (!document || !game.recentEvent) return;
+  var age = Max(0, (game.elapsed || 0) - (game.recentEvent.at || 0));
+  var text = age < 10 ? ' · just now' : ' · ' + RoughTime(age) + ' ago';
+  if (text === _recentAge) return;
+  _recentAge = text;
+  $("#RecentAge").text(text);
+}
+
+var _popupTimer = null;
+// Show the event in a dialog. It stays up while the event plays, and for
+// K.EventPopupLinger seconds after it ends (longer while the mouse is over
+// it). Click, Esc or OK closes it sooner. The game keeps running behind it.
+function ShowEventPopup(finished) {
+  if (!document || !EventPopupsOn()) return;
+  var dlg = document.getElementById("EventDialog");
+  if (!dlg || !dlg.showModal || !game.recentEvent) return;
+  RenderEvent(game.recentEvent, $("#EventWhere"), $("#EventLines"), $("#EventResult"));
+  if (!dlg.open) dlg.showModal();
+  clearTimeout(_popupTimer);
+  if (finished) _popupTimer = setTimeout(PopupTimeout, K.EventPopupLinger * 1000);
+}
+
+function PopupTimeout() {
+  var dlg = document.getElementById("EventDialog");
+  // (the dialog element itself counts the backdrop as hover, so ask the
+  // window's own parts)
+  var reading = dlg && dlg.open && Array.prototype.some.call(dlg.children, function (part) {
+    return part.matches(":hover");
+  });
+  if (reading)
+    _popupTimer = setTimeout(PopupTimeout, 2000);   // still reading
+  else
+    CloseEventPopup();
+}
+
+function CloseEventPopup() {
+  clearTimeout(_popupTimer);
+  var dlg = document.getElementById("EventDialog");
+  if (dlg && dlg.open) dlg.close();
 }
 
 // ---- Story ----------------------------------------------------------------
@@ -776,7 +988,7 @@ function Defeated(fight) {
 function RecoveryTime() {
   var D = K.Defeat;
   var level = GetI(Traits,'Level');
-  var con = GetI(Stats,'CON') / ExpectedStat(level);
+  var con = EffStat('CON') / ExpectedStat(level);
   return Math.round((D.RecoveryBase + D.RecoveryPerLevel * level) / Min(2, Max(0.5, con)));
 }
 
@@ -820,7 +1032,7 @@ function NeedsRest() {
 // Resting takes 3-8 seconds depending on how hurt you are; more CON, less.
 function RestTime() {
   var hurt = 1 - HPBar.Position() / Max(1, HPBar.Max());
-  var con = GetI(Stats,'CON') / ExpectedStat(GetI(Traits,'Level'));
+  var con = EffStat('CON') / ExpectedStat(GetI(Traits,'Level'));
   return Math.round(1000 * (3 + 5 * hurt) / Min(2, Max(0.5, con)));
 }
 
@@ -834,7 +1046,7 @@ function RestoreHealth() {
 // CHA against what is typical for your level, turned into a multiplier:
 // 1 for an average character, more for a charming one, within [lo, hi].
 function ChaFactor(slope, lo, hi) {
-  var r = GetI(Stats,'CHA') / ExpectedStat(GetI(Traits,'Level'));
+  var r = EffStat('CHA') / ExpectedStat(GetI(Traits,'Level'));
   return Min(hi, Max(lo, 1 + slope * (r - 1)));
 }
 
@@ -1093,8 +1305,10 @@ if (document)
 
 
 function WinSpell() {
-  AddR(Spells, SpellName(K.Spells[RandomLow(Min(GetI(Stats,'WIS')+GetI(Traits,'Level'),
-                                                K.Spells.length))]), 1);
+  var spell = SpellName(K.Spells[RandomLow(Min(GetI(Stats,'WIS')+GetI(Traits,'Level'),
+                                               K.Spells.length))]);
+  AddR(Spells, spell, 1);
+  return spell;
 }
 
 function LPick(list, goal) {
@@ -1539,12 +1753,15 @@ function Timer1Timer() {
     }
 
     Dequeue();
+    ShowBuffs();
+    ShowRecentAge();
   } else {
     var elapsed = timeGetTime() - clock.lasttick;
     if (elapsed > 100) elapsed = 100;
     if (elapsed < 0) elapsed = 0;
     TaskBar.increment(elapsed);
     ShowFight();
+    ShowBuffs();
   }
 
   StartTimer();
@@ -1607,6 +1824,13 @@ function FormCreate() {
       ToggleNarration();
     });
     ShowNarration();
+    $("#EventPopupToggle").on("click", function (e) {
+      e.preventDefault();
+      ToggleEventPopups();
+    });
+    ShowEventPopupToggle();
+    // Close the event pop-up with a click anywhere on it (or its backdrop)
+    $("#EventDialog").on("click", CloseEventPopup);
     try {
       if (window.localStorage.getItem("pq.combatlog") === "1")
         $("body").addClass("show-log");
@@ -1742,6 +1966,8 @@ function LoadGame(sheet) {
   ShowPurse();
   ShowGearPower();
   ShowCondition();
+  ShowBuffs();
+  ShowRecentEvent();
   ShowFight(true);
   if (Kill)
     Kill.text(game.kill);
@@ -1855,6 +2081,10 @@ function FormKeyDown(e) {
 
   if (e.key === 'n') {
     ToggleNarration();
+  }
+
+  if (e.key === 'e') {
+    ToggleEventPopups();
   }
 
   if (e.key === 'p') {

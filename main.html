@@ -107,6 +107,7 @@
       <div class="bar"></div>
     </div>
     <div id="Condition" class="profile"></div>
+    <div id="Buffs" class="profile"></div>
 
     <div class="label">Experience</div>
 
@@ -205,6 +206,13 @@
       <div class="hint"></div>
       <div class="bar"></div>
     </div>
+
+    <span class="label head">Last Event<span id="RecentAge"></span></span>
+    <div id="RecentEvent" class="listbox empty">
+      <div id="RecentWhere"></div>
+      <div id="RecentLines"></div>
+      <div id="RecentResult"></div>
+    </div>
   </div>
 
 </div>
@@ -219,11 +227,21 @@
 <div id="FightBar">
   <span id="FightLine"></span>
   <a id="NarrateToggle" href="#" title="Read cinematics and events aloud (N)">Narration: on</a>
+  <a id="EventPopupToggle" href="#" title="Show events in a pop-up window (E)">Event pop-ups: on</a>
   <a id="LogToggle" href="#" title="Show or hide the combat log (C)">Combat log</a>
 </div>
 <div id="CombatLog" class="listbox"></div>
 
 </div>
+
+<dialog id="EventDialog" aria-labelledby="EventWhere">
+  <div class="dlg-title"><span id="EventWhere"></span></div>
+  <div class="dlg-body">
+    <div id="EventLines"></div>
+    <div id="EventResult"></div>
+    <div class="dlg-buttons"><button type="button" id="EventOk">OK</button></div>
+  </div>
+</dialog>
 
 <div id=bsodmom>
 <div id=bsod>

@@ -226,6 +226,12 @@ div.profile#GearPower, div.profile#Purse { margin-bottom: 2px; }
 
 div.profile#Condition.wounded { color: #b33; font-weight: bold; }
 
+/* Event buffs */
+div.profile#Buffs { color: #060; font-weight: bold; }
+div.profile#Buffs:empty { display: none; }
+#Stats tr.buffed td:last-child { color: #060; font-weight: bold; }
+#Stats tr.buffed td:last-child::after { content: " \25B2"; font-size: 7pt; }
+
 /* ---- Wider, responsive layout -------------------------------------------- */
 /* The window grows with the screen (up to 1200px) so long item and quest
    names fit, and stacks into one column on narrow screens. */
@@ -283,7 +289,7 @@ tr { height: auto; min-height: 15px; }
   text-overflow: ellipsis;
 }
 #FightLine.defeat { color: #b33; font-weight: bold; }
-#LogToggle, #NarrateToggle { color: #008; cursor: pointer; text-decoration: underline; white-space: nowrap; }
+#LogToggle, #NarrateToggle, #EventPopupToggle { color: #008; cursor: pointer; text-decoration: underline; white-space: nowrap; }
 #CombatLog {
   display: none;
   height: 120px;
@@ -318,3 +324,35 @@ body.show-log #CombatLog { display: block; }
 #StoryTitle { font-weight: bold; margin-bottom: 2px; }
 #StoryText { line-height: 1.3; }
 #Plots { height: 90px; }
+
+/* ---- Last event, and the event pop-up --------------------------------------- */
+#RecentAge { font-weight: normal; color: #555; }
+#RecentEvent { padding: 4px 6px; line-height: 1.3; background-color: #f4f8ff; }
+#RecentEvent.empty { color: #777; font-style: italic; background-color: white; }
+#RecentWhere { font-weight: bold; margin-bottom: 2px; }
+#RecentResult, #EventResult { font-style: italic; color: #060; margin-top: 3px; }
+#RecentResult:empty, #EventResult:empty { display: none; }
+
+#EventDialog {
+  padding: 0;
+  width: min(440px, calc(100vw - 32px));
+  background-color: #e7e7e7;
+  border: outset 2px silver;
+  font-family: Tahoma, Helvetica, sans-serif;
+  font-size: 10pt;
+  text-align: left;
+  color: black;
+}
+#EventDialog::backdrop { background: rgba(0, 0, 40, 0.45); }
+#EventDialog .dlg-title {
+  background-color: #008;
+  color: white;
+  font-weight: bold;
+  font-size: 10pt;
+  padding: 3px 6px;
+}
+#EventDialog .dlg-body { padding: 10px 12px 8px; }
+#EventDialog .dlg-body div { font-size: 11pt; line-height: 1.4; }
+#EventLines div { margin-bottom: 6px; }
+#EventDialog .dlg-buttons { text-align: right; margin-top: 8px; }
+#EventDialog button { font-family: inherit; font-size: 9pt; padding: 2px 18px; }

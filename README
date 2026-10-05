@@ -53,6 +53,13 @@ the primary counts 2, the secondary 1, and an attribute named by both
 race and class counts twice. On the character sheet, primaries get a
 filled star and secondaries an open one.
 
+The attributes are spread evenly: each of the 8 is the primary of exactly
+3 races and 3 classes, and the secondary of 3 more of each, and no two
+races (or classes) share the same pair. Across all 576 combinations every
+attribute carries the same average weight, and half of a profile is
+martial on average. If you change one, swap another in the same list to
+keep the counts at 3.
+
 - Profile attributes are more likely to go up when a stat is won
   (K.StatPickBase in config.js controls how much more).
 - HP Max and MP Max in the profile grow 10% faster per point of weight
@@ -188,9 +195,9 @@ Balance
 -------
 
 Checked by simulating one character for every race x class combination
-(576) to level 20. Every combination wins at least 73% of its fights;
-races and classes are each within 4 percentage points of one another;
-martial, arcane and mixed characters within half a point.
+(576) to level 20. Every combination wins at least 76% of its fights
+(91% on average); races are within 5 percentage points of one another and
+classes within 4; martial, arcane and mixed characters within a point.
 
 
 Story
@@ -233,11 +240,64 @@ Random events
 
 Now and then something happens: while you rest, on the road to the
 Killing Fields(TM), in town, or after a fight. Events are narrated, and
-most give a small reward or cost (gold, an item, +1 to a stat, a spell,
-a piece of gear, healing, a few fights Wounded, a little XP).
+most give a small reward or cost (gold, an item, a temporary stat buff, a
+spell, a piece of gear, healing, a few fights Wounded, a little XP).
 
 They live in events.js. Each one is an entry in K.Events with where it
 can happen, a weight, its lines and its effect; the format is described
 at the top of the file, and story placeholders ({guy}, {kingdom},
 {nemesis}...) work in the lines. K.EventChance and K.EventCooldown set
 how often they happen (about one every 10 minutes of play by default).
+
+Seeing them: the narrator is quick, so each event also opens in a pop-up
+window, one line at a time as it is spoken, ending with what it did to
+you. It closes itself a few seconds after the event is over (it waits
+while the mouse is over it); click it, press Esc or OK to close it sooner.
+The game keeps running behind it. Press E, or click "Event pop-ups" under
+the task bar, to turn pop-ups off or on (remembered per browser). The most
+recent event is always shown in the "Last Event" box under the quests, and
+is saved with the character. K.EventPopupLinger sets how long the pop-up
+stays after the event.
+
+Stat buffs: a stat event ("+3 CON for 10 minutes") is temporary. The stat
+is raised by K.BuffPercent (25%) of what a typical character of your level
+has, for K.BuffMinutes (10) minutes of game time, so it matters at level 5
+and at level 45. The same stat again refreshes the timer; different stats
+stack. Buffs show under the health bars with the time left, and the stat
+is marked on the character sheet. They count in fights, prices and drops,
+resting and recovery, but not for carrying capacity or for what level-ups
+and new spells are based on.
+
+Why temporary: with a permanent +1 on every stat event, simulated
+characters (16, to level 45) got there in 65 hours instead of 94 without
+events, with 44% fewer defeats and a win rate 3 points higher, because the
+points never wear off. With buffs, level 45 takes 86 hours and the win rate
+is within a couple of points of a game with no events. A buff running is
+worth about one point of win rate, and about one fight in seven is fought
+under one. Raise K.BuffPercent for stronger ones; even 40% only moved the
+win rate by about a point.
+
+
+Endgame: where the content runs out
+-----------------------------------
+
+Measured with simulated characters to level 50 (sim.js, with events on):
+
+- Time: level 30 takes about 17 hours, 40 about 50, 45 about 87 and 50
+  about 165 (122 to 224 across 4 characters). Each 5 levels double the
+  time per level (LevelUpTime), so level 50 is roughly 12 hours per level,
+  level 60 would be about 50 and level 70 days.
+- Monsters: by level 30 a character has met 88% of the 526 monsters, and
+  91% by level 40. 268 of them are level 10 or lower; from level 41 up there
+  is about one per level (3 to 66). MonsterTask picks the closest of 6
+  random monsters, so most of the pool is far below a high-level hero: at
+  levels 41-45 only 18% of fights are within 5 levels of the hero and 59%
+  are swarms of monsters 10 or more levels weaker. A level 45 hero spends
+  3,600 fights per level mostly on old friends.
+- Gear: the weapon and armor lists end at power 46 and the shield list at
+  32. Higher power still happens, as "+N" on the last items.
+- Events: 40 kinds. Characters have seen all of them by about level 30 and
+  have had about 720 events by level 50, 18 repeats of each.
+- Spells (404) and stories (39, with Act 6 at level 50) are not the limit:
+  a level 50 character knows 90 to 160 spells and is still learning about
+  5 per level.

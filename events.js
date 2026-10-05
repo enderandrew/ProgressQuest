@@ -17,7 +17,9 @@
 //                      says how much.
 //             item:    'boring' or 'special': an item for your pack.
 //                      {loot} in the lines names it.
-//             stat:    'random' or a stat name ('STR', 'HP Max'...): +1
+//             stat:    'random' or one of the six core stats ('STR', 'CON',
+//                      'DEX', 'INT', 'WIS', 'CHA'): a temporary buff, see
+//                      K.BuffMinutes and K.BuffPercent below
 //             spell:   true: learn a spell (or level one up)
 //             equip:   true: a piece of gear a little above your level
 //             heal:    true: full HP and MP
@@ -34,6 +36,18 @@
 // number of tasks between two events.
 K.EventChance = { rest: 0.25, road: 0.12, town: 0.12, field: 0.01 };
 K.EventCooldown = 80;
+
+// Stat events are temporary buffs, not permanent gains: the stat is raised
+// by K.BuffPercent of what a typical character of your level has (so it
+// matters at level 5 and at level 45), for K.BuffMinutes of game time. The
+// same stat again just refreshes the timer; different stats stack. A buff
+// counts in fights, prices and drops, resting and recovery, but not for
+// carrying capacity or for what a level-up or a new spell is based on.
+K.BuffMinutes = 10;
+K.BuffPercent = 0.25;
+
+// How long the event pop-up stays open once the event is over (seconds).
+K.EventPopupLinger = 12;
 
 K.Events = [
   { key: 'snoring', where: ['rest'],
