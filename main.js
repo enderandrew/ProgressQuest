@@ -491,7 +491,8 @@ function Dequeue() {
       game.task = 'rest';
     } else {
       var nn = GetI(Traits, 'Level');
-      var t = MonsterTask(nn);
+      // After a defeat, a sensible hero picks easier fights for a while
+      var t = MonsterTask(Max(1, nn - Math.floor(game.caution || 0)));
       var InventoryLabelAlsoGameStyleTag = 3;
       nn = Math.floor((2 * InventoryLabelAlsoGameStyleTag * t.level * 1000) / nn);
       // The fight is settled now; the task bar just plays it out. Harder
@@ -550,6 +551,8 @@ function FinishFight() {
   $.each(fight.log, function (i, line) { Log(line); });
 
   if (game.wounded > 0) { --game.wounded; ShowCondition(); }
+  if (fight.outcome == 'win' || fight.outcome == 'close')
+    game.caution = Max(0, (game.caution || 0) - K.Defeat.CautionDecay);
 
   if (fight.outcome == 'defeat') {
     Defeated(fight);
@@ -561,6 +564,64 @@ function FinishFight() {
     MPBar.increment(regen.mp);
   }
   fight.done = true;
+  ShowFight();
+}
+
+// ---- Watching the fight -------------------------------------------------
+
+// One line on how a fight went, for under the task bar
+function FightSummary(fight) {
+  var rounds = fight.rounds + (fight.rounds == 1 ? " round" : " rounds");
+  var cost = [];
+  if (fight.hpLost) cost.push(fight.hpLost + " HP");
+  if (fight.mpSpent) cost.push(fight.mpSpent + " MP");
+  cost = cost.length ? " (cost " + cost.join(", ") + ")" : "";
+  var foe = fight.foe || "the foe";
+  switch (fight.outcome) {
+  case 'win':    return (fight.foeFled ? ProperName(foe) + " gave up after " + rounds : "Beat " + foe + " in " + rounds) + cost;
+  case 'close':  return "Barely beat " + foe + " in " + rounds + cost;
+  case 'flee':   return "Got away from " + foe + " after " + rounds + cost;
+  case 'defeat': return "Defeated by " + foe + " after " + rounds;
+  }
+  return "";
+}
+
+// The fight plays out as the task bar fills: the combat log reveals its
+// lines in step with the bar, and the line under the bar shows the latest
+// blow, then the result once the fight is over.
+var _shownLines = -1, _shownFight = null, _shownLive = null;
+function ShowFight(force) {
+  if (!document) return;
+  var fight = game.combat;
+  if (!fight || !fight.log) { $("#FightLine").text(""); return; }
+  var live = Pos('kill|', game.task) == 1 && !fight.done;
+  var n = live ? Math.floor(fight.log.length * TaskBar.Position() / Max(1, TaskBar.Max())) : fight.log.length;
+  if (!force && fight === _shownFight && n === _shownLines && live === _shownLive) return;
+  if (fight !== _shownFight) {
+    $("#CombatLog").empty();
+    $("<div class='fight-head'>").text("vs " + fight.foe).appendTo("#CombatLog");
+    _shownLines = 0;
+  }
+  for (var i = Max(0, _shownLines); i < n; ++i)
+    $("<div>").text(fight.log[i]).appendTo("#CombatLog");
+  if (!live && (fight !== _shownFight || _shownLive !== false || force))
+    $("<div class='fight-result'>").text(FightSummary(fight)).appendTo("#CombatLog");
+  _shownFight = fight;
+  _shownLines = n;
+  _shownLive = live;
+  var log = $("#CombatLog")[0];
+  if (log) log.scrollTop = log.scrollHeight;
+  $("#FightLine").text(live ? (n ? fight.log[n - 1] : "Sizing each other up...") :
+                       "Last fight: " + FightSummary(fight))
+    .toggleClass("defeat", !live && fight.outcome == 'defeat');
+}
+
+function ToggleCombatLog() {
+  $("body").toggleClass("show-log");
+  try {
+    window.localStorage.setItem("pq.combatlog", $("body").hasClass("show-log") ? "1" : "0");
+  } catch (e) {}
+  ShowFight(true);
 }
 
 // ---- Defeat ---------------------------------------------------------------
@@ -606,6 +667,7 @@ function Defeated(fight) {
   game.queue.push('task|4|You are dragged back to town by ' + rescuer);
   game.queue.push('heal|' + RecoveryTime() + '|Convalescing at ' + temple);
   game.wounded = D.WoundedFights;
+  game.caution = Min(D.CautionMax, (game.caution || 0) + D.CautionPerDefeat);
   ShowCondition();
 }
 
@@ -1273,7 +1335,7 @@ function Log(line) {
 function Task(caption, msec) {
   game.kill = caption + "...";
   if (Kill)
-    Kill.text(game.kill);
+    Kill.text(game.kill).attr("title", game.kill);
   Log(game.kill);
   TaskBar.reset(msec);
 }
@@ -1413,6 +1475,7 @@ function Timer1Timer() {
     if (elapsed > 100) elapsed = 100;
     if (elapsed < 0) elapsed = 0;
     TaskBar.increment(elapsed);
+    ShowFight();
   }
 
   StartTimer();
@@ -1461,6 +1524,14 @@ function FormCreate() {
     Kill = $("#Kill");
 
     $("#quit").on("click", quit);
+    $("#LogToggle").on("click", function (e) {
+      e.preventDefault();
+      ToggleCombatLog();
+    });
+    try {
+      if (window.localStorage.getItem("pq.combatlog") === "1")
+        $("body").addClass("show-log");
+    } catch (e) {}
 
     $(document).on("keydown", FormKeyDown);
 
@@ -1590,6 +1661,7 @@ function LoadGame(sheet) {
   ShowPurse();
   ShowGearPower();
   ShowCondition();
+  ShowFight(true);
   if (Kill)
     Kill.text(game.kill);
   ClearAllSelections();
@@ -1694,6 +1766,10 @@ function FormKeyDown(e) {
         Brag('m', true);
       }
     }
+  }
+
+  if (e.key === 'c') {
+    ToggleCombatLog();
   }
 
   if (e.key === 'p') {

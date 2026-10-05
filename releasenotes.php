@@ -88,8 +88,51 @@
 	body { margin-left: 50px; margin-right: 50px; }
 	</style>
 	
-	<a name="6_4"></a>
-	<h3>Still in development...</h3>
+	<a name="remix_combat"></a>
+	<h3>Changes for the Combat Update:</h3>
+
+	<ul>
+	<li>Monsters are now actually fought. Previously they were defeated by the
+	administrative process of your progress bar filling up. Combat is
+	resolved in rounds, using every statistic you have, including the ones
+	you had assumed were decorative.
+	<li>STR hits things. DEX hits things more often, dodges things, and runs
+	away from things. CON makes things hit you less hard. INT makes spells
+	hurt. WIS makes spells work at all. CHA convinces beaten monsters that
+	they have somewhere else to be.
+	<li>Your race and class now each have a primary and secondary attribute,
+	which grow a little faster than the others. A Martial/Arcane rating on the
+	character sheet tells you how likely you are to hit a monster with a
+	stick versus a spell. Neither is guaranteed to work.
+	<li>Every one of the 400-odd spells now does something: damage, healing,
+	buffs, debuffs or crowd control, determined by careful study of its name.
+	Tonsillectomy is performed on the monster. Locate Restroom heals.
+	<li>Spell levels matter. A spell at level VII is better than the same spell
+	at level I. This was always implied.
+	<li>Monsters may now be Giant, Fairly Stupid, Undead, or Kaiju. These are
+	not compliments, except for Kaiju.
+	<li>Hit points and mana now persist between fights. You will occasionally
+	stop to catch your breath, which is not a bug but a lifestyle.
+	<li>Equipment has power, and you will only buy equipment that is better
+	than what you have. The shopkeepers of the realm are devastated.
+	<li>Monsters drop loot sometimes rather than always. Some of it is rare.
+	All of it is sticky.
+	<li>Gold and loot found on the Killing Fields&trade; are unbanked until you
+	sell them at market. If you are defeated, the monster helps itself.
+	<li>Defeat is now possible. You will be dragged back to town by a passing
+	stranger and convalesce at a temple, which will accept a modest tithe of
+	10% of your life savings. You will be Wounded for a couple of fights and
+	will, for a while, pick on smaller monsters. This is called wisdom.
+	<li>A combat log is available (press C) for those who wish to watch every
+	swing. The task bar now says how the last fight went, in case you were
+	wondering.
+	<li>The window is wider and fits smaller screens. Long names of equipment
+	no longer fall off the edge of the world.
+	<li>jQuery has been upgraded to version 4. Nobody will notice, which is the
+	highest praise available to a library.
+	<li>Saves from earlier versions are upgraded automatically when loaded.
+	Your character will not notice either.
+	</ul>
 
 	<h1>Release Notes - Original</h1>
 	</center>

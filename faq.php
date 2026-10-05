@@ -87,6 +87,102 @@
 	</div>
 	<tr height=3em><td>
 	</table>
+
+	<a name=combat1>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>Wait, there's combat now? I thought the whole point was that there wasn't any gameplay.</i></b><br/><br/>
+	<b>A:</b> There still isn't any gameplay. There is now combat, which you watch instead of the progress bar. Your character fights every monster on its own, using every stat it has, and you continue to do nothing. We consider this a faithful adaptation.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat2>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>What do my stats actually do?</i></b><br/><br/>
+	<b>A:</b> STR is melee damage. DEX is hitting, dodging, acting first and running away. CON softens blows and speeds up healing. INT is spell damage. WIS decides whether a spell works and protects you from monster magic. CHA makes beaten monsters give up, gets better prices and better haggling. HP Max and MP Max are, against all odds, your maximum HP and MP.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat3>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>What are the stars next to some of my stats?</i></b><br/><br/>
+	<b>A:</b> Your race and class each have a primary attribute (filled star) and a secondary one (open star). These go up a little faster than the rest. If your race and class share an attribute, congratulations, or condolences, depending on which one it is.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat4>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>Why does my character keep stopping to catch its breath?</i></b><br/><br/>
+	<b>A:</b> Hit points now carry over from one fight to the next. When they get low, your character rests. Characters who know a healing spell rest faster, and tell you about it.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat5>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>My character died! Is it gone?</i></b><br/><br/>
+	<b>A:</b> No. Death in the realm is more of a setback. The monster takes some of the gold and loot you were carrying, a stranger drags you back to town, and a temple patches you up for a tithe of 10% of your banked gold. Your equipment and the rest of your bank are safe. You will be Wounded for a couple of fights and will pick easier fights for a while, which is more than most of us manage after a setback.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat6>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>How do I protect my gold?</i></b><br/><br/>
+	<b>A:</b> Sell your loot at market. Anything you are still carrying when you fall in battle is fair game for the monster. Anything in the bank is safe from monsters, though not from clerics.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat7>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>Can I see the fight?</i></b><br/><br/>
+	<b>A:</b> Press C on the game screen to open the combat log, which plays the fight out blow by blow as the task bar fills. The line under the task bar always shows how the last fight ended.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat8>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>What does the spell tag in my spell book mean?</i></b><br/><br/>
+	<b>A:</b> Every spell is one of five kinds: dmg (hurts the monster), heal (hurts the monster less, by making you better), buff (makes you better), debuff (makes the monster worse), or cc (makes the monster stand there). Hover over a spell for details.
+	</div>
+	<tr height=3em><td>
+	</table>
 	
 	<a name=2>
 	<p align=center>

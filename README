@@ -55,7 +55,7 @@ filled star and secondaries an open one.
 
 - Profile attributes are more likely to go up when a stat is won
   (K.StatPickBase in config.js controls how much more).
-- HP Max and MP Max in the profile grow 15% faster per point of weight
+- HP Max and MP Max in the profile grow 10% faster per point of weight
   on level-up (K.PoolGrowthPerWeight).
 - The martial/arcane split (STR, CON, DEX, HP Max vs INT, WIS, CHA,
   MP Max) is shown under the stats; later it decides how often a
@@ -166,5 +166,28 @@ Lose a fight and:
 - you are Wounded for the next 2 fights (a little weaker, a little
   softer), shown in red under the health bars along with your total
   number of defeats.
+- you get cautious: each defeat makes you pick on monsters 2 levels
+  weaker, and each win wears a little of that off. This is what stops a
+  weak character from losing, getting robbed, losing again forever.
 
 Tuning knobs are in K.Defeat in combat.js.
+
+
+Watching
+--------
+
+The line under the task bar shows the latest blow while a fight plays
+out, then how it ended ("Last fight: Barely beat the Giant Orc in 7
+rounds (cost 41 HP)"). Press C, or click "Combat log", for a panel that
+plays the whole fight out blow by blow as the task bar fills. The
+window is up to 1200px wide and stacks into one column on narrow
+screens.
+
+
+Balance
+-------
+
+Checked by simulating one character for every race x class combination
+(576) to level 20. Every combination wins at least 73% of its fights;
+races and classes are each within 4 percentage points of one another;
+martial, arcane and mixed characters within half a point.

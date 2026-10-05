@@ -25,10 +25,11 @@ K.Combat = {
 
   // How hard a stat ratio pushes damage (damage *= ratio ^ exponent)
   DamageExponent: 0.7,
+  SpellDamageExponent: 0.85,  // INT scales spell damage a little harder
   DefenseExponent: 0.6,
 
   // Hit chance = base + slope * log2(attacker DEX / defender DEX)
-  HeroHitBase: 0.78, MonsterHitBase: 0.62, HitSlope: 0.22,
+  HeroHitBase: 0.78, MonsterHitBase: 0.62, HitSlope: 0.28,
   HitMin: 0.2, HitMax: 0.97,
 
   // Share of monster attacks that are magic: dodged with WIS, not DEX, and
@@ -91,7 +92,11 @@ K.Defeat = {
   // rich, and it can never leave you broke. 0 turns it off.
   Tithe: 0.1,
   // Fights spent Wounded afterwards, and what being Wounded costs
-  WoundedFights: 2, WoundedDamage: 0.92, WoundedTaken: 1.08
+  WoundedFights: 2, WoundedDamage: 0.92, WoundedTaken: 1.08,
+  // Caution: each defeat makes you pick on monsters this many levels
+  // weaker; every win takes CautionDecay of it away again. At most
+  // CautionMax levels, and never below level 1.
+  CautionPerDefeat: 2, CautionDecay: 0.25, CautionMax: 10
 };
 
 // Loot tuning (used by main.js)
@@ -309,7 +314,7 @@ function ResolveCombat(hero, foe, seed) {
       break;
     default:  // damage
       var sdmg = perHP / C.SpellHitsToKill *
-        Math.pow(ratio(hero.INT, mon.INT), C.DamageExponent) *
+        Math.pow(ratio(hero.INT, mon.INT), C.SpellDamageExponent) *
         levelF(spell) * (1 + buff) * (1 + debuff) * between(0.8, 1.2);
       monHP -= sdmg;
       log.push("You cast " + label + " on " + name + " for " + Show(sdmg));
