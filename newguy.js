@@ -193,8 +193,12 @@ function sold() {
   $.each(K.Equips, function (i,equip) { newguy.EquipPower[equip] = 0; });
   newguy.purse = 0;
   newguy.story = prologue;
+  // The Prologue's "ending" is its opening scenes, for the Acts list tooltip
+  var prologueScenes = newguy.queue
+    .filter(function (q) { return q.split('|')[0] == 'task'; })
+    .map(function (q) { return q.split('|').slice(2).join('|'); });
   newguy.storyLog = [{ act: 0, key: prologue.key, title: prologue.title, purpose: prologue.purpose,
-                       taunt: prologue.taunt }];
+                       taunt: prologue.taunt, ending: prologueScenes }];
   newguy.deaths = 0;
   newguy.wounded = 0;
 

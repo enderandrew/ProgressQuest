@@ -137,7 +137,15 @@ function Special(m, s) {
 // the next Act (see story.js).
 function InterplotCinematic() {
   var story = game.story && game.story.act == game.act ? game.story : NewStory(game.act);
-  $.each(StoryEnding(story), function (i, line) { Q('task|4|' + line); });
+  var ending = StoryEnding(story);
+  // Keep the ending, so an idle player can read it later by hovering
+  // over the Act in the list
+  var entry = StoryFor(game.act);
+  if (entry) {
+    entry.ending = ending;
+    RefreshActTooltips();
+  }
+  $.each(ending, function (i, line) { Q('task|4|' + line); });
   Q('plot|1|Loading ...');
 }
 
@@ -462,6 +470,31 @@ function ActCaption(act) {
   }
   var entry = StoryFor(act);
   return 'Act ' + toRoman(act) + (entry ? ': ' + entry.title : '');
+}
+
+// The Act number in a caption from the Acts list ("Act XIV: ..." -> 14)
+function ActFromCaption(caption) {
+  var m = /^\s*Act ([A-Z]+)/.exec(caption || '');
+  return m ? toArabic(m[1]) : 0;
+}
+
+// Hover text for an Act: what it was about, and once it is over, how it
+// ended (the cinematic, which an idle player has probably missed)
+function ActTooltip(act) {
+  var entry = StoryFor(act);
+  if (!entry) return '';
+  var tip = entry.purpose;
+  if (entry.ending && entry.ending.length)
+    tip += '\n\nHow it ended:\n' + entry.ending.join('\n');
+  return tip;
+}
+
+function RefreshActTooltips() {
+  if (!Plots || !Plots.box) return;
+  Plots.box.find("tr").each(function () {
+    var tip = ActTooltip(ActFromCaption($(this).text()));
+    if (tip) $(this).attr("title", tip);
+  });
 }
 
 // Make a story the current one, remember it, and show it
@@ -1388,8 +1421,8 @@ function FormCreate() {
 
   // Each Act in the list shows its story on hover
   Plots.decorate = function (row, caption) {
-    var entry = StoryFor(row.index());
-    if (entry) row.attr("title", entry.purpose);
+    var tip = ActTooltip(ActFromCaption(caption));
+    if (tip) row.attr("title", tip);
   };
 
   // Show each slot's gear power on hover
