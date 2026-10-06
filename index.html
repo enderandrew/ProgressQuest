@@ -1,130 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<link rel="apple-touch-icon" sizes="180x180" href="https://enderandrew.com/ProgressQuest/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="https://enderandrew.com/ProgressQuest/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="https://enderandrew.com/ProgressQuest/favicon-16x16.png">
-	<link rel="manifest" href="https://enderandrew.com/ProgressQuest/site.webmanifest">
-	<link rel="mask-icon" href="https://enderandrew.com/ProgressQuest/safari-pinned-tab.svg" color="#5bbad5">
-	<link rel="shortcut icon" href="https://enderandrew.com/ProgressQuest/favicon.ico">
-	<meta name="msapplication-TileColor" content="#da532c">
-	<meta name="msapplication-config" content="https://enderandrew.com/ProgressQuest/browserconfig.xml">
-	<meta name="theme-color" content="#ffffff">
-	<title>Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle</title>
-			<!-- Google tag (gtag.js) -->
-			<meta name="google-site-verification" content="Fw32VtOfNNMYuxwq-LDxGbzuY7QIxjvQmLuWnv6FTGY" />
-			<script async src="https://www.googletagmanager.com/gtag/js?id=G-C7FZLTKS4Q"></script>
-				<script>
-				window.dataLayer = window.dataLayer || [];
-				function gtag(){dataLayer.push(arguments);}
-				gtag('js', new Date());
-				
-				gtag('config', 'G-C7FZLTKS4Q');
-			</script>
-	<style>
-		body {
-			text-align: center;
-			background-image: url('battleback9.png');
-			background-size: cover;
-			background-repeat: no-repeat;
-		}
-		p {
-			margin-left: 10%;
-			margin-right: 10%;
-			text-align: left;
-		}
-		.sig {
-			text-align: center;
-			font-size: small;
-			color: #808080;
-		}
-		.sig a, .sig a:visited {
-			color: #808080;
-			text-decoration: none;
-		}
-		div {
-			background:#7f7f7f;
-			background:rgba(255,255,255,0.5);
-			margin-left: 15%;
-			margin-right: 15%;
-		}
-		.center {
-			display: block;
-			margin-left: auto;
-			margin-right: auto;
-		}
-		#go {
-			font-size: 30pt;
-		}
-		img {
-			border-style: none;
-		}
-		th, td { text-align: left; padding-right: 2em; }
-		.good { color: #2a2; }
-		.ugly { color: #c82; }
-	</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="apple-touch-icon" sizes="180x180" href="https://enderandrew.com/ProgressQuest/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://enderandrew.com/ProgressQuest/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://enderandrew.com/ProgressQuest/favicon-16x16.png">
+<link rel="manifest" href="https://enderandrew.com/ProgressQuest/site.webmanifest">
+<link rel="mask-icon" href="https://enderandrew.com/ProgressQuest/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="shortcut icon" href="https://enderandrew.com/ProgressQuest/favicon.ico">
+<meta name="msapplication-TileColor" content="#da532c">
+<meta name="msapplication-config" content="https://enderandrew.com/ProgressQuest/browserconfig.xml">
+<meta name="theme-color" content="#245edb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle</title>
+<!-- Google tag (gtag.js) -->
+<meta name="google-site-verification" content="Fw32VtOfNNMYuxwq-LDxGbzuY7QIxjvQmLuWnv6FTGY" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-C7FZLTKS4Q"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-C7FZLTKS4Q');
+</script>
+<link rel="stylesheet" href="menu.css">
+<script src="jquery-4.0.0.min.js"></script>
+<script src="config.js"></script>
+<script src="menu.js"></script>
 </head>
+
 <body>
-	<a href="https://ProgressQuest.EnderAndrew.com" style="text-decoration:none"><img style="border:0" src="pq.gif" width="512px" height="451px" id="logo" title="Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle" alt="Progress Quest Remix" class="center"></a>
-	<div>
-		<h1>Progress Quest Remix in Your Browser</h1>
-		
-		<p>
-		This is a fork of the original <a href="http://progressquest.com" target="_blank">Progress Quest</a> that leans heavily into the parody aspect of the game. There is no support for our changes in multiplayer, guilds, hall of fame, etc. Perhaps someday. This is just a single-player browser-based proof of concept.
-		</p>
-		
-		<p>
-		Thanks to recent advances in technology, it has been possible to port Progress Quest Remix to run in your browser. You no longer need to download or install anything to play Progress Quest; just hit the button:
-		</p>
-		
-		<button id="go" onclick="window.location.href='roster.html'">Play!</button>
-		
-		<p>
-		Does that sound easy to you? Well it wasn't; we started with hardware emulation of a 80386-equipped PC clone running a novel Windows XP compatible operating system called ProgrOS, implemented in a clean room in the Seychelles by a team of people who had never programmed before (to keep the lawyers at bay).
-		
-		<p>
-		Unfortunately that wasn't fast enough (there was too much lag death), so we instead emulated the much faster Cray-2 supercomputer and ran the 80386 emulator in that. But the 80386 kept getting hot, so we switched to a 6502 overclocked at 120GHz with emulated liquid helium coolant, and ported ProgrOS to that.
-		
-		<p>
-		Between you, me, and that talking pony over there, this is pretty much beta software at this point. Browser support breakdown:
-		<center>
-		<table>
-		<tr>
-		<th class=good>Chrome, Firefox, Safari 
-		<td>Aces! Works great! (We think!)
-		<tr>
-		<th class=ugly>Opera, Mobile Safari, Internet Explorer
-		<td>Some visual glitches. Should play fine.
-		</table>
-		</center>
-		
-		<p>
-		This edition of the game is only single player - there is no Hall of Fame yet. If anyone cares, that will come later.
-		</p>
-		
-		
-		<br>
-		<br>
-		<div align="center" id="nabar">
-			<a href="./">Home</a> &middot;
-			<a href="./info.php">Info</a> &middot;
-			<a href="./faq.php">FAQ</a> &middot;
-			<a href="./roster.html">Play</a> &middot;
-			<a href="./dl.php">Download</a> &middot;
-			<a href="http://progressquest.com/realms.php">Realms</a> &middot;
-			<a href="http://progressquest.com/acct.php">Accounts</a> &middot;
-			<a href="./news.php">News</a> &middot;
-			<a href="http://www.cafepress.com/pqm">Store</a> &middot;
-			<a href="http://forum.progressquest.com/">Forum</a> &middot;
-			<a href="./links.php">Links</a>
-		</div>
-		<br>
-		<div class="sig">
-			&copy;2001-2010 <a class=dim href="mailto:grumdrig@progressquest.com">grumdrig@progressquest.com</a> for original Progress Quest - &copy;2023 <a class=dim href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix
-		</div>
-	</div>
+
+<!-- ---- The main menu ------------------------------------------------------ -->
+<section class="xp-window" id="menuwin" aria-labelledby="menutitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="menutitle">Progress Quest Remix</span>
+  </div>
+  <div class="xp-body">
+    <img id="logo" src="pq.gif" width="512" height="451"
+         alt="Progress Quest Remix"
+         title="Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle">
+    <p class="tagline">The breakfast of not-quite champions who sleep in and let their game idle.</p>
+    <nav id="menu">
+      <button class="xp-button big" data-open="dlgNew"><span class="ico">&#x2694;</span>New Game</button>
+      <button class="xp-button big" data-open="dlgResume"><span class="ico">&#x25B6;</span>Resume<span class="count" id="resumeCount"></span></button>
+      <button class="xp-button big" data-open="dlgPlus"><span class="ico">&#x2795;</span>New Game+<span class="soon">soon</span></button>
+      <button class="xp-button big" data-open="dlgHall"><span class="ico">&#x1F3C6;</span>Hall of Legends<span class="soon">soon</span></button>
+      <button class="xp-button big" data-open="dlgChallenge"><span class="ico">&#x1F3B2;</span>Challenge Modes<span class="soon">soon</span></button>
+      <button class="xp-button big" data-open="dlgFaq"><span class="ico">&#x2753;</span>FAQ</button>
+      <button class="xp-button big" data-open="dlgGitHub"><span class="ico">&#x1F4BB;</span>GitHub</button>
+    </nav>
+  </div>
+</section>
+
+<!-- ---- New Game: the character roller, in a window ------------------------- -->
+<dialog class="xp-window" id="dlgNew" aria-labelledby="dlgNewTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgNewTitle">New Character</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body flush">
+    <iframe id="newguyFrame" title="Roll up a new character"></iframe>
+  </div>
+</dialog>
+
+<!-- ---- Resume: saved characters ------------------------------------------- -->
+<dialog class="xp-window" id="dlgResume" aria-labelledby="dlgResumeTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgResumeTitle">Resume</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <p id="rosterNote">Pick up where your hero left off. They never stopped; they were just waiting for you to watch.</p>
+    <div class="xp-list" id="roster"></div>
+    <div class="xp-actions">
+      <label class="xp-button" id="importLabel">Import save&hellip;<input type="file" id="importFile" accept=".pqw,text/plain" multiple hidden></label>
+      <span class="hint">or drop a .pqw backup on this window</span>
+      <button class="xp-button" data-close>Close</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ---- Not wired up yet ------------------------------------------------- -->
+<dialog class="xp-window" id="dlgPlus" aria-labelledby="dlgPlusTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgPlusTitle">New Game+</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <h2>Coming soon</h2>
+    <p>Reach level 50 and finally settle things with the Old Bastard&trade;. Then retire your
+       hero to the Hall of Legends and start a new one with a legacy bonus from the old
+       one's race and class.</p>
+    <p>There is one bonus for each of the 24 races and 24 classes. Pick your pairings well
+       and it takes 24 heroes to collect them all.</p>
+    <div class="xp-actions"><button class="xp-button" data-close>OK</button></div>
+  </div>
+</dialog>
+
+<dialog class="xp-window" id="dlgHall" aria-labelledby="dlgHallTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgHallTitle">Hall of Legends</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <h2>Coming soon</h2>
+    <p>Heroes who reach level 50 and retire are enshrined here, with the legacy bonuses they
+       earned, how long it took, and how many times they were dragged back to town.</p>
+    <p>The Hall is kept in this browser and shared by all your characters. A Hall of
+       Fame across players needs a server, and will come later.</p>
+    <div class="xp-actions"><button class="xp-button" data-close>OK</button></div>
+  </div>
+</dialog>
+
+<dialog class="xp-window" id="dlgChallenge" aria-labelledby="dlgChallengeTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgChallengeTitle">Challenge Modes</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <h2>Coming soon</h2>
+    <ul class="xp-bullets">
+      <li><b>Hardcore.</b> One life. When your hero falls, they stay fallen.</li>
+      <li><b>Daily Challenge.</b> Everyone gets the same seed, hero and twist for the day.</li>
+      <li><b>Mutators.</b> No spells, no shopping, glass cannon, pacifist, and other bad ideas.</li>
+    </ul>
+    <div class="xp-actions"><button class="xp-button" data-close>OK</button></div>
+  </div>
+</dialog>
+
+<dialog class="xp-window" id="dlgFaq" aria-labelledby="dlgFaqTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgFaqTitle">Frequently Asked Questions</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body flush">
+    <iframe id="faqFrame" title="Progress Quest FAQ"></iframe>
+  </div>
+  <div class="xp-actions pad">
+    <a class="xp-button" href="faq.php" target="_blank" rel="noopener">Open in a new tab</a>
+    <button class="xp-button" data-close>Close</button>
+  </div>
+</dialog>
+
+<dialog class="xp-window" id="dlgGitHub" aria-labelledby="dlgGitHubTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgGitHubTitle">About Progress Quest Remix</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <p>This is a fork of the original <a href="http://progressquest.com" target="_blank" rel="noopener">Progress Quest</a>
+       that leans heavily into the parody. It is single-player and runs entirely in your
+       browser; your characters are saved here, on this device.</p>
+    <p>It was not easy. We started with hardware emulation of an 80386-equipped PC clone
+       running a novel Windows XP compatible operating system called ProgrOS, implemented in
+       a clean room in the Seychelles by a team of people who had never programmed before.
+       That had too much lag death, so we emulated a Cray-2 and ran the 80386 in that. The
+       80386 kept getting hot, so we switched to a 6502 overclocked at 120GHz with emulated
+       liquid helium coolant. You're welcome.</p>
+    <p>The source code, issues and release notes live on GitHub.</p>
+    <div class="xp-actions">
+      <a class="xp-button default" href="https://github.com/enderandrew/ProgressQuest" target="_blank" rel="noopener">Open on GitHub</a>
+      <button class="xp-button" data-close>Close</button>
+    </div>
+    <p class="sig">&copy;2001-2010 <a href="mailto:grumdrig@progressquest.com">grumdrig@progressquest.com</a> for the original Progress Quest
+       &middot; &copy;2023 <a href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix</p>
+  </div>
+</dialog>
+
+<!-- ---- Taskbar ------------------------------------------------------------- -->
+<footer id="taskbar">
+  <button id="start" title="Back to the menu">start</button>
+  <div class="task"><img src="swords.gif" alt="">Progress Quest Remix</div>
+  <div id="tray"><span id="clock"></span></div>
+</footer>
+
+<template id="rosterRow">
+  <div class="row" tabindex="0">
+    <span class="badge">&#x2694;</span>
+    <span class="who"><b class="name"></b> <span class="what"></span><br>
+      <span class="where"></span></span>
+    <span class="row-actions">
+      <a class="xp-button play" title="Resume this character">Play</a>
+      <a class="xp-button save" title="Download a backup file">Back up</a>
+      <button class="xp-button del" title="Delete this character">Delete</button>
+    </span>
+  </div>
+</template>
+
 </body>
-
 </html>
-
-

@@ -13,11 +13,19 @@ to JavaScript, remixed.
 Running it
 ----------
 
-Open roster.html through a web server (the game clock runs in a Web
+Open index.html through a web server (the game clock runs in a Web
 Worker, which browsers won't start from a file:// URL). For example:
 
     python3 -m http.server
-    # then visit http://localhost:8000/roster.html
+    # then visit http://localhost:8000/
+
+index.html is the main menu, a Windows XP desktop on Bliss: New Game (the
+character roller, newguy.html, in a window), Resume (your saved heroes,
+with backup, import and delete), New Game+, Hall of Legends and Challenge
+Modes (placeholders for now), FAQ (faq.php, in a window) and GitHub.
+Each opens in its own window;
+index.html#resume, #new, #faq, #github and so on open one directly. Quitting a
+game comes back to Resume, and the old roster.html redirects there.
 
 jQuery 4 is bundled as jquery-4.0.0.min.js, so no network is needed.
 

@@ -1,0 +1,287 @@
+/* Progress Quest Remix main menu: a Windows XP (Luna) desktop on Bliss. */
+
+:root {
+  --xp-face: #ece9d8;
+  --xp-frame: #0831d9;
+  --xp-title: linear-gradient(180deg, #0997ff 0%, #0053ee 8%, #0050ee 40%, #0066ff 88%, #0066ff 93%, #005bff 95%, #003dd7 96%, #003dd7 100%);
+  --xp-title-text: #fff;
+  --xp-text: #000;
+  --xp-link: #0000c0;
+  --xp-list: #fff;
+  --xp-list-border: #7f9db9;
+  --xp-select: #316ac5;
+  --xp-muted: #5a5a5a;
+  --taskbar: linear-gradient(180deg, #1f2f86 0%, #3165c4 3%, #3682e5 6%, #4490e6 10%, #3883e5 12%, #2b71e0 15%, #2663da 18%, #235bd6 20%, #2258d5 23%, #2157d6 38%, #245ddb 54%, #2562df 86%, #245fdc 89%, #2158d4 92%, #1d4ec0 95%, #1941a5 98%);
+  --tray: linear-gradient(180deg, #0c59b9 1%, #139ee9 6%, #18b5f2 10%, #139beb 14%, #1290e8 19%, #0d8dea 63%, #0d9ff1 81%, #0f9eed 88%, #119be9 91%, #1392e2 94%, #137ed7 97%, #095bc9 100%);
+  font-family: Tahoma, "Segoe UI", Verdana, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  padding: 24px 16px 54px;
+  color: var(--xp-text);
+  background-color: #5a7edc;
+  background-image: url("Bliss.png");
+  background-image: image-set(url("Bliss.webp") type("image/webp"), url("Bliss.png") type("image/png"));
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-size: 12px;
+  overflow-x: hidden;
+}
+
+a { color: var(--xp-link); }
+
+/* ---- Windows ------------------------------------------------------------- */
+
+.xp-window {
+  background: var(--xp-face);
+  border: 3px solid var(--xp-frame);
+  border-top: 0;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 2px 3px 12px rgba(0, 0, 0, 0.45);
+  padding: 0;
+  color: var(--xp-text);
+}
+
+.xp-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 5px 0 7px;
+  background: var(--xp-title);
+  color: var(--xp-title-text);
+  font: bold 13px "Trebuchet MS", Tahoma, sans-serif;
+  text-shadow: 1px 1px #0f1089;
+  border-radius: 7px 7px 0 0;
+  margin: 0 -3px;
+  user-select: none;
+}
+.xp-titlebar img { width: 16px; height: 16px; }
+.xp-titlebar span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.xp-close {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #fff;
+  border-radius: 3px;
+  background: radial-gradient(circle at 70% 70%, #cc4931 0%, #e2785a 60%, #f0a28d 100%);
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+}
+.xp-close::before, .xp-close::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  background: #fff;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.xp-close::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.xp-close:hover { filter: brightness(1.12); }
+.xp-close:focus-visible { outline: 1px dotted #fff; outline-offset: -4px; }
+
+.xp-body { padding: 12px 14px 14px; }
+.xp-body.flush { padding: 0; }
+.xp-body p { line-height: 1.45; margin: 0 0 10px; }
+.xp-body h2 { font-size: 15px; margin: 0 0 8px; color: #1c3a8f; }
+
+/* ---- Buttons ---------------------------------------------------------- */
+
+.xp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 75px;
+  min-height: 23px;
+  padding: 2px 12px;
+  font: 12px Tahoma, "Segoe UI", sans-serif;
+  color: #000;
+  text-decoration: none;
+  background: linear-gradient(180deg, #fff 0%, #ecebe6 86%, #d6d0c5 100%);
+  border: 1px solid #003c74;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+}
+.xp-button:hover { box-shadow: inset 0 -2px #f8b636, inset 0 2px #fee3a1, inset 2px 0 #fcd57f, inset -2px 0 #fcd57f; }
+.xp-button:active { background: linear-gradient(180deg, #cdcac3 0%, #e3e3db 14%, #f2f2f1 100%); }
+.xp-button:focus-visible, .xp-button.default { box-shadow: inset 0 -2px #99c1fe, inset 0 2px #cee7ff, inset 2px 0 #bcd4f6, inset -2px 0 #bcd4f6; }
+.xp-button:disabled { color: #a19f95; border-color: #c9c7ba; cursor: default; box-shadow: none; }
+
+/* ---- Main menu -------------------------------------------------------- */
+
+#menuwin { width: min(340px, 100%); margin-top: 2vh; }
+#menuwin .xp-body { text-align: center; }
+#logo { width: 200px; height: auto; display: block; margin: 0 auto 4px; }
+.tagline { font-style: italic; color: var(--xp-muted); margin: 0 auto 12px !important; max-width: 260px; }
+
+#menu { display: flex; flex-direction: column; gap: 8px; }
+#menu .xp-button.big {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 36px;
+  font-size: 14px;
+  padding: 4px 12px;
+}
+#menu .ico { width: 24px; font-size: 17px; text-align: center; }
+#menu .soon, #menu .count {
+  margin-left: auto;
+  font-size: 10px;
+  color: #fff;
+  background: #7a96df;
+  border-radius: 8px;
+  padding: 1px 7px;
+}
+#menu .count { background: #3c8f3c; }
+#menu .count:empty { display: none; }
+
+/* ---- Dialogs ------------------------------------------------------------- */
+
+dialog.xp-window {
+  width: min(480px, calc(100vw - 24px));
+  max-height: calc(100vh - 56px);
+  overflow: visible;
+}
+dialog.xp-window[open] { display: flex; flex-direction: column; }
+dialog.xp-window .xp-body { overflow: auto; }
+dialog::backdrop { background: rgba(0, 20, 80, 0.25); }
+
+#dlgNew { width: min(522px, calc(100vw - 12px)); }
+#newguyFrame {
+  display: block;
+  width: 100%;
+  height: min(518px, calc(100vh - 100px));
+  border: 0;
+  background: var(--xp-face);
+}
+
+#dlgResume { width: min(620px, calc(100vw - 24px)); }
+
+#dlgFaq { width: min(760px, calc(100vw - 24px)); }
+#faqFrame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 150px);
+  max-height: 640px;
+  border: 0;
+  border-bottom: 1px solid var(--xp-list-border);
+  background: #fff;
+}
+.xp-actions.pad { margin: 0; padding: 8px 12px 10px; }
+
+.xp-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.xp-actions .hint { flex: 1; color: var(--xp-muted); font-size: 11px; }
+
+.xp-bullets { margin: 0 0 6px; padding-left: 18px; line-height: 1.5; }
+.sig { margin-top: 14px !important; font-size: 10px; color: var(--xp-muted); text-align: center; }
+.sig a { color: var(--xp-muted); }
+
+/* ---- Saved characters ---------------------------------------------------- */
+
+.xp-list {
+  background: var(--xp-list);
+  border: 1px solid var(--xp-list-border);
+  max-height: 46vh;
+  overflow: auto;
+}
+.xp-list .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eef0f5;
+}
+.xp-list .row:last-child { border-bottom: 0; }
+.xp-list .row:hover, .xp-list .row:focus-within { background: #e8eefa; }
+.xp-list .row:focus { outline: 1px dotted var(--xp-select); outline-offset: -2px; }
+.xp-list .badge { font-size: 22px; color: #2a4fbf; width: 26px; text-align: center; }
+.xp-list .who { flex: 1; min-width: 0; line-height: 1.4; overflow-wrap: anywhere; }
+.xp-list .where { color: var(--xp-muted); font-size: 11px; }
+.xp-list .row-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.xp-list .row-actions .xp-button { min-width: 0; padding: 2px 8px; font-size: 11px; }
+.xp-list .row.lit { background: #fff8d6; }
+.xp-list .empty { padding: 14px; color: var(--xp-muted); font-style: italic; }
+.xp-list.dropping { outline: 2px dashed var(--xp-select); outline-offset: -4px; }
+
+/* ---- Taskbar ------------------------------------------------------------- */
+
+#taskbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--taskbar);
+  z-index: 10;
+}
+#start {
+  height: 30px;
+  padding: 0 22px 2px 12px;
+  border: 0;
+  border-radius: 0 10px 10px 0;
+  background: linear-gradient(180deg, #3c8f3c 0%, #4ea74e 8%, #3e963e 40%, #2f872f 88%, #276b27 100%);
+  color: #fff;
+  font: italic bold 18px "Trebuchet MS", Tahoma, sans-serif;
+  text-shadow: 1px 1px 2px #1a3d1a;
+  box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+#start:hover { filter: brightness(1.1); }
+#taskbar .task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  min-width: 0;
+  max-width: 190px;
+  color: #fff;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  background: #1e52b7;
+  border-radius: 3px;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+#taskbar .task img { width: 16px; height: 16px; }
+#tray {
+  margin-left: auto;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--tray);
+  border-left: 1px solid #092e95;
+  color: #fff;
+  font-size: 11px;
+}
+
+@media (max-width: 520px) {
+  body { padding: 10px 8px 44px; }
+  #taskbar .task { display: none; }
+  .xp-list .row { flex-wrap: wrap; }
+  .xp-list .row-actions { width: 100%; justify-content: flex-start; padding-left: 34px; }
+}

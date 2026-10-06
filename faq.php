@@ -59,7 +59,21 @@
 		th, td { text-align: left; padding-right: 2em; }
 		.good { color: #2a2; }
 		.ugly { color: #c82; }
+		/* Shown inside the main menu's FAQ window (index.html) */
+		html.embedded body { background: #fff; margin: 8px 0; padding: 0 16px; }
+		html.embedded table { width: 100%; max-width: 640px; margin: 0 auto; }
+		html.embedded #logop, html.embedded #nabar, html.embedded .sig { display: none; }
+		html.embedded div, html.embedded p { margin-left: 0; margin-right: 0; }
+		html.embedded div { background: none; }
 	</style>
+	<script>
+		// In a frame: drop the logo and old link bar, and open links in the whole window
+		if (window.parent !== window) {
+			document.documentElement.className += ' embedded';
+			var base = document.createElement('base'); base.target = '_top';
+			document.head.appendChild(base);
+		}
+	</script>
 </head>
 <body bgcolor=#ffffff alink=blue vlink=black>
 <p align=center id=logop>
@@ -83,7 +97,7 @@
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
 	<b>Q: <i>How is this different from the original Progress Quest?</i></b><br/><br/>
-	<b>A:</b> The original game already had an aspect of parody. I'm leaning into that more heavily with a fork to rewrite most of the text (classes, races, items, monsters, etc) in the game. I will be adding new content. I'm unsure if I will change features beyond that.
+	<b>A:</b> This game progresses faster, has more content, an actual combat simulation, random events, an ending, and a new game+.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -184,14 +198,26 @@
 	<tr height=3em><td>
 	</table>
 	
+	<a name=1>
+	<p align=center>
+	<table width=80%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>Where is the Hall of Fame! The original game had a Hall of Fame! What gives?</i></b><br/><br/>
+	<b>A:</b>When I'm further along in this fork I may add a server backend with persistent online characters. But for now, play the original game if you want a persistent server with online characters.
+	</div>
+	<tr height=3em><td>
+	</table>
+
 	<a name=2>
 	<p align=center>
 	<table width=80%>
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>Everybody on the forums is talking about 3D mode, but I can't seem to activate it. Is it all bunk?</i></b><br/><br/>
-	<b>A:</b> The shading around the progress bars and buttons and so on gives them sort of a 3D feel.
+	<b>Q: <i>What is with all the puns and lame jokes? Do you think you are funny?</i></b><br/><br/>
+	<b>A:</b>People tend to laugh when they look at me.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -202,95 +228,13 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>My character isn't updating in the Hall of Fame! He's level <i>x</i> on my computer, but the Hall of fame shows him as level <i>x</i>-3, and I can't change my motto. What gives?</i></b><br/><br/>
-	<b>A:</b> There's a bug related to long mottoes in older versions. <a href=dl.php>Download</a> version 6.2 (or later), or just pick a shorter motto. State your point concisely, in other words.
+	<b>Q: <i>How do I make friends as an adult? I feel so disconnected.</i></b><br/><br/>
+	<b>A:</b>Find a group of people with a shared interest. Or stalk people from a distance and rifle through their trash to get to know them. That sure worked for me!
 	</div>
 	<tr height=3em><td>
 	</table>
-	
-	<a name=4>
-	<p align=center>
-	<table width=80%>
-	<tr height=3em><td>
-	<tr><td>
-	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>What's with the rankings? Why am I below this clown A55 /\/\0NKEY who is lower level?</i></b><br/><br/>
-	<b>A:</b> The Hall of Fame rankings are based on the voting of the Council of Roilwachhs. This council meets only every so often (15 minutes, typically), so it may take some time before the rankings change.
-	</div>
-	<tr height=3em><td>
-	</table>
-	
-	<a name=5>
-	<p align=center>
-	<table width=80%>
-	<tr height=3em><td>
-	<tr><td>
-	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>I started my character offline, and now I regret it. Is there a way to turn him/her into an online character, listed on the Hall of Fame?</i></b><br/><br/>
-	<b>A:</b> Unfortunately, no, there is not.
-	</div>
-	<tr height=3em><td>
-	</table>
-	
-	<a name=6>
-	<p align=center>
-	<table width=80%>
-	<tr height=3em><td>
-	<tr><td>
-	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>I started my character online, and now I regret it. Is there a way to delete my character?</i></b><br/><br/>
-	<b>A:</b> No. The laws of the realms, in their wisdom and double-humanity, forbid so heartless an act.
-	</div>
-	<tr height=3em><td>
-	</table>
-	
-	<a name=7>
-	<p align=center>
-	<table width=80%>
-	<tr height=3em><td>
-	<tr><td>
-	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>Something bad happened, and now it says "Invalid Stream Format" when I try to load my saved game. Is there any hope?</i></b><br/><br/>
-	<b>A:</b> Sorry; there is not. Your character is a goner. At least you've learned the importance of regular backups...
-	</div>
-	<tr height=3em><td>
-	</table>
-	
-	<a name=8>
-	<p align=center>
-	<table width=80%>
-	<tr height=3em><td>
-	<tr><td>
-	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>Aw, I lost my save file, and the backups. Can you recreate him from the server somehow?</i></b><br/><br/>
-	<b>A:</b> Nope, that would be impossible. Would if I could. Sorry!
-	</div>
-	<tr height=3em><td>
-	</table>
-	
-	<a name=9>
-	<p align=center>
-	<table width=80%>
-	<tr height=3em><td>
-	<tr><td>
-	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>I've been running PQ for years now, and my character is eighty-somethingth level, and now the game crashes or I've been thrown into the Hall of Infamy or some other random badness is going on. What can I do?</i></b><br/><br/>
-	<b>A:</b> You are witnessing a form of senility and/or corruption and/or loss of bladder control brought on by the decrepit age of so ancient a character. (Equivalently, this is a limitation of the program which has no remedy.) It's time to make way for a new generation of adventurers!
-	</div>
-	<tr height=3em><td>
-	</table>
-	
-	<a name=10>
-	<p align=center>
-	<table width=80%>
-	<tr height=3em><td>
-	<tr><td>
-	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>Is there any chance of a version for CP/M, NextStep, BeOS, GEM, TI-84 or other platform?</i></b><br/><br/>
-	<b>A:</b> Nothing is in the works to natively support any other platform, but you can just <a href='play/'>play it in your browser</a>, or see <a href=dl.php>the download page</a> for a couple options for a couple emulation possibilities on Linux and Mac. And if that's not good enough, <a href='https://bitbucket.org/grumdrig/pq'>here's the source code</a>. Port it yourself!
-	</div>
-	<tr height=3em><td>
-	</table>
+
+
 	<p>
 			<div align="center" id="nabar">
 				<a href="./">Home</a> &middot;
@@ -307,7 +251,7 @@
 			</div>
 			<br>
 			<div class="sig">
-				&copy;2001-2010 <a class=dim href="mailto:grumdrig@progressquest.com">grumdrig@progressquest.com</a> for original Progress Quest - &copy;2023 <a class=dim href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix
+				&copy;2001-2010 <a class=dim href="mailto:grumdrig@progressquest.com">grumdrig@progressquest.com</a> for original Progress Quest - &copy;2026 <a class=dim href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix
 			</div>
 </div>
   
