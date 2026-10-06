@@ -334,11 +334,94 @@ storage.storeRoster = function (roster, callback) {
 
 // The Hall of Legends: retired heroes, shared by every character in this
 // browser (see MakeLegend in main.js for what is kept).
+// ---- Seals ------------------------------------------------------------------
+//
+// Saves and Hall of Legends entries carry a seal: a hash of their contents
+// that only the game writes. Edit a save in the browser's storage or in a
+// backup file and the seal no longer matches, and the hero is branded a
+// cheater (see Brand in main.js); an edited legend stops counting. The
+// recipe is in this file, so someone who reads the source can forge one:
+// this stops casual tampering, not a determined cheat. A server replaying
+// the seeded fights could one day check for real.
+
+// JSON with object keys sorted, so the same data always gives the same text
+// (the seal itself is left out)
+function StableStringify(v, top) {
+  if (v === null || typeof v !== "object") {
+    if (typeof v === "number" && !isFinite(v)) return "null";
+    return v === undefined ? undefined : JSON.stringify(v);
+  }
+  if (Array.isArray(v)) {
+    return "[" + v.map(function (x) {
+      var s = StableStringify(x);
+      return s === undefined ? "null" : s;
+    }).join(",") + "]";
+  }
+  var out = [];
+  Object.keys(v).sort().forEach(function (k) {
+    if (top && k === "seal") return;
+    var s = StableStringify(v[k]);
+    if (s !== undefined && typeof v[k] !== "function") out.push(JSON.stringify(k) + ":" + s);
+  });
+  return "{" + out.join(",") + "}";
+}
+
+var _sealPepper = [80,114,111,103,114,101,115,115,32,113,117,101,115,116,32,82,101,109,105,120,
+                   47,79,108,100,32,66,97,115,116,97,114,100].map(function (c) { return String.fromCharCode(c); }).join("");
+
+// A 64-bit hash (two 32-bit lanes, cyrb53 style), as 16 hex digits
+function SealHash(str) {
+  var h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;
+  for (var i = 0; i < str.length; ++i) {
+    var ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return ("00000000" + (h1 >>> 0).toString(16)).slice(-8) + ("00000000" + (h2 >>> 0).toString(16)).slice(-8);
+}
+
+function SealOf(obj) {
+  return "s1." + SealHash(_sealPepper + StableStringify(obj, true));
+}
+
+function Seal(obj) {
+  obj.seal = SealOf(obj);
+  return obj;
+}
+
+function SealOk(obj) {
+  return !!(obj && obj.seal) && obj.seal === SealOf(obj);
+}
+
+// A save from storage or a backup file: "ok" (sealed and untouched), "old"
+// (from before saves were sealed) or "bad" (edited, or its seal removed)
+function SaveSealState(sheet) {
+  if (!sheet.seal) return (sheet.saveVersion || 0) >= 9 ? "bad" : "old";
+  return SealOk(sheet) ? "ok" : "bad";
+}
+
+// Does this legend count (for the Hall's honors and New Game+)? Not if it
+// was edited, or the hero was branded a cheater.
+function LegendCounts(l) {
+  return SealOk(l) && !l.cheater;
+}
+
 storage.loadLegends = function (callback) {
+  var self = this;
   this.getItem("legends", function (value) {
     var list = [];
     try { list = JSON.parse(value || "[]") || []; } catch (e) { list = []; }
-    callback(Array.isArray(list) ? list : []);
+    if (!Array.isArray(list)) list = [];
+    // Legends from before seals are sealed once, the first time we look
+    self.getItem("legendsSealed", function (flag) {
+      if (flag) return callback(list);
+      list.forEach(function (l) { if (l && !l.seal) Seal(l); });
+      self.setItem("legends", JSON.stringify(list), function () {
+        self.setItem("legendsSealed", "1", function () { callback(list); });
+      });
+    });
   });
 };
 
@@ -347,6 +430,7 @@ storage.storeLegends = function (list, callback) {
 };
 
 storage.addLegend = function (legend, callback) {
+  Seal(legend);
   this.loadLegends(function (list) {
     list = list.filter(function (l) { return l.id !== legend.id; });
     list.push(legend);
@@ -355,6 +439,7 @@ storage.addLegend = function (legend, callback) {
 };
 
 storage.addToRoster = function (newguy, callback) {
+  Seal(newguy);
   this.loadRoster(function (games) {
     games[newguy.Traits.Name] = newguy;
     storage.storeRoster(games, callback);
@@ -397,7 +482,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 8;
+var SaveVersion = 9;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -472,6 +557,11 @@ var SaveMigrations = [
   function (sheet) {
     sheet.mode = sheet.mode || "normal";
     sheet.legacy = sheet.legacy || null;
+  },
+  // 8 -> 9: saves are sealed (see Seal), and a hero caught cheating is
+  // branded for good (game.cheater: { reason, at, level }).
+  function (sheet) {
+    sheet.cheater = sheet.cheater || null;
   }
 ];
 
@@ -587,7 +677,7 @@ K.Legacy = { Primary: 0.05, Secondary: 0.025 };
 // klasses: {name: [heroes]} }
 function HonoredBy(legends) {
   var races = {}, klasses = {};
-  (legends || []).forEach(function (l) {
+  (legends || []).filter(LegendCounts).forEach(function (l) {
     (races[l.race] = races[l.race] || []).push(l.name);
     (klasses[l.klass] = klasses[l.klass] || []).push(l.name);
   });

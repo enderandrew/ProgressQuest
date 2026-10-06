@@ -39,6 +39,7 @@
   <span id="title">Progress Quest Remix</span>
   <a id="quit"><img src="closeup.png" alt="Close button"></a>
 </div>
+<div id="CheaterBrand" style="display:none"></div>
 
 <script src="jquery-4.0.0.min.js"></script>
 <script src="config.js"></script>
@@ -47,6 +48,7 @@
 <script src="combat.js"></script>
 <script src="main.js"></script>
 <script src="desktop.js"></script>
+<script src="guard.js"></script>
 
 <div class="hbox">
   <div class="vbox" id="Izquierda">
@@ -276,23 +278,6 @@
       <button type="button" id="RetireNo">Cancel</button>
     </div>
   </div>
-</dialog>
-
-<dialog id="StopScreen" aria-label="No recursing!">
-  <p>A problem has been detected and Progress Quest has been shut down to
-  prevent damage to your free time.</p>
-  <p class="big">NO_RECURSING</p>
-  <p>No recursing! You tried to run Progress Quest inside Progress Quest.
-  The universe can only idle so hard.</p>
-  <p>If this is the first time you've seen this Stop error screen, stop
-  double-clicking pq.exe. If this screen appears again, follow these steps:</p>
-  <p>Check to make sure your character is still leveling up without you.
-  Disable or remove any newly installed progress bars. If problems continue,
-  go outside.</p>
-  <p>Technical information:</p>
-  <p>*** STOP: 0x0000PQ0D (0x00000050, 0x00000051, 0x00000045, 0x00000053)</p>
-  <p>*** pq.exe - Address F00DCAFE base at DEADBEEF, DateStamp 3b7d8f2c</p>
-  <p class="blink">Press any key or click to continue _</p>
 </dialog>
 
 <div id="Balloon" role="status" aria-live="polite">

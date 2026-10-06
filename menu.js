@@ -57,7 +57,7 @@ function StartNewGame(plus) {
 // badges that depend on it
 var legendCount = 0;
 function ShowLegendCount(legends) {
-  legendCount = legends.length;
+  legendCount = legends.filter(LegendCounts).length;   // New Game+ needs one that counts
   $("#hallCount").text(legends.length ? legends.length : "");
   var hall = LegacyFromHall(legends);
   var honored = hall.races.length + hall.klasses.length;
@@ -101,7 +101,8 @@ function ShowRoster(games) {
     row.find(".where").text("Level " + c.Traits.Level + " " + c.Traits.Class +
                             (c.bestplot ? " · " + c.bestplot : "") +
                             (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
-                            (c.mode == "plus" ? " \u00b7 New Game+" : ""));
+                            (c.mode == "plus" ? " \u00b7 New Game+" : "") +
+                            (c.cheater || SaveSealState(c) == "bad" ? " \u00b7 \u26a0 branded a cheater" : ""));
     var href = "main.html#" + EncodeName(name);
     row.find(".play").attr("href", href);
     row.on("dblclick", function () { window.location.href = href; })
@@ -132,6 +133,13 @@ function ImportSaves(files) {
       } catch (err) {
         alert(file.name + " doesn't look like a Progress Quest save.");
         return;
+      }
+      // An edited backup (or one with its seal removed) imports branded
+      if (SaveSealState(sheet) == "bad" && !sheet.cheater) {
+        sheet.cheater = { reason: "it was imported from a backup file that had been edited",
+                          at: new Date().toISOString(), level: parseInt(sheet.Traits.Level, 10) || 0 };
+        alert(file.name + " was edited outside the game. " + sheet.Traits.Name +
+              " has been branded a cheater.");
       }
       storage.loadRoster(function (games) {
         if (!games[sheet.Traits.Name] ||
@@ -182,7 +190,7 @@ function ShowHall(legends) {
 
   // Which races and classes have been honored, and by whom
   var byRace = {}, byKlass = {};
-  $.each(legends, function (i, l) {
+  $.each(legends.filter(LegendCounts), function (i, l) {
     (byRace[l.race] = byRace[l.race] || []).push(l.name);
     (byKlass[l.klass] = byKlass[l.klass] || []).push(l.name);
   });
@@ -208,7 +216,9 @@ function ShowHall(legends) {
     list.html('<div class="empty">Reach level ' + FinaleLevel() + ', defeat the Old Bastard\u2122, ' +
               'and retire your hero to be remembered here forever (or until you clear your browser data).</div>');
   } else {
+    var voided = legends.filter(function (l) { return !LegendCounts(l); }).length;
     $("#hallSummary").text(legends.length + (legends.length == 1 ? " legend" : " legends") +
+      (voided ? " (" + voided + " not counted)" : "") +
       " \u00b7 " + hr + " of " + races.length + " races and " + hk + " of " + klasses.length + " classes honored" +
       " \u00b7 New Game+ bonus +" + Math.round(LegacyAverage(LegacyFromHall(legends).bonus) * 1000) / 10 + "% on average");
   }
@@ -227,6 +237,12 @@ function ShowHall(legends) {
     row.find(".best").text([l.bestequip, l.bestspell, l.beststat].filter(Boolean).join(" / "));
     row.find(".taunt").text(l.taunt ? "\u201c" + l.taunt + "\u201d (the Old Bastard\u2122, in the Prologue)" : "");
     if (l.id === hallHighlight) row.addClass("lit");
+    if (!LegendCounts(l)) {
+      row.addClass("void");
+      row.find(".where").append($("<span class='voided'>").text(
+        " \u00b7 \u26a0 " + (l.cheater ? "branded a cheater (" + l.cheater + ")" : "this entry was edited") +
+        "; doesn't count for New Game+"));
+    }
     row.find(".del").on("click", function () {
       if (!confirm("Remove " + l.name + " from the Hall of Legends? Their race and class will no longer count as honored.")) return;
       storage.loadLegends(function (all) {
@@ -263,11 +279,15 @@ function RestoreHall(file) {
     storage.loadLegends(function (legends) {
       var have = {};
       $.each(legends, function (i, l) { have[l.id] = true; });
-      var added = incoming.filter(function (l) { return !have[l.id]; });
+      // Only legends the game wrote (sealed and untouched) come back
+      var edited = incoming.filter(function (l) { return !SealOk(l); }).length;
+      var added = incoming.filter(function (l) { return SealOk(l) && !have[l.id]; });
       storage.storeLegends(legends.concat(added), function () {
         LoadHall();
-        alert(added.length ? "Restored " + added.length + (added.length == 1 ? " legend." : " legends.")
-                           : "Those legends are already in the Hall.");
+        alert((added.length ? "Restored " + added.length + (added.length == 1 ? " legend." : " legends.")
+                            : "No new legends to restore.") +
+              (edited ? " " + edited + (edited == 1 ? " entry was" : " entries were") +
+                        " left out because the backup had been edited." : ""));
       });
     });
   });

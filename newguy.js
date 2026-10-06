@@ -169,6 +169,7 @@ function sold() {
     HPBar: { position: stats['HP Max'], max: stats['HP Max'] },
     MPBar: { position: stats['MP Max'], max: stats['MP Max'] },
     saveVersion: SaveVersion,
+    birthVersion: SaveVersion,   // heroes born from v9 on get the full cheat checks
     buffs: [],
     recentEvent: null,
     finale: null,

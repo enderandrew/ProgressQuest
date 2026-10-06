@@ -570,6 +570,96 @@ function ShowFinaleDialog() {
   if (!dlg.open) dlg.showModal();
 }
 
+// ---- Cheating ---------------------------------------------------------------
+//
+// A single-player game in a browser can't stop a determined cheat, but it
+// can notice the usual ones and say so. A hero caught cheating is branded
+// for good (game.cheater, sealed into the save): they can keep playing,
+// but the brand shows on the character sheet, in Resume and in the Hall,
+// and a branded legend's race and class don't count for New Game+.
+//
+// What gets noticed:
+// - a save edited outside the game (its seal, see Seal in config.js)
+// - game time running faster than the clock (console fast-forwarding,
+//   speed hacks): game time can only pass while the game is open
+// - for heroes created from save version 9 on, things a fair game can't
+//   produce: levels faster than the XP allows, stats, HP/MP or gear far
+//   beyond the level. The limits are several times what simulated heroes
+//   (with a full New Game+ legacy) ever reach.
+K.Guard = {
+  CheckEvery: 50,       // tasks between checks
+  SpeedSlack: 1.1,      // game time may run this much faster than the clock...
+  SpeedGrace: 600,      // ...plus this many seconds (a task already under way)
+  LevelPace: 0.3,       // game time >= this share of the XP time for the level
+  StatMax: 4,           // a core stat <= 18 + this many times typical for the level
+  PoolMax: 3,           // HP/MP Max <= this many times typical, + 100
+  GearAbove: 20         // gear power <= level + this
+};
+
+var _guardSession = null;   // real time and game time when this page started
+
+// later: the save happens as usual (while loading, the sheet isn't ready)
+function Brand(reason, later) {
+  if (!game || game.cheater) return;
+  var level = game.Traits ? parseInt(game.Traits.Level, 10) || 0 : 0;
+  game.cheater = { reason: reason, at: new Date().toISOString(), level: level };
+  Log('Branded a cheater: ' + reason);
+  if (later) return;
+  ShowBrand();
+  if (document) SaveGame();
+}
+
+function ShowBrand() {
+  if (!document) return;
+  var c = game.cheater;
+  $("#CheaterBrand").text(c ? "Branded a cheater: " + c.reason + ". This hero can keep playing, " +
+                          "but won't count for New Game+." : "").toggle(!!c);
+  $("#main").toggleClass("branded", !!c);
+}
+
+// Typical gains are measured, not fixed: see K.Guard
+function CheckForCheating() {
+  if (!document || !game || game.cheater) return;
+  var G = K.Guard, now = Date.now(), elapsed = game.elapsed || 0;
+  if (!_guardSession) _guardSession = { real: now, elapsed: elapsed };
+
+  // Game time can't pass faster than real time, this session...
+  var played = elapsed - _guardSession.elapsed, real = (now - _guardSession.real) / 1000;
+  if (played > real * G.SpeedSlack + G.SpeedGrace)
+    return Brand("the game ran faster than the clock");
+
+  // The Old Bastard(TM) can only have been beaten at the finale level
+  var f = game.finale;
+  if (f && f.state == 'won' && ((f.wonLevel || 0) < K.Boss.Level || GetI(Traits,'Level') < K.Boss.Level))
+    return Brand("they claim to have beaten the Old Bastard\u2122 before level " + K.Boss.Level);
+
+  if ((game.birthVersion || 0) < 9) return;   // older heroes: only the above
+
+  // ...or since the hero was born
+  if (game.birthstamp && elapsed > (now - game.birthstamp) / 1000 * G.SpeedSlack + G.SpeedGrace)
+    return Brand("more time was played than has passed since they were born");
+
+  var level = GetI(Traits,'Level');
+  if (level >= 5) {
+    var xpTime = 0;
+    for (var l = 1; l < level; ++l) xpTime += LevelUpTime(l);
+    if (elapsed < xpTime * G.LevelPace)
+      return Brand("they reached level " + level + " faster than is possible");
+  }
+  var E = ExpectedStat(level), P = ExpectedPool(level);
+  for (var i = 0; i < K.PrimeStats.length; ++i) {
+    var stat = K.PrimeStats[i];
+    if (GetI(Stats, stat) > 18 + G.StatMax * E + 20)
+      return Brand("their " + stat + " is impossibly high for level " + level);
+  }
+  if (GetI(Stats,'HP Max') > G.PoolMax * P + 100 || GetI(Stats,'MP Max') > G.PoolMax * P + 100)
+    return Brand("their HP or MP is impossibly high for level " + level);
+  for (var s = 0; s < K.Equips.length; ++s) {
+    if (SlotPower(K.Equips[s]) > level + G.GearAbove)
+      return Brand("their " + K.Equips[s] + " is far too good for level " + level);
+  }
+}
+
 // ---- Retiring to the Hall of Legends ----------------------------------------
 
 // What the Hall remembers about a hero
@@ -596,7 +686,8 @@ function MakeLegend() {
     bestspell: game.bestspell || '',
     beststat: game.beststat || '',
     taunt: (prologue && prologue.taunt) || '',
-    mode: game.mode || 'normal'
+    mode: game.mode || 'normal',
+    cheater: game.cheater ? game.cheater.reason : null
   };
 }
 
@@ -617,6 +708,7 @@ function AskRetire() {
 // Enshrine the hero, take them off the roster, and go to the Hall
 function Retire() {
   if (!CanRetire()) return;
+  CheckForCheating();   // a branded hero still retires, but won't count
   SuspendAutosave();   // or leaving the page would save them back
   StopTimer();
   var legend = MakeLegend();
@@ -1899,6 +1991,7 @@ function LevelUp() {
   RestoreHealth();  // a new level, a fresh start
   ExpBar.reset(LevelUpTime(GetI(Traits,'Level')));
   Brag('l');
+  CheckForCheating();
 }
 
 function ClearAllSelections() {
@@ -1964,6 +2057,7 @@ function Timer1Timer() {
     Dequeue();
     ShowBuffs();
     ShowRecentAge();
+    if (game.tasks % K.Guard.CheckEvery == 0) CheckForCheating();
   } else {
     var elapsed = timeGetTime() - clock.lasttick;
     if (elapsed > 100) elapsed = 100;
@@ -2157,6 +2251,7 @@ function LoadGame(sheet) {
     return;
   }
 
+  var sealState = SaveSealState(sheet);   // before migrating changes it
   try {
     game = MigrateSave(sheet);
   } catch (err) {
@@ -2164,6 +2259,7 @@ function LoadGame(sheet) {
     window.location.href = "index.html#resume";
     return;
   }
+  if (sealState == "bad") Brand("its save was edited outside the game", true);
 
   if (document) {
     var title = "Progress Quest Remix - " + GameSaveName();
@@ -2192,6 +2288,8 @@ function LoadGame(sheet) {
     this.CheckAll(true);
   });
 
+  ShowBrand();
+  CheckForCheating();
   Log('Loaded game: ' + game.Traits.Name);
   if (!game.elapsed)
     Brag('s');

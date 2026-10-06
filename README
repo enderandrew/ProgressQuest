@@ -247,7 +247,7 @@ keeps idling.
   Virus Downloader    download more RAM
   WinCramp            plays (and stops) the Progress Quest theme
   ZSNES               snes.html
-  pq.exe              No recursing!
+  pq.exe              No recursing! (a stop screen from guard.js)
 
 They are in desktop.js: each icon is a box in pixels of back.jpg
 (1024x768), turned into percentages so it stays on its icon however the
@@ -376,6 +376,43 @@ It is a strong reward. Simulated heroes (6 each, to level 40):
 
 Lower K.Legacy.Primary and Secondary to make it gentler. Saves are now
 version 8 (game.mode, game.legacy).
+
+
+Cheating
+--------
+
+A single-player game in a browser can't stop a determined cheat; the code
+is right there. What it can do is notice the usual ones, and remember. A
+hero caught cheating is branded for good: a red banner on the character
+sheet, a mark in Resume and in the Hall of Legends, and their race and
+class don't count for New Game+ (a branded hero can still play, and
+retire). What gets noticed:
+
+- Saves are sealed (a hash of the contents, config.js: Seal). Edit a save
+  in the browser's storage, or edit a .pqw backup and import it, and the
+  hero is branded. Saves from before sealing are trusted once and sealed.
+- Game time can only pass while the game is open, so game time running
+  faster than the clock (console fast-forwarding, speed hacks) is caught.
+- For heroes created from now on: reaching a level faster than its XP
+  allows, or stats, HP/MP or gear far beyond the level. The limits
+  (K.Guard in main.js) are several times what simulated heroes, even with
+  a full New Game+ legacy, ever reach.
+- Beating the Old Bastard(TM) below the finale level.
+- Hall of Legends entries are sealed too. An edited legend stops counting,
+  and Restore leaves edited entries out.
+
+Fast-forwarding a test character will brand it; that is the speed check
+working. The seal recipe is in the source, so this stops casual tampering,
+not a determined cheat; a server replaying the seeded fights could check
+for real one day.
+
+And then there is the Konami code (up up down down left right left right
+B A, on the menu or in the game): Konami.mp3 plays and a stop screen
+explains that no cheating is allowed (guard.js, which also draws pq.exe's
+stop screen). It doesn't brand anyone. Add Konami.mp3 to the site for the
+sound; without it the stop screen still shows.
+
+Saves are now version 9 (game.seal, game.cheater, game.birthVersion).
 
 
 Endgame: where the content runs out
