@@ -27,6 +27,9 @@
 
 <body>
 
+<!-- The icons on the fake desktop (back.jpg); see desktop.js -->
+<nav id="desktop" aria-label="Desktop"></nav>
+
 <br>
 
 <div class="vbox window" id="main">
@@ -43,6 +46,7 @@
 <script src="events.js"></script>
 <script src="combat.js"></script>
 <script src="main.js"></script>
+<script src="desktop.js"></script>
 
 <div class="hbox">
   <div class="vbox" id="Izquierda">
@@ -94,6 +98,7 @@
     </table>
 
     <div id="Profile" class="profile"></div>
+    <div id="Legacy" class="profile"></div>
 
     <div class="label">Health</div>
     <div class="progress-container" id="HPBar">
@@ -272,6 +277,28 @@
     </div>
   </div>
 </dialog>
+
+<dialog id="StopScreen" aria-label="No recursing!">
+  <p>A problem has been detected and Progress Quest has been shut down to
+  prevent damage to your free time.</p>
+  <p class="big">NO_RECURSING</p>
+  <p>No recursing! You tried to run Progress Quest inside Progress Quest.
+  The universe can only idle so hard.</p>
+  <p>If this is the first time you've seen this Stop error screen, stop
+  double-clicking pq.exe. If this screen appears again, follow these steps:</p>
+  <p>Check to make sure your character is still leveling up without you.
+  Disable or remove any newly installed progress bars. If problems continue,
+  go outside.</p>
+  <p>Technical information:</p>
+  <p>*** STOP: 0x0000PQ0D (0x00000050, 0x00000051, 0x00000045, 0x00000053)</p>
+  <p>*** pq.exe - Address F00DCAFE base at DEADBEEF, DateStamp 3b7d8f2c</p>
+  <p class="blink">Press any key or click to continue _</p>
+</dialog>
+
+<div id="Balloon" role="status" aria-live="polite">
+  <div class="balloon-title"></div>
+  <div class="balloon-text"></div>
+</div>
 
 <div id=bsodmom>
 <div id=bsod>

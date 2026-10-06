@@ -118,6 +118,8 @@ function NewGuyFormLoad() {
     if (Embedded()) $("html").addClass("embedded");
     $("#races, #classes").on("change", "input:radio", ShowNewGuyProfile);
     ShowNewGuyProfile();
+    $("#Suggest").on("click", SuggestPairing);
+    LoadLegacy();
 
     //var caption = 'Progress Quest Remix - New Character';
     //if (MainForm.GetHostName != '')
@@ -170,6 +172,8 @@ function sold() {
     buffs: [],
     recentEvent: null,
     finale: null,
+    mode: NewGamePlus() ? "plus" : "normal",
+    legacy: NewGamePlus() && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } : null,
     queue: [
       "scene|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",
 	  "scene|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",
@@ -205,6 +209,13 @@ function sold() {
                        taunt: prologue.taunt, ending: prologueScenes }];
   newguy.deaths = 0;
   newguy.wounded = 0;
+  // A New Game+ legacy raises HP Max and MP Max from the start
+  if (newguy.legacy) {
+    $.each(["HP Max", "MP Max"], function (i, pool) {
+      var bar = pool == "HP Max" ? newguy.HPBar : newguy.MPBar;
+      bar.max = bar.position = Math.round(stats[pool] * (1 + (newguy.legacy.bonus[pool] || 0)));
+    });
+  }
 
 
   if (document && $("#multiplayer:checked").length > 0) {
@@ -238,6 +249,71 @@ function sold() {
   }
 }
 
+
+// ---- Legacy -----------------------------------------------------------------
+
+// New Game+: the hero gets the legacy of everyone in the Hall of Legends
+// (newguy.html?plus, or the main menu's New Game+). A plain New Game shows
+// what is honored, but gives no bonus.
+function NewGamePlus() {
+  try { return String(window.location.search || "").indexOf("plus") >= 0; } catch (e) { return false; }
+}
+
+var hall = null, honored = { races: {}, klasses: {} };
+
+function LoadLegacy() {
+  if (!storage.loadLegends) return;
+  storage.loadLegends(function (legends) {
+    honored = HonoredBy(legends);
+    hall = LegacyFromHall(legends);
+    hall.count = legends.length;
+    // Mark the honored races and classes
+    $("#races label, #classes label").each(function () {
+      var name = $(this).text();
+      var who = (this.htmlFor.indexOf("Race") == 0 ? honored.races : honored.klasses)[name];
+      var title = $(this).attr("title").split(" \u00b7 ")[0];
+      $(this).toggleClass("honored", !!who)
+        .attr("title", title + (who ? " \u00b7 honored by " + who.join(", ") : " \u00b7 not honored yet"));
+    });
+    ShowLegacyPanel();
+  });
+}
+
+function ShowLegacyPanel() {
+  if (!document || !hall) return;
+  var plus = NewGamePlus();
+  var n = hall.races.length + hall.klasses.length;
+  var total = K.Races.length + K.Klasses.length;
+  $("#legacy").toggleClass("plus", plus);
+  $("#LegacyMode").text(plus ? "New Game+" : "New Game");
+  $("#LegacyCount").text(n + " of " + total + " honored");
+  var avg = Math.round(LegacyAverage(hall.bonus) * 1000) / 10;
+  if (plus) {
+    $("#LegacyBonus").text(n ? "+" + avg + "% on average" : "Nothing honored yet")
+      .attr("title", n ? "This hero starts with: " + LegacySummary(hall.bonus) : "");
+  } else {
+    $("#LegacyBonus").text(n ? "No bonus here; use New Game+" : "Retire a hero at level " +
+                           ((K.Boss && K.Boss.Level) || 50) + " to start")
+      .attr("title", n ? "New Game+ would give: " + LegacySummary(hall.bonus) : "");
+  }
+}
+
+// Pick a race and a class nobody in the Hall has played yet (or any, once
+// they all have), so every hero adds to the collection
+function SuggestPairing() {
+  function pick(name, done) {
+    var all = $("input:radio[name=" + name + "]").toArray();
+    var fresh = all.filter(function (r) { return !done[r.value]; });
+    var choice = (fresh.length ? fresh : all)[Random((fresh.length ? fresh : all).length)];
+    if (choice) {
+      choice.checked = true;
+      choice.scrollIntoView({ block: "nearest" });
+    }
+  }
+  pick("Race", honored.races);
+  pick("Class", honored.klasses);
+  ShowNewGuyProfile();
+}
 
 // In the main menu's New Game window (index.html), this page runs in a
 // frame: the game then opens in the whole window, and Cancel closes the

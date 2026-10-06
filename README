@@ -21,8 +21,9 @@ Worker, which browsers won't start from a file:// URL). For example:
 
 index.html is the main menu, a Windows XP desktop on Bliss: New Game (the
 character roller, newguy.html, in a window), Resume (your saved heroes,
-with backup, import and delete), New Game+ and Challenge Modes
-(placeholders for now), Hall of Legends (retired heroes, see below), FAQ
+with backup, import and delete), New Game+ (a new hero with a legacy, see
+below), Hall of Legends (retired heroes), Challenge Modes (a placeholder
+for now), FAQ
 (faq.php, in a window) and GitHub. Each opens in its own window;
 index.html#resume, #new, #hall, #faq, #github and so on open one directly.
 Quitting a game comes back to Resume, and the old roster.html redirects
@@ -232,6 +233,29 @@ each story), K.Quests, and K.Insults. Placeholders are listed at the
 top of the file. Add a story or a quest by adding an entry.
 
 
+The desktop
+-----------
+
+The game runs on a fake Windows XP desktop (back.jpg), and its icons work.
+Click one to select it, double-click (or press Enter) to open it; on a
+touch screen a tap opens it. Web links open in a new tab, so the game
+keeps idling.
+
+  My Bad Fan-Fic      a timeless classic of fan fiction
+  My Network Places   GeoCities, restored
+  Internet Exploder   the dino runner
+  Virus Downloader    download more RAM
+  WinCramp            plays (and stops) the Progress Quest theme
+  ZSNES               snes.html
+  pq.exe              No recursing!
+
+They are in desktop.js: each icon is a box in pixels of back.jpg
+(1024x768), turned into percentages so it stays on its icon however the
+wallpaper is stretched. To add one, paint it into back.jpg and add a line
+to DesktopIcons. The icons are hidden on screens narrower than 860px,
+where the game window covers the desktop anyway.
+
+
 Narration
 ---------
 
@@ -319,6 +343,39 @@ classes have been honored, which New Game+ will turn into legacy bonuses.
 from one. index.html#hall opens it directly.
 
 Saves are now version 7 (game.finale).
+
+
+New Game+ and legacies
+----------------------
+
+Every race and class that has a hero in the Hall of Legends is honored,
+and New Game+ (main menu) starts a hero with their legacy: for each
+honored race and class, +5% to its primary attribute and +2.5% to its
+secondary (K.Legacy in config.js). The core stats get that share of what
+is typical for the hero's level, so it keeps up all the way to 50; HP Max
+and MP Max get that share of the hero's own. Every attribute is the
+primary of 3 races and 3 classes and the secondary of 3 more of each, so
+honoring all 48 is +45% on every attribute. Play a new race and a new
+class each time and that takes 24 heroes.
+
+- New Game+ is locked until the first hero retires. A plain New Game never
+  gets a legacy, for those who like it hard.
+- The character roller marks honored races and classes (gold), shows the
+  collection in a Legacy box (where the dead Multiplayer option was), and
+  has a Suggest button that picks a race and class nobody has played yet.
+- The legacy is fixed when the hero is created (game.legacy), shown under
+  the stats with a tooltip of the bonuses, and New Game+ heroes are marked
+  in Resume and the Hall.
+
+It is a strong reward. Simulated heroes (6 each, to level 40):
+
+  legacy          time to 40   defeats   win rate
+  none               45 h         851      92.0%
+  half (+22.5%)      28 h         195      98.1%
+  all 48 (+45%)      24 h          71      99.4%
+
+Lower K.Legacy.Primary and Secondary to make it gentler. Saves are now
+version 8 (game.mode, game.legacy).
 
 
 Endgame: where the content runs out

@@ -418,8 +418,8 @@ function HeroSnapshot() {
   var hero = {
     name: Get(Traits,'Name'),
     level: GetI(Traits,'Level'),
-    hp: HPBar.Position(), hpMax: GetI(Stats,'HP Max'),
-    mp: MPBar.Position(), mpMax: GetI(Stats,'MP Max'),
+    hp: HPBar.Position(), hpMax: PoolMax('HP Max'),
+    mp: MPBar.Position(), mpMax: PoolMax('MP Max'),
     weapon: SlotPower('Weapon'),
     armor: ArmorPowerAvg(),
     physicality: CharProfile().physicality,
@@ -849,9 +849,47 @@ function BuffAmount(stat) {
   return total;
 }
 
-// A stat as it counts right now, buffs included
+// A stat as it counts right now: buffs and the New Game+ legacy included
 function EffStat(stat) {
-  return GetI(Stats, stat) + BuffAmount(stat);
+  return GetI(Stats, stat) + BuffAmount(stat) + LegacyAmount(stat);
+}
+
+// ---- New Game+ legacy (see K.Legacy in config.js) ----------------------------
+
+// This hero's legacy share for an attribute (0.15 is +15%)
+function LegacyPct(stat) {
+  return (game.legacy && game.legacy.bonus && game.legacy.bonus[stat]) || 0;
+}
+
+// Core stats: that share of what is typical at the hero's level
+function LegacyAmount(stat) {
+  var pct = LegacyPct(stat);
+  return pct ? Math.round(ExpectedStat(GetI(Traits,'Level')) * pct) : 0;
+}
+
+// HP Max and MP Max as they count (the bars' maximum): the legacy share of
+// the hero's own
+function PoolMax(stat) {
+  return Math.round(GetI(Stats, stat) * (1 + LegacyPct(stat)));
+}
+
+// "New Game+ legacy: 6 races and classes" under the stats
+function ShowLegacy() {
+  if (!document) return;
+  var L = game.legacy;
+  var n = L ? (L.races || []).length + (L.klasses || []).length : 0;
+  if (!n) { $("#Legacy").text("").attr("title", ""); return; }
+  $("#Legacy").text("New Game+ legacy: " + n + (n == 1 ? " race or class" : " races and classes") +
+                    " (+" + Math.round(LegacyAverage(L.bonus) * 1000) / 10 + "% on average)")
+    .attr("title", "From the Hall of Legends, fixed when this hero was created. " +
+          LegacySummary(L.bonus) + ". Core stats get a share of what is typical for your level; " +
+          "HP Max and MP Max a share of your own." +
+          (L.races.length ? "\nRaces: " + L.races.join(", ") : "") +
+          (L.klasses.length ? "\nClasses: " + L.klasses.join(", ") : ""));
+  $("#Stats tr").each(function () {
+    var pct = LegacyPct(Key(this));
+    $(this).toggleClass("legacy", pct > 0);
+  });
 }
 
 // "Buffed: +14 STR (9:41) +12 WIS (3:20)" under the health bars, and the
@@ -1208,8 +1246,8 @@ function RestTime() {
 }
 
 function RestoreHealth() {
-  HPBar.reset(GetI(Stats,'HP Max'), GetI(Stats,'HP Max'));
-  MPBar.reset(GetI(Stats,'MP Max'), GetI(Stats,'MP Max'));
+  HPBar.reset(PoolMax('HP Max'), PoolMax('HP Max'));
+  MPBar.reset(PoolMax('MP Max'), PoolMax('MP Max'));
 }
 
 // ---- Loot ---------------------------------------------------------------
@@ -1290,9 +1328,9 @@ function Put(list, key, value) {
   if (key === 'STR')
     EncumBar.reset(10 + value, EncumBar.Position());
   if (key === 'HP Max')
-    HPBar.reset(value, HPBar.Position());
+    HPBar.reset(PoolMax('HP Max'), HPBar.Position());
   if (key === 'MP Max')
-    MPBar.reset(value, MPBar.Position());
+    MPBar.reset(PoolMax('MP Max'), MPBar.Position());
 
   if (list === Inventory) {
     ShowPurse();
@@ -2145,6 +2183,7 @@ function LoadGame(sheet) {
   ShowBuffs();
   ShowRecentEvent();
   ShowRetire();
+  ShowLegacy();
   ShowFight(true);
   if (Kill)
     Kill.text(game.kill);

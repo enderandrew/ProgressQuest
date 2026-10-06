@@ -45,7 +45,7 @@
     <nav id="menu">
       <button class="xp-button big" data-open="dlgNew"><span class="ico">&#x2694;</span>New Game</button>
       <button class="xp-button big" data-open="dlgResume"><span class="ico">&#x25B6;</span>Resume<span class="count" id="resumeCount"></span></button>
-      <button class="xp-button big" data-open="dlgPlus"><span class="ico">&#x2795;</span>New Game+<span class="soon">soon</span></button>
+      <button class="xp-button big" data-open="dlgPlus"><span class="ico">&#x2795;</span>New Game+<span class="count gold" id="plusCount"></span><span class="soon" id="plusLocked">locked</span></button>
       <button class="xp-button big" data-open="dlgHall"><span class="ico">&#x1F3C6;</span>Hall of Legends<span class="count gold" id="hallCount"></span></button>
       <button class="xp-button big" data-open="dlgChallenge"><span class="ico">&#x1F3B2;</span>Challenge Modes<span class="soon">soon</span></button>
       <button class="xp-button big" data-open="dlgFaq"><span class="ico">&#x2753;</span>FAQ</button>
@@ -92,12 +92,14 @@
     <button class="xp-close" aria-label="Close" data-close></button>
   </div>
   <div class="xp-body">
-    <h2>Coming soon</h2>
-    <p>Reach level 50 and finally settle things with the Old Bastard&trade;. Then retire your
-       hero to the Hall of Legends and start a new one with a legacy bonus from the old
-       one's race and class.</p>
-    <p>There is one bonus for each of the 24 races and 24 classes. Pick your pairings well
-       and it takes 24 heroes to collect them all.</p>
+    <h2>Locked, for now</h2>
+    <p>Reach level <span class="finaleLevel">50</span>, finally settle things with the Old Bastard&trade;,
+       and retire your hero to the Hall of Legends. That unlocks New Game+.</p>
+    <p>A New Game+ hero inherits a legacy from every race and class in the Hall: a bonus to
+       their primary attribute and a smaller one to their secondary. There are 24 races and
+       24 classes; pick new pairings and it takes 24 heroes to collect them all, for +45% to
+       every attribute.</p>
+    <p>A plain New Game always starts without a legacy, if you'd rather do it the hard way.</p>
     <div class="xp-actions"><button class="xp-button" data-close>OK</button></div>
   </div>
 </dialog>

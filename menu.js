@@ -13,16 +13,20 @@ function b64_stringify(value) {
 // ---- Windows --------------------------------------------------------------
 
 function OpenWindow(id) {
+  // New Game+ is the character roller with a legacy, once someone has
+  // retired to the Hall; until then its window explains how to unlock it
+  var plus = id == "dlgPlus" && legendCount > 0;
+  if (plus) id = "dlgNew";
   var dlg = document.getElementById(id);
   if (!dlg) return;
   $("dialog[open]").each(function () { if (this !== dlg) this.close(); });
-  if (id == "dlgNew") StartNewGame();
+  if (id == "dlgNew") StartNewGame(plus);
   if (id == "dlgResume") LoadRoster();
   if (id == "dlgHall") LoadHall();
   if (id == "dlgFaq" && !$("#faqFrame").attr("src")) $("#faqFrame").attr("src", "faq.php");
   if (!dlg.open) dlg.showModal();
   // a link to index.html#resume (or #new...) opens that window
-  history.replaceState(null, "", "#" + id.replace(/^dlg/, "").toLowerCase());
+  history.replaceState(null, "", "#" + (plus ? "plus" : id.replace(/^dlg/, "").toLowerCase()));
 }
 
 function CloseWindows() {
@@ -44,8 +48,23 @@ function WindowFromHash() {
 
 // The character roller runs in its own page (newguy.html) inside the New
 // Game window. It is reloaded each time, so every visit is a fresh roll.
-function StartNewGame() {
-  $("#newguyFrame").attr("src", "newguy.html?embed");
+function StartNewGame(plus) {
+  $("#dlgNewTitle").text(plus ? "New Character (New Game+)" : "New Character");
+  $("#newguyFrame").attr("src", "newguy.html?embed" + (plus ? "&plus" : ""));
+}
+
+// How many heroes are in the Hall (New Game+ unlocks at 1), and the menu
+// badges that depend on it
+var legendCount = 0;
+function ShowLegendCount(legends) {
+  legendCount = legends.length;
+  $("#hallCount").text(legends.length ? legends.length : "");
+  var hall = LegacyFromHall(legends);
+  var honored = hall.races.length + hall.klasses.length;
+  $("#plusCount").text(legends.length ? honored + "/" + (K.Races.length + K.Klasses.length) : "")
+    .attr("title", legends.length ? "Races and classes honored. New Game+ heroes start with " +
+          LegacySummary(hall.bonus) : "");
+  $("#plusLocked").toggle(!legends.length);
 }
 
 // ---- Resume: saved characters ----------------------------------------------
@@ -81,7 +100,8 @@ function ShowRoster(games) {
     row.find(".what").text("the " + c.Traits.Race);
     row.find(".where").text("Level " + c.Traits.Level + " " + c.Traits.Class +
                             (c.bestplot ? " · " + c.bestplot : "") +
-                            (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : ""));
+                            (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
+                            (c.mode == "plus" ? " \u00b7 New Game+" : ""));
     var href = "main.html#" + EncodeName(name);
     row.find(".play").attr("href", href);
     row.on("dblclick", function () { window.location.href = href; })
@@ -156,8 +176,8 @@ function Hours(seconds) {
 }
 
 function ShowHall(legends) {
+  ShowLegendCount(legends);
   legends = legends.slice().sort(function (a, b) { return (b.retired || "").localeCompare(a.retired || ""); });
-  $("#hallCount").text(legends.length ? legends.length : "");
   var list = $("#legends").empty();
 
   // Which races and classes have been honored, and by whom
@@ -189,7 +209,8 @@ function ShowHall(legends) {
               'and retire your hero to be remembered here forever (or until you clear your browser data).</div>');
   } else {
     $("#hallSummary").text(legends.length + (legends.length == 1 ? " legend" : " legends") +
-      " \u00b7 " + hr + " of " + races.length + " races and " + hk + " of " + klasses.length + " classes honored");
+      " \u00b7 " + hr + " of " + races.length + " races and " + hk + " of " + klasses.length + " classes honored" +
+      " \u00b7 New Game+ bonus +" + Math.round(LegacyAverage(LegacyFromHall(legends).bonus) * 1000) / 10 + "% on average");
   }
 
   $.each(legends, function (i, l) {
@@ -197,7 +218,8 @@ function ShowHall(legends) {
     row.find(".name").text(l.name);
     row.find(".what").text("the " + l.race);
     var when = l.retired ? new Date(l.retired).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) : "";
-    row.find(".where").text("Level " + l.level + " " + l.klass + (when ? " \u00b7 retired " + when : ""));
+    row.find(".where").text("Level " + l.level + " " + l.klass + (l.mode == "plus" ? " \u00b7 New Game+" : "") +
+                            (when ? " \u00b7 retired " + when : ""));
     row.find(".feat").text("Beat the Old Bastard\u2122 at level " + l.wonLevel + ", " + Hours(l.wonAt || 0) +
       " in, " + (l.tries > 1 ? "on the " + Ordinal(l.tries) + " try" : "on the first try") +
       " \u00b7 defeated " + (l.deaths || 0).toLocaleString() + (l.deaths == 1 ? " time" : " times") +
@@ -292,7 +314,8 @@ $(function () {
       $("#resumeCount").text(n ? n : "");
     });
   if (HasLocalStorage() || window.openDatabase)
-    storage.loadLegends(function (legends) { $("#hallCount").text(legends.length ? legends.length : ""); });
+    storage.loadLegends(ShowLegendCount);
+  $(".finaleLevel").text(FinaleLevel());
   WindowFromHash();
   $(window).on("hashchange", WindowFromHash);
 });

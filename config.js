@@ -397,7 +397,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 7;
+var SaveVersion = 8;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -467,6 +467,11 @@ var SaveMigrations = [
   // 6 -> 7: the level-50 finale (see K.Boss in combat.js).
   function (sheet) {
     sheet.finale = sheet.finale || null;
+  },
+  // 7 -> 8: New Game+ (game.mode, and the legacy bonus fixed at birth).
+  function (sheet) {
+    sheet.mode = sheet.mode || "normal";
+    sheet.legacy = sheet.legacy || null;
   }
 ];
 
@@ -561,6 +566,73 @@ function AttributeProfile(race, klass) {
 function ProfileSummary(profile) {
   var m = Math.round(100 * profile.physicality);
   return "Martial " + m + "% / Arcane " + (100 - m) + "%";
+}
+
+// ---- Legacy (New Game+) -----------------------------------------------------
+//
+// Every race and class whose hero retired to the Hall of Legends is
+// "honored". A New Game+ hero gets, for each honored race and class,
+// K.Legacy.Primary of its primary attribute and K.Legacy.Secondary of its
+// secondary. The core stats get that share of what is typical for the
+// hero's level (ExpectedStat), so the bonus keeps up from level 1 to 50;
+// HP Max and MP Max get that share of the hero's own maximum. Each
+// attribute is the primary of 3 races and 3 classes and the secondary of
+// 3 more of each, so all 48 honored is +45% on every attribute.
+//
+// The bonus is fixed when the hero is created (game.legacy), so the Hall
+// changing later does not change heroes already playing.
+K.Legacy = { Primary: 0.05, Secondary: 0.025 };
+
+// Honored races and classes from the Hall: { races: {name: [heroes]},
+// klasses: {name: [heroes]} }
+function HonoredBy(legends) {
+  var races = {}, klasses = {};
+  (legends || []).forEach(function (l) {
+    (races[l.race] = races[l.race] || []).push(l.name);
+    (klasses[l.klass] = klasses[l.klass] || []).push(l.name);
+  });
+  return { races: races, klasses: klasses };
+}
+
+// The bonus per attribute (a share: 0.15 is +15%) for these honored races
+// and classes (lists of names)
+function LegacyBonus(races, klasses) {
+  var bonus = {};
+  K.Stats.forEach(function (s) { bonus[s] = 0; });
+  function add(list, honored) {
+    list.forEach(function (entry) {
+      if (honored.indexOf(entry.split("|")[0]) < 0) return;
+      var tags = (entry.split("|")[1] || "").split(",");
+      if (tags[0] in bonus) bonus[tags[0]] += K.Legacy.Primary;
+      if (tags[1] in bonus) bonus[tags[1]] += K.Legacy.Secondary;
+    });
+  }
+  add(K.Races, races || []);
+  add(K.Klasses, klasses || []);
+  K.Stats.forEach(function (s) { bonus[s] = Math.round(bonus[s] * 10000) / 10000; });
+  return bonus;
+}
+
+// What a New Game+ hero starts with, from the Hall of Legends
+function LegacyFromHall(legends) {
+  var h = HonoredBy(legends);
+  var races = Object.keys(h.races).filter(function (n) { return K.Races.some(function (r) { return r.split("|")[0] == n; }); });
+  var klasses = Object.keys(h.klasses).filter(function (n) { return K.Klasses.some(function (k) { return k.split("|")[0] == n; }); });
+  return { races: races, klasses: klasses, bonus: LegacyBonus(races, klasses) };
+}
+
+// "+15% STR, +7.5% CON..." (attributes with a bonus, in the usual order)
+function LegacySummary(bonus) {
+  return K.Stats.filter(function (s) { return bonus && bonus[s] > 0; })
+    .map(function (s) { return "+" + Math.round(bonus[s] * 1000) / 10 + "% " + s; })
+    .join(", ");
+}
+
+// Average bonus across the 8 attributes
+function LegacyAverage(bonus) {
+  var t = 0;
+  K.Stats.forEach(function (s) { t += (bonus && bonus[s]) || 0; });
+  return t / K.Stats.length;
 }
 
 K.Equips = ["Weapon",
