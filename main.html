@@ -228,6 +228,7 @@
   <span id="FightLine"></span>
   <a id="NarrateToggle" href="#" title="Read cinematics and events aloud (N)">Narration: on</a>
   <a id="EventPopupToggle" href="#" title="Show events in a pop-up window (E)">Event pop-ups: on</a>
+  <a id="RetireLink" href="#" title="Retire this hero to the Hall of Legends" style="display:none">Retire</a>
   <a id="LogToggle" href="#" title="Show or hide the combat log (C)">Combat log</a>
 </div>
 <div id="CombatLog" class="listbox"></div>
@@ -240,6 +241,35 @@
     <div id="EventLines"></div>
     <div id="EventResult"></div>
     <div class="dlg-buttons"><button type="button" id="EventOk">OK</button></div>
+  </div>
+</dialog>
+
+<dialog id="FinaleDialog" class="pq-dialog" aria-labelledby="FinaleTitle">
+  <div class="dlg-title"><span id="FinaleTitle">The Old Bastard&trade; is defeated!</span></div>
+  <div class="dlg-body">
+    <div id="FinaleSummary"></div>
+    <div>You can retire to the Hall of Legends, where this hero's race and class
+      count toward New Game+ legacy bonuses. Or keep playing for bigger numbers,
+      and retire whenever you like with the Retire link under the task bar.</div>
+    <div class="dlg-buttons">
+      <button type="button" id="FinaleRetire">Retire to the Hall of Legends</button>
+      <button type="button" id="FinaleKeep">Keep playing</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="RetireDialog" class="pq-dialog" aria-labelledby="RetireTitle">
+  <div class="dlg-title"><span id="RetireTitle">Retire to the Hall of Legends?</span></div>
+  <div class="dlg-body">
+    <div><b id="RetireName"></b> will be enshrined in the Hall of Legends, and the
+      <span id="RetireRace"></span> race and the <span id="RetireClass"></span> class will
+      count as honored. Retired heroes leave your roster, so this can't be undone.</div>
+    <div class="dlg-small"><a id="RetireBackup" href="#">Download a backup first</a>
+      if you might want to play them again.</div>
+    <div class="dlg-buttons">
+      <button type="button" id="RetireYes">Retire</button>
+      <button type="button" id="RetireNo">Cancel</button>
+    </div>
   </div>
 </dialog>
 

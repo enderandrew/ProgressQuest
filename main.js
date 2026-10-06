@@ -308,6 +308,9 @@ function Dequeue() {
       MaybeEvent('road', 'heading');
     } else if (Split(game.task,0) == 'event') {
       FinishEvent();
+    } else if (game.task == 'boss') {
+      FinishFight();
+      FinishBoss();
     } else if (game.task == 'buying') {
       // buy some equipment, if the shop has anything better
       var offer = ShopPower();
@@ -359,6 +362,10 @@ function Dequeue() {
         if (a == 'scene') Narrate(s);
         if (last == 'ev' || last == 'event') RevealEventLine();
         if (last == 'event') game.task = 'event';
+        if (last == 'victory') ShowFinaleDialog();
+      } else if (a == 'boss') {
+        game.queue.shift();
+        BeginBoss();
       } else {
         throw 'bah!' + a;
       }
@@ -373,6 +380,8 @@ function Dequeue() {
         Task('Heading to the Killing Fields™', 4 * 1000);
         game.task = 'heading';
       }
+    } else if (FinaleDue()) {
+      StartFinale();   // queues the cinematic and the fight; picked up next time round
     } else if (NeedsRest()) {
       // A heal spell gets you back on your feet twice as fast
       var heals = game.Spells.filter(function (sp) { return SpellType(sp[0]) == 'heal'; });
@@ -458,6 +467,168 @@ function FinishFight() {
   }
   fight.done = true;
   ShowFight();
+}
+
+// ---- The finale -----------------------------------------------------------
+
+// At K.Boss.Level the hero goes after the Old Bastard(TM) from the Prologue.
+// game.finale: { state: 'pending' or 'won', tries, nextTry (game seconds),
+// wonAt, wonLevel }. null until the first attempt.
+function FinaleDue() {
+  if (GetI(Traits,'Level') < K.Boss.Level || game.event) return false;
+  var f = game.finale;
+  if (f && f.state == 'won') return false;
+  return !f || (game.elapsed || 0) >= (f.nextTry || 0);
+}
+
+function FinaleVars() {
+  var vars = StoryVars();
+  var prologue = StoryFor(0);
+  vars.taunt = (prologue && prologue.taunt) || Insult();
+  vars.tries = ((game.finale && game.finale.tries) || 0) + 1;
+  vars.hours = Math.round((game.elapsed || 0) / 3600);
+  return vars;
+}
+
+// Queue the lines of a part of the finale (K.FinaleStory), narrated. The
+// last line can carry a marker for Dequeue.
+function QueueFinale(part, marker) {
+  var vars = FinaleVars();
+  var lines = K.FinaleStory[part] || [];
+  $.each(lines, function (i, line) {
+    var text = ProperName(StoryText(line, vars)).replace(/\|/g, '/');
+    game.queue.push('scene|4|' + text + (marker && i == lines.length - 1 ? '|' + marker : ''));
+  });
+}
+
+function StartFinale() {
+  game.finale = game.finale || { state: 'pending', tries: 0 };
+  QueueFinale(game.finale.tries && K.FinaleStory.rematch ? 'rematch' : 'approach');
+  game.queue.push('boss|0|The Old Bastard\u2122');
+  Log('The finale begins');
+}
+
+// The fight itself. Settled now, like any fight; the task bar plays it out.
+function BeginBoss() {
+  var B = K.Boss;
+  RestoreHealth();   // you rested up for this
+  var escapes = game.finale.tries || 0;   // he gets older every time he runs
+  var foe = { name: 'the Old Bastard\u2122',
+              level: Max(1, B.Level + B.BossLevelGap - Min(B.WeakenMax, escapes * B.WeakenPerEscape)),
+              qty: 1, boss: true, hpMult: B.BossHP, maxRounds: B.BossMaxRounds };
+  var fight = ResolveCombat(HeroSnapshot(), foe, Random(0x7fffffff));
+  fight.foe = foe.name;
+  fight.foeLevel = foe.level;
+  fight.qty = 1;
+  fight.boss = true;
+  game.combat = fight;
+  game.finale.tries = (game.finale.tries || 0) + 1;
+  Task('Fighting the Old Bastard\u2122 for the fate of everything (attempt ' + game.finale.tries + ')',
+       Min(60000, 10000 + fight.rounds * 800));
+  game.task = 'boss';
+  ShowFight(true);
+}
+
+// The fight has played out (FinishFight has applied it)
+function FinishBoss() {
+  var fight = game.combat || {};
+  var f = game.finale = game.finale || { state: 'pending', tries: 1 };
+  if (fight.outcome == 'win' || fight.outcome == 'close') {
+    f.state = 'won';
+    f.wonAt = game.elapsed || 0;
+    f.wonLevel = GetI(Traits,'Level');
+    Log('Defeated the Old Bastard\u2122 after ' + f.tries + (f.tries == 1 ? ' try' : ' tries'));
+    QueueFinale('victory', 'victory');
+    ShowRetire();
+    Brag('f');
+  } else {
+    f.nextTry = (game.elapsed || 0) + K.Boss.RetryMinutes * 60;
+    QueueFinale('escape');
+  }
+}
+
+function CanRetire() {
+  return !!(game.finale && game.finale.state == 'won');
+}
+
+// "Retire" under the task bar, once the Old Bastard(TM) is beaten
+function ShowRetire() {
+  if (!document) return;
+  $("#RetireLink").toggle(CanRetire());
+}
+
+function ShowFinaleDialog() {
+  if (!document || !CanRetire()) return;
+  var dlg = document.getElementById("FinaleDialog");
+  if (!dlg || !dlg.showModal) return;
+  var f = game.finale;
+  $("#FinaleSummary").text(Get(Traits,'Name') + " beat the Old Bastard\u2122 at level " + f.wonLevel +
+    ", " + RoughTime(f.wonAt) + " into the adventure" +
+    (f.tries > 1 ? ", on attempt " + f.tries : ", on the first try") +
+    ", after being defeated " + (game.deaths || 0) + (game.deaths == 1 ? " time." : " times."));
+  CloseEventPopup();
+  if (!dlg.open) dlg.showModal();
+}
+
+// ---- Retiring to the Hall of Legends ----------------------------------------
+
+// What the Hall remembers about a hero
+function MakeLegend() {
+  var f = game.finale || {};
+  var prologue = StoryFor(0);
+  var stats = {};
+  $.each(K.Stats, function (i, s) { stats[s] = GetI(Stats, s); });
+  return {
+    id: Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36),
+    name: Get(Traits,'Name'),
+    race: Get(Traits,'Race'),
+    klass: Get(Traits,'Class'),
+    level: GetI(Traits,'Level'),
+    stats: stats,
+    retired: new Date().toISOString(),
+    played: Math.round(game.elapsed || 0),
+    wonLevel: f.wonLevel || GetI(Traits,'Level'),
+    wonAt: Math.round(f.wonAt || game.elapsed || 0),
+    tries: f.tries || 1,
+    deaths: game.deaths || 0,
+    acts: game.act || 0,
+    bestequip: game.bestequip || '',
+    bestspell: game.bestspell || '',
+    beststat: game.beststat || '',
+    taunt: (prologue && prologue.taunt) || '',
+    mode: game.mode || 'normal'
+  };
+}
+
+function AskRetire() {
+  if (!document || !CanRetire()) return;
+  var dlg = document.getElementById("RetireDialog");
+  $("#RetireName").text(Get(Traits,'Name'));
+  $("#RetireRace").text(Get(Traits,'Race'));
+  $("#RetireClass").text(Get(Traits,'Class'));
+  $("#RetireBackup")
+    .attr("href", "data:text/plain;charset=utf-8," +
+          encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(game))))))
+    .attr("download", Get(Traits,'Name') + ".pqw");
+  $("#FinaleDialog")[0].close();
+  if (!dlg.open) dlg.showModal();
+}
+
+// Enshrine the hero, take them off the roster, and go to the Hall
+function Retire() {
+  if (!CanRetire()) return;
+  SuspendAutosave();   // or leaving the page would save them back
+  StopTimer();
+  var legend = MakeLegend();
+  var name = Get(Traits,'Name');
+  storage.addLegend(legend, function () {
+    storage.loadRoster(function (games) {
+      delete games[name];
+      storage.storeRoster(games, function () {
+        window.location.href = "index.html#hall/" + legend.id;
+      });
+    });
+  });
 }
 
 // ---- Narration ------------------------------------------------------------
@@ -1829,6 +2000,11 @@ function FormCreate() {
       ToggleEventPopups();
     });
     ShowEventPopupToggle();
+    $("#RetireLink").on("click", function (e) { e.preventDefault(); AskRetire(); });
+    $("#FinaleRetire").on("click", AskRetire);
+    $("#FinaleKeep").on("click", function () { this.closest("dialog").close(); });
+    $("#RetireYes").on("click", Retire);
+    $("#RetireNo").on("click", function () { this.closest("dialog").close(); });
     // Close the event pop-up with a click anywhere on it (or its backdrop)
     $("#EventDialog").on("click", CloseEventPopup);
     try {
@@ -1896,7 +2072,7 @@ function quit() {
     if (window.opener) {
       window.close();
     } else {
-      window.location.href = "roster.html";
+      window.location.href = "index.html#resume";
     }
   });
 }
@@ -1939,7 +2115,7 @@ function SaveGame(callback) {
 function LoadGame(sheet) {
   if (!sheet) {
     alert("Error loading game");
-    window.location.href = "roster.html";
+    window.location.href = "index.html#resume";
     return;
   }
 
@@ -1947,7 +2123,7 @@ function LoadGame(sheet) {
     game = MigrateSave(sheet);
   } catch (err) {
     alert(err.message);
-    window.location.href = "roster.html";
+    window.location.href = "index.html#resume";
     return;
   }
 
@@ -1968,6 +2144,7 @@ function LoadGame(sheet) {
   ShowCondition();
   ShowBuffs();
   ShowRecentEvent();
+  ShowRetire();
   ShowFight(true);
   if (Kill)
     Kill.text(game.kill);
@@ -2114,7 +2291,7 @@ function FormKeyDown(e) {
         `resizable,width=${$("#main")[0].offsetWidth},height=${$("#main")[0].offsetHeight},popup,location=0`);
       if(ext && !ext.closed && typeof ext.closed !== 'undefined') {
         // popup was apparently not blocked
-        window.location.href = "roster.html";  // this window can go back to the roster
+        window.location.href = "index.html#resume";  // this window can go back to the menu
       }
     });
   }

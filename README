@@ -21,11 +21,12 @@ Worker, which browsers won't start from a file:// URL). For example:
 
 index.html is the main menu, a Windows XP desktop on Bliss: New Game (the
 character roller, newguy.html, in a window), Resume (your saved heroes,
-with backup, import and delete), New Game+, Hall of Legends and Challenge
-Modes (placeholders for now), FAQ (faq.php, in a window) and GitHub.
-Each opens in its own window;
-index.html#resume, #new, #faq, #github and so on open one directly. Quitting a
-game comes back to Resume, and the old roster.html redirects there.
+with backup, import and delete), New Game+ and Challenge Modes
+(placeholders for now), Hall of Legends (retired heroes, see below), FAQ
+(faq.php, in a window) and GitHub. Each opens in its own window;
+index.html#resume, #new, #hall, #faq, #github and so on open one directly.
+Quitting a game comes back to Resume, and the old roster.html redirects
+there.
 
 jQuery 4 is bundled as jquery-4.0.0.min.js, so no network is needed.
 
@@ -284,6 +285,40 @@ is within a couple of points of a game with no events. A buff running is
 worth about one point of win rate, and about one fight in seven is fought
 under one. Raise K.BuffPercent for stronger ones; even 40% only moved the
 win rate by about a point.
+
+
+The finale, retiring and the Hall of Legends
+--------------------------------------------
+
+At level 50 (K.Boss.Level in combat.js) the Prologue's promise comes due.
+Instead of the next monster, the hero tracks down the Old Bastard(TM),
+who sneers the same insult he used in your dream, and they fight. It is
+a real fight (ResolveCombat) against a level 51 monster with twice the
+usual health who never gives up. The scenes are narrated, and their lines
+are in story.js (K.FinaleStory) with the usual placeholders plus {taunt},
+{tries} and {hours}.
+
+- Lose, or run, and it counts as a defeat; he gets away. The hero keeps
+  playing and tries again 30 minutes of game time later, and every escape
+  leaves him a level older and slower (at most 10). Measured on 6
+  simulated level-50 heroes: the strongest win the first fight 98% of the
+  time, an average one about a third; it takes 2.3 attempts on average
+  and 9 in 10 win within 5.
+- Win, and a victory scene plays, then a window offers Retire or Keep
+  playing. Playing on is for bigger numbers; "Retire" stays under the task
+  bar.
+- Retiring enshrines the hero in the Hall of Legends and takes them off
+  the roster (the confirmation offers a backup download first).
+
+The Hall of Legends (main menu) is kept in this browser and shared by all
+characters: each legend's race and class, level, when they beat the Old
+Bastard(TM) and on which try, defeats, time played, best gear, spell and
+stat, and the Prologue taunt. It also shows which of the 24 races and 24
+classes have been honored, which New Game+ will turn into legacy bonuses.
+"Back up Hall" downloads it as a file, and "Restore" adds legends back
+from one. index.html#hall opens it directly.
+
+Saves are now version 7 (game.finale).
 
 
 Endgame: where the content runs out

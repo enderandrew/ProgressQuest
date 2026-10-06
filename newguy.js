@@ -115,6 +115,7 @@ function NewGuyFormLoad() {
     $("#RandomName").on("click", GenClick);
     $('#Sold').on("click", sold);
     $('#quit').on("click", cancel);
+    if (Embedded()) $("html").addClass("embedded");
     $("#races, #classes").on("change", "input:radio", ShowNewGuyProfile);
     ShowNewGuyProfile();
 
@@ -168,6 +169,7 @@ function sold() {
     saveVersion: SaveVersion,
     buffs: [],
     recentEvent: null,
+    finale: null,
     queue: [
       "scene|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",
 	  "scene|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",
@@ -237,14 +239,29 @@ function sold() {
 }
 
 
+// In the main menu's New Game window (index.html), this page runs in a
+// frame: the game then opens in the whole window, and Cancel closes the
+// New Game window instead.
+function Embedded() {
+  try {
+    return String(window.location.search || "").indexOf("embed") >= 0 &&
+           !!window.parent && window.parent !== window;
+  } catch (e) {
+    return false;   // no page (sim.js), or a parent we can't see
+  }
+}
+
 function charIsBorn(newguy) {
   storage.addToRoster(newguy, function () {
-    window.location.href = "main.html#" + EncodeName(newguy.Traits.Name);
+    (Embedded() ? window.top : window).location.href = "main.html#" + EncodeName(newguy.Traits.Name);
   });
 }
 
 function cancel() {
-  window.location.href = "roster.html";
+  if (Embedded())
+    window.parent.postMessage("pq-close-newguy", window.location.origin);
+  else
+    window.location.href = "index.html";
 }
 
 function GenClick() {

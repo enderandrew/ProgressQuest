@@ -18,6 +18,7 @@ function OpenWindow(id) {
   $("dialog[open]").each(function () { if (this !== dlg) this.close(); });
   if (id == "dlgNew") StartNewGame();
   if (id == "dlgResume") LoadRoster();
+  if (id == "dlgHall") LoadHall();
   if (id == "dlgFaq" && !$("#faqFrame").attr("src")) $("#faqFrame").attr("src", "faq.php");
   if (!dlg.open) dlg.showModal();
   // a link to index.html#resume (or #new...) opens that window
@@ -29,8 +30,13 @@ function CloseWindows() {
 }
 
 // index.html#resume, #new, #plus, #hall, #challenge, #faq, #github
+// index.html#hall/<id> opens the Hall with that legend highlighted (a hero
+// who just retired).
+var hallHighlight = "";
 function WindowFromHash() {
-  var name = (window.location.hash || "").slice(1).toLowerCase();
+  var parts = (window.location.hash || "").slice(1).split("/");
+  var name = parts[0].toLowerCase();
+  hallHighlight = parts[1] ? decodeURIComponent(parts[1]) : "";
   var ids = { "new": "dlgNew", resume: "dlgResume", plus: "dlgPlus", hall: "dlgHall",
               challenge: "dlgChallenge", faq: "dlgFaq", github: "dlgGitHub" };
   if (ids[name]) OpenWindow(ids[name]);
@@ -74,7 +80,8 @@ function ShowRoster(games) {
     row.find(".name").text(name);
     row.find(".what").text("the " + c.Traits.Race);
     row.find(".where").text("Level " + c.Traits.Level + " " + c.Traits.Class +
-                            (c.bestplot ? " · " + c.bestplot : ""));
+                            (c.bestplot ? " · " + c.bestplot : "") +
+                            (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : ""));
     var href = "main.html#" + EncodeName(name);
     row.find(".play").attr("href", href);
     row.on("dblclick", function () { window.location.href = href; })
@@ -132,6 +139,118 @@ function EnableDropImport() {
   });
 }
 
+// ---- Hall of Legends ---------------------------------------------------------
+
+function LoadHall() {
+  storage.loadLegends(ShowHall);
+}
+
+function Ordinal(n) {
+  var s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function Hours(seconds) {
+  var h = seconds / 3600;
+  return h < 10 ? h.toFixed(1) + " hours" : Math.round(h).toLocaleString() + " hours";
+}
+
+function ShowHall(legends) {
+  legends = legends.slice().sort(function (a, b) { return (b.retired || "").localeCompare(a.retired || ""); });
+  $("#hallCount").text(legends.length ? legends.length : "");
+  var list = $("#legends").empty();
+
+  // Which races and classes have been honored, and by whom
+  var byRace = {}, byKlass = {};
+  $.each(legends, function (i, l) {
+    (byRace[l.race] = byRace[l.race] || []).push(l.name);
+    (byKlass[l.klass] = byKlass[l.klass] || []).push(l.name);
+  });
+  function chips(target, names, by, counter) {
+    var box = $(target).empty(), honored = 0;
+    $.each(names, function (i, n) {
+      var who = by[n];
+      if (who) ++honored;
+      $("<span>").text(n).toggleClass("honored", !!who)
+        .attr("title", who ? "Honored by " + who.join(", ") : "Not yet honored")
+        .appendTo(box);
+    });
+    $(counter).text(honored + " of " + names.length);
+    return honored;
+  }
+  var races = K.Races.map(function (r) { return r.split("|")[0]; });
+  var klasses = K.Klasses.map(function (k) { return k.split("|")[0]; });
+  var hr = chips("#raceChips", races, byRace, "#raceCount");
+  var hk = chips("#klassChips", klasses, byKlass, "#klassCount");
+
+  if (!legends.length) {
+    $("#hallSummary").text("The Hall is empty, for now.");
+    list.html('<div class="empty">Reach level ' + FinaleLevel() + ', defeat the Old Bastard\u2122, ' +
+              'and retire your hero to be remembered here forever (or until you clear your browser data).</div>');
+  } else {
+    $("#hallSummary").text(legends.length + (legends.length == 1 ? " legend" : " legends") +
+      " \u00b7 " + hr + " of " + races.length + " races and " + hk + " of " + klasses.length + " classes honored");
+  }
+
+  $.each(legends, function (i, l) {
+    var row = $(document.getElementById("legendRow").content.cloneNode(true)).children().first();
+    row.find(".name").text(l.name);
+    row.find(".what").text("the " + l.race);
+    var when = l.retired ? new Date(l.retired).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) : "";
+    row.find(".where").text("Level " + l.level + " " + l.klass + (when ? " \u00b7 retired " + when : ""));
+    row.find(".feat").text("Beat the Old Bastard\u2122 at level " + l.wonLevel + ", " + Hours(l.wonAt || 0) +
+      " in, " + (l.tries > 1 ? "on the " + Ordinal(l.tries) + " try" : "on the first try") +
+      " \u00b7 defeated " + (l.deaths || 0).toLocaleString() + (l.deaths == 1 ? " time" : " times") +
+      " \u00b7 " + Hours(l.played || 0) + " played");
+    row.find(".best").text([l.bestequip, l.bestspell, l.beststat].filter(Boolean).join(" / "));
+    row.find(".taunt").text(l.taunt ? "\u201c" + l.taunt + "\u201d (the Old Bastard\u2122, in the Prologue)" : "");
+    if (l.id === hallHighlight) row.addClass("lit");
+    row.find(".del").on("click", function () {
+      if (!confirm("Remove " + l.name + " from the Hall of Legends? Their race and class will no longer count as honored.")) return;
+      storage.loadLegends(function (all) {
+        storage.storeLegends(all.filter(function (x) { return x.id !== l.id; }), LoadHall);
+      });
+    });
+    list.append(row);
+  });
+  var lit = list.find(".lit")[0];
+  if (lit) lit.scrollIntoView({ block: "nearest" });
+
+  $("#hallBackup")
+    .attr("href", "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(legends, null, 1)))
+    .attr("download", "hall-of-legends.json");
+}
+
+// The finale level lives in combat.js (K.Boss), which the menu doesn't load
+function FinaleLevel() {
+  return (K.Boss && K.Boss.Level) || 50;
+}
+
+// Add legends from a backup (ones already here are left alone)
+function RestoreHall(file) {
+  file.text().then(function (text) {
+    var incoming;
+    try {
+      incoming = JSON.parse(text);
+      if (!Array.isArray(incoming)) throw new Error("not a list");
+      incoming = incoming.filter(function (l) { return l && l.id && l.name && l.race && l.klass; });
+    } catch (e) {
+      alert(file.name + " doesn't look like a Hall of Legends backup.");
+      return;
+    }
+    storage.loadLegends(function (legends) {
+      var have = {};
+      $.each(legends, function (i, l) { have[l.id] = true; });
+      var added = incoming.filter(function (l) { return !have[l.id]; });
+      storage.storeLegends(legends.concat(added), function () {
+        LoadHall();
+        alert(added.length ? "Restored " + added.length + (added.length == 1 ? " legend." : " legends.")
+                           : "Those legends are already in the Hall.");
+      });
+    });
+  });
+}
+
 // ---- Taskbar clock ---------------------------------------------------------
 
 function TickClock() {
@@ -160,6 +279,7 @@ $(function () {
 
   $("#start").on("click", CloseWindows);
   $("#importFile").on("change", function () { ImportSaves(this.files); this.value = ""; });
+  $("#hallRestore").on("change", function () { if (this.files[0]) RestoreHall(this.files[0]); this.value = ""; });
 
   EnableDropImport();
   TickClock();
@@ -171,6 +291,8 @@ $(function () {
       var n = Object.keys(games).length;
       $("#resumeCount").text(n ? n : "");
     });
+  if (HasLocalStorage() || window.openDatabase)
+    storage.loadLegends(function (legends) { $("#hallCount").text(legends.length ? legends.length : ""); });
   WindowFromHash();
   $(window).on("hashchange", WindowFromHash);
 });

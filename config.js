@@ -332,6 +332,28 @@ storage.storeRoster = function (roster, callback) {
   }
 }
 
+// The Hall of Legends: retired heroes, shared by every character in this
+// browser (see MakeLegend in main.js for what is kept).
+storage.loadLegends = function (callback) {
+  this.getItem("legends", function (value) {
+    var list = [];
+    try { list = JSON.parse(value || "[]") || []; } catch (e) { list = []; }
+    callback(Array.isArray(list) ? list : []);
+  });
+};
+
+storage.storeLegends = function (list, callback) {
+  this.setItem("legends", JSON.stringify(list), callback);
+};
+
+storage.addLegend = function (legend, callback) {
+  this.loadLegends(function (list) {
+    list = list.filter(function (l) { return l.id !== legend.id; });
+    list.push(legend);
+    storage.storeLegends(list, callback);
+  });
+};
+
 storage.addToRoster = function (newguy, callback) {
   this.loadRoster(function (games) {
     games[newguy.Traits.Name] = newguy;
@@ -375,7 +397,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 6;
+var SaveVersion = 7;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -441,6 +463,10 @@ var SaveMigrations = [
   function (sheet) {
     sheet.buffs = sheet.buffs || [];
     sheet.recentEvent = sheet.recentEvent || null;
+  },
+  // 6 -> 7: the level-50 finale (see K.Boss in combat.js).
+  function (sheet) {
+    sheet.finale = sheet.finale || null;
   }
 ];
 

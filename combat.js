@@ -99,6 +99,29 @@ K.Defeat = {
   CautionPerDefeat: 2, CautionDecay: 0.25, CautionMax: 10
 };
 
+// The finale (used by main.js): at Level the hero tracks down the Old
+// Bastard(TM) and fights him. He is a monster of level Level +
+// BossLevelGap (not your level: getting stronger helps), with BossHP times
+// a normal monster's health, he never gives up, and the fight can run to
+// BossMaxRounds. Lose (or run) and he gets away; you can try again after
+// RetryMinutes of game time, and each escape leaves him a level older and
+// slower (WeakenPerEscape, up to WeakenMax). The lines are in story.js
+// (K.FinaleStory).
+//
+// Measured on 6 simulated level-50 heroes: the strongest win the first
+// fight 98% of the time, an average one about a third, the most fragile
+// almost never; on average it takes 2.3 attempts, 9 in 10 heroes win
+// within 5, and none needed more than 8.
+K.Boss = {
+  Level: 50,
+  BossLevelGap: 1,
+  BossHP: 2,
+  BossMaxRounds: 60,
+  RetryMinutes: 30,
+  WeakenPerEscape: 1,
+  WeakenMax: 10
+};
+
 // Loot tuning (used by main.js)
 K.Loot = {
   // Chance a beaten monster drops its item: base, +per level the monster
@@ -199,6 +222,8 @@ function _log2(x) { return Math.log(x) / Math.LN2; }
 //         wounded,              (true after a recent defeat)
 //         spells: [{name, level, roman, type}] }  (type: see SpellType)
 // foe:  { name, level, qty }    (level is per monster; qty fight together)
+//       optional: boss (never gives up), hpMult (more health),
+//       maxRounds (longer fights)
 // seed: anything; the same seed replays the same fight
 //
 // Returns { outcome, rounds, hpLost, mpSpent, foeFled, log }
@@ -218,7 +243,10 @@ function ResolveCombat(hero, foe, seed) {
   // The monster: typical stats for its level, give or take
   var mon = {};
   $.each(K.PrimeStats, function (i, s) { mon[s] = E * between(0.85, 1.15); });
-  var perHP = Math.max(1, P * C.MonsterHP * between(0.85, 1.15));
+  // baseHP sets how hard the hero hits; a boss (hpMult) just has more of it
+  var baseHP = Math.max(1, P * C.MonsterHP * between(0.85, 1.15));
+  var perHP = baseHP * (foe.hpMult || 1);
+  var maxRounds = foe.maxRounds || C.MaxRounds;
   var monHP = perHP * qty;
   var monMax = monHP;
 
@@ -313,7 +341,7 @@ function ResolveCombat(hero, foe, seed) {
       }
       break;
     default:  // damage
-      var sdmg = perHP / C.SpellHitsToKill *
+      var sdmg = baseHP / C.SpellHitsToKill *
         Math.pow(ratio(hero.INT, mon.INT), C.SpellDamageExponent) *
         levelF(spell) * (1 + buff) * (1 + debuff) * between(0.8, 1.2);
       monHP -= sdmg;
@@ -330,7 +358,7 @@ function ResolveCombat(hero, foe, seed) {
     // Melee
     var hit = _clamp(C.HeroHitBase + C.HitSlope * _log2(ratio(hero.DEX, mon.DEX)), C.HitMin, C.HitMax);
     if (roll() < hit) {
-      var dmg = perHP / C.MeleeHitsToKill *
+      var dmg = baseHP / C.MeleeHitsToKill *
         Math.pow(ratio(hero.STR, mon.STR), C.DamageExponent) * weaponF *
         (1 + buff) * (1 + debuff) * between(0.8, 1.2);
       monHP -= dmg;
@@ -383,7 +411,7 @@ function ResolveCombat(hero, foe, seed) {
     if (outcome) break;
 
     // CHA: a beaten monster may give up
-    if (monHP < monMax / 2) {
+    if (!foe.boss && monHP < monMax / 2) {
       var giveUp = _clamp(C.GiveUpBase * ratio(hero.CHA, mon.CHA), 0, C.GiveUpMax);
       if (roll() < giveUp) {
         log.push(ProperName(name) + " gives up and runs off");
@@ -400,7 +428,7 @@ function ResolveCombat(hero, foe, seed) {
       }
       log.push("You try to flee, but " + name + " blocks the way");
     }
-    if (rounds >= C.MaxRounds) {
+    if (rounds >= maxRounds) {
       log.push("You and " + name + " lose interest and wander off");
       outcome = "flee";
     }

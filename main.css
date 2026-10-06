@@ -289,7 +289,7 @@ tr { height: auto; min-height: 15px; }
   text-overflow: ellipsis;
 }
 #FightLine.defeat { color: #b33; font-weight: bold; }
-#LogToggle, #NarrateToggle, #EventPopupToggle { color: #008; cursor: pointer; text-decoration: underline; white-space: nowrap; }
+#LogToggle, #NarrateToggle, #EventPopupToggle, #RetireLink { color: #008; cursor: pointer; text-decoration: underline; white-space: nowrap; }
 #CombatLog {
   display: none;
   height: 120px;
@@ -356,3 +356,23 @@ body.show-log #CombatLog { display: block; }
 #EventLines div { margin-bottom: 6px; }
 #EventDialog .dlg-buttons { text-align: right; margin-top: 8px; }
 #EventDialog button { font-family: inherit; font-size: 9pt; padding: 2px 18px; }
+
+/* ---- Finale and retiring ----------------------------------------------------- */
+#RetireLink { font-weight: bold; color: #806000; }
+.pq-dialog {
+  padding: 0;
+  width: min(460px, calc(100vw - 32px));
+  background-color: #e7e7e7;
+  border: outset 2px silver;
+  font-family: Tahoma, Helvetica, sans-serif;
+  text-align: left;
+  color: black;
+}
+.pq-dialog::backdrop { background: rgba(0, 0, 40, 0.45); }
+.pq-dialog .dlg-title { background-color: #008; color: white; font-weight: bold; font-size: 10pt; padding: 3px 6px; }
+.pq-dialog .dlg-body { padding: 10px 12px 8px; }
+.pq-dialog .dlg-body div { font-size: 10pt; line-height: 1.4; margin-bottom: 8px; }
+.pq-dialog .dlg-body div.dlg-small { font-size: 9pt; color: #444; }
+#FinaleSummary { font-weight: bold; }
+.pq-dialog .dlg-buttons { text-align: right; margin: 10px 0 0; }
+.pq-dialog button { font-family: inherit; font-size: 9pt; padding: 2px 12px; margin-left: 6px; }

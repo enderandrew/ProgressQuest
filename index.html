@@ -46,7 +46,7 @@
       <button class="xp-button big" data-open="dlgNew"><span class="ico">&#x2694;</span>New Game</button>
       <button class="xp-button big" data-open="dlgResume"><span class="ico">&#x25B6;</span>Resume<span class="count" id="resumeCount"></span></button>
       <button class="xp-button big" data-open="dlgPlus"><span class="ico">&#x2795;</span>New Game+<span class="soon">soon</span></button>
-      <button class="xp-button big" data-open="dlgHall"><span class="ico">&#x1F3C6;</span>Hall of Legends<span class="soon">soon</span></button>
+      <button class="xp-button big" data-open="dlgHall"><span class="ico">&#x1F3C6;</span>Hall of Legends<span class="count gold" id="hallCount"></span></button>
       <button class="xp-button big" data-open="dlgChallenge"><span class="ico">&#x1F3B2;</span>Challenge Modes<span class="soon">soon</span></button>
       <button class="xp-button big" data-open="dlgFaq"><span class="ico">&#x2753;</span>FAQ</button>
       <button class="xp-button big" data-open="dlgGitHub"><span class="ico">&#x1F4BB;</span>GitHub</button>
@@ -109,12 +109,18 @@
     <button class="xp-close" aria-label="Close" data-close></button>
   </div>
   <div class="xp-body">
-    <h2>Coming soon</h2>
-    <p>Heroes who reach level 50 and retire are enshrined here, with the legacy bonuses they
-       earned, how long it took, and how many times they were dragged back to town.</p>
-    <p>The Hall is kept in this browser and shared by all your characters. A Hall of
-       Fame across players needs a server, and will come later.</p>
-    <div class="xp-actions"><button class="xp-button" data-close>OK</button></div>
+    <p id="hallSummary"></p>
+    <div class="xp-list" id="legends"></div>
+    <h3 class="hall-head">Races honored <span id="raceCount"></span></h3>
+    <div class="chips" id="raceChips"></div>
+    <h3 class="hall-head">Classes honored <span id="klassCount"></span></h3>
+    <div class="chips" id="klassChips"></div>
+    <div class="xp-actions">
+      <a class="xp-button" id="hallBackup" title="Download the Hall as a file">Back up Hall</a>
+      <label class="xp-button" title="Add legends from a Hall backup">Restore&hellip;<input type="file" id="hallRestore" accept=".json,application/json" hidden></label>
+      <span class="hint">Kept in this browser, shared by all your heroes.</span>
+      <button class="xp-button" data-close>Close</button>
+    </div>
   </div>
 </dialog>
 
@@ -172,7 +178,7 @@
       <button class="xp-button" data-close>Close</button>
     </div>
     <p class="sig">&copy;2001-2010 <a href="mailto:grumdrig@progressquest.com">grumdrig@progressquest.com</a> for the original Progress Quest
-       &middot; &copy;2023 <a href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix</p>
+       &middot; &copy;2026 <a href="mailto:ender@enderandrew.com">ender@enderandrew.com</a> for Progress Quest Remix</p>
   </div>
 </dialog>
 
@@ -192,6 +198,20 @@
       <a class="xp-button play" title="Resume this character">Play</a>
       <a class="xp-button save" title="Download a backup file">Back up</a>
       <button class="xp-button del" title="Delete this character">Delete</button>
+    </span>
+  </div>
+</template>
+
+<template id="legendRow">
+  <div class="row legend" tabindex="0">
+    <span class="badge">&#x1F3C6;</span>
+    <span class="who"><b class="name"></b> <span class="what"></span><br>
+      <span class="where"></span><br>
+      <span class="feat"></span><br>
+      <span class="best"></span>
+      <span class="taunt"></span></span>
+    <span class="row-actions">
+      <button class="xp-button del" title="Remove this legend from the Hall">Remove</button>
     </span>
   </div>
 </template>

@@ -771,3 +771,42 @@ function MakeQuest() {
   quest.caption = ProperName(StoryText(caption, vars));
   return quest;
 }
+
+// ---- The finale -------------------------------------------------------------
+//
+// At level 50 (K.Boss.Level in combat.js) the hero finally tracks down the
+// Old Bastard(TM) from the Prologue. Each list is played one line at a time
+// and narrated. Story placeholders work here, plus {taunt} (his insult
+// from the Prologue), {tries} (this attempt's number) and {hours} (time
+// played).
+//
+//   approach  before the first fight
+//   rematch   before each later one
+//   victory   after beating him; the last line is followed by the choice to
+//             retire to the Hall of Legends or keep playing
+//   escape    after losing or running away; he will be back
+K.FinaleStory = {
+  approach: [
+    'At long last, the trail of the Old Bastard™ leads to a damp cave outside {kingdom}',
+    'He is exactly as old, and exactly as much of a bastard, as your dream promised',
+    '“{taunt}” he sneers, just like he did all those levels ago',
+    'You crack your knuckles. It is time to settle this'
+  ],
+  rematch: [
+    'You pick up the Old Bastard™\'s trail again, this time near {kingdom}',
+    '“{insult}” he wheezes. He is running out of material',
+    'Round {tries}. Fight!'
+  ],
+  victory: [
+    'The Old Bastard™ staggers, wheezes, and falls to his knees',
+    '“You haven\'t seen the last of me,” he croaks. You have, actually',
+    'Your quest to right this particular wrong is finally over',
+    'Word of your victory spreads across the land. Bards start rhyming things with {hero}',
+    'You could retire a legend. Or you could keep going, for the numbers'
+  ],
+  escape: [
+    'The Old Bastard™ cackles and slips away through a door marked “Definitely Not An Exit”',
+    'He looks a little older and a little slower every time he runs',
+    'He will be back. You will be ready. Probably'
+  ]
+};
