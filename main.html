@@ -101,6 +101,7 @@
 
     <div id="Profile" class="profile"></div>
     <div id="Legacy" class="profile"></div>
+    <div id="DailyLine" class="profile"></div>
 
     <div class="label">Health</div>
     <div class="progress-container" id="HPBar">
@@ -278,6 +279,18 @@
     <div class="dlg-buttons">
       <button type="button" id="DeathHall">Hall of the Fallen</button>
       <button type="button" id="DeathMenu">Main menu</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="DailyDialog" class="pq-dialog" aria-labelledby="DailyTitle">
+  <div class="dlg-title"><span id="DailyTitle">&#x2714; Daily Challenge complete</span></div>
+  <div class="dlg-body">
+    <div id="DailyResult"></div>
+    <div>Your hero plays on as an ordinary hero. Come back tomorrow for a new one.</div>
+    <div class="dlg-buttons">
+      <button type="button" id="DailyOk">Keep playing</button>
+      <button type="button" id="DailyMenu">Challenge Modes</button>
     </div>
   </div>
 </dialog>

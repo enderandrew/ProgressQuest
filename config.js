@@ -403,9 +403,10 @@ function SaveSealState(sheet) {
 }
 
 // Does this legend count (for the Hall's honors and New Game+)? Not if it
-// was edited, or the hero was branded a cheater.
+// was edited, or the hero was branded a cheater, or didn't start at level 1
+// (a Daily Challenge hero skipped the climb).
 function LegendCounts(l) {
-  return SealOk(l) && !l.cheater;
+  return SealOk(l) && !l.cheater && !(l.startLevel > 1);
 }
 
 storage.loadLegends = function (callback) {
@@ -517,6 +518,23 @@ function LedgerVerdict(sheet, entries, trusted) {
   return null;
 }
 
+// Daily Challenge results, by date: { "2026-10-07": { name, status, ... } }
+storage.loadDailies = function (callback) {
+  this.getItem("dailies", function (value) {
+    var book = {};
+    try { book = JSON.parse(value || "{}") || {}; } catch (e) { book = {}; }
+    callback(book);
+  });
+};
+
+storage.noteDaily = function (date, entry, callback) {
+  var self = this;
+  this.loadDailies(function (book) {
+    book[date] = Seal(entry);
+    self.setItem("dailies", JSON.stringify(book), callback);
+  });
+};
+
 storage.addToRoster = function (newguy, callback) {
   Seal(newguy);
   if (newguy.mode == "hardcore") this.noteHardcore(newguy);
@@ -562,7 +580,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 10;
+var SaveVersion = 11;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -648,6 +666,17 @@ var SaveMigrations = [
   function (sheet) {
     sheet.tactics = sheet.tactics || { fights: "normal", resting: "normal", spells: "normal" };
     sheet.choiceLog = sheet.choiceLog || [];
+  },
+  // 10 -> 11: seeds, mutators and the Daily Challenge (game.runSeed,
+  // game.mutators, game.daily) and the counters a challenge goal can use.
+  function (sheet) {
+    sheet.mutators = sheet.mutators || [];
+    sheet.runSeed = sheet.runSeed || "";
+    sheet.daily = sheet.daily || null;
+    sheet.wins = sheet.wins || 0;
+    sheet.streak = sheet.streak || 0;
+    sheet.questsDone = sheet.questsDone || 0;
+    sheet.goldEarned = sheet.goldEarned || 0;
   }
 ];
 

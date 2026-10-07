@@ -1,6 +1,6 @@
-// The main menu (index.html): New Game, Resume, and the windows for the
-// modes that are still to come. Depends on config.js (storage, EncodeName,
-// DecodeName, Pick).
+// The main menu (index.html): New Game, Resume, the Hall, and Challenge
+// Modes. Depends on config.js (storage, EncodeName, DecodeName, Pick), and
+// on story.js, combat.js and daily.js for the Daily Challenge.
 
 function b64_decode(value) {
   return JSON.parse(decodeURIComponent(escape(atob(value))));
@@ -12,7 +12,7 @@ function b64_stringify(value) {
 
 // ---- Windows --------------------------------------------------------------
 
-function OpenWindow(id, mode) {
+function OpenWindow(id, mode, extra) {
   // New Game+ is the character roller with a legacy, once someone has
   // retired to the Hall; until then its window explains how to unlock it.
   // Hardcore (from Challenge Modes) is the roller too.
@@ -22,7 +22,7 @@ function OpenWindow(id, mode) {
   var dlg = document.getElementById(id);
   if (!dlg) return;
   $("dialog[open]").each(function () { if (this !== dlg) this.close(); });
-  if (id == "dlgNew") StartNewGame(mode);
+  if (id == "dlgNew") StartNewGame(mode, extra);
   if (id == "dlgChallenge") ShowChallenges();
   if (id == "dlgResume") LoadRoster();
   if (id == "dlgHall") LoadHall();
@@ -51,20 +51,148 @@ function WindowFromHash() {
 
 // The character roller runs in its own page (newguy.html) inside the New
 // Game window. It is reloaded each time, so every visit is a fresh roll.
-function StartNewGame(mode) {
-  $("#dlgNewTitle").text(mode == "plus" ? "New Character (New Game+)" :
-                         mode == "hardcore" ? "New Character (\u2620 Hardcore)" : "New Character");
-  $("#newguyFrame").attr("src", "newguy.html?embed" + (mode ? "&" + mode : ""));
+// extra: more of the query string, e.g. "seed=abc&mut=nospells" (Custom Run)
+function StartNewGame(mode, extra) {
+  $("#dlgNewTitle").text((mode == "plus" ? "New Character (New Game+)" :
+                          mode == "hardcore" ? "New Character (\u2620 Hardcore)" : "New Character") +
+                         (extra ? " \u2014 custom run" : ""));
+  $("#newguyFrame").attr("src", "newguy.html?embed" + (mode ? "&" + mode : "") + (extra ? "&" + extra : ""));
 }
 
-// Challenge Modes: what a Hardcore hero would start with
+// Challenge Modes: the Daily, Custom Run, and what a Hardcore hero would
+// start with
 function ShowChallenges() {
+  ShowDailyCard();
+  ShowCustomCard();
   storage.loadLegends(function (legends) {
     var hall = LegacyFromHall(legends);
     var n = hall.races.length + hall.klasses.length;
     $("#hardcoreLegacy").text(n ? n + " of " + (K.Races.length + K.Klasses.length) + " honored, +" +
       Math.round(LegacyAverage(hall.bonus) * 1000) / 10 + "% on average" : "nothing honored yet");
   });
+}
+
+// " · Daily 2026-10-07 · Glass Cannon · seed abc" for the roster and the Hall
+function RunTags(daily, mutators, runSeed) {
+  var tags = [];
+  if (daily) tags.push("\ud83d\udcc5 Daily " + daily);
+  (mutators || []).forEach(function (k) {
+    var m = K.Mutators.filter(function (x) { return x.key == k; })[0];
+    if (m) tags.push(m.label);
+  });
+  if (runSeed && !daily) tags.push("seed \u201c" + runSeed + "\u201d");
+  return tags.map(function (t) { return " \u00b7 " + t; }).join("");
+}
+
+// ---- The Daily Challenge (daily.js) -----------------------------------------
+
+function DailyStatusText(e) {
+  return e.status == "done" ? "\u2714 done in " + Hours(e.played) + " of play" :
+         e.status == "failed" ? "\u2718 out of time" :
+         e.status == "died" ? "\u2620 died trying" : "unfinished";
+}
+
+// Today's hero, the button to start or resume it, and past results
+function ShowDailyCard() {
+  var date = DailyDate(), plan = DailyPlan(date);
+  var twist = K.Mutators.filter(function (m) { return plan.mutators.indexOf(m.key) >= 0; })[0];
+  $("#dailyDate").text(date + " (UTC)");
+  $(".dailyHours").text(K.DailyHours);
+  $("#dailyPlan").empty()
+    .append($("<div>").text("A level " + plan.level + " " + plan.race + " " + plan.klass + "."))
+    .append($("<div class=goal>").text("Goal: " + DailyGoalText(plan.goal) + " within " + K.DailyHours + " hours."))
+    .append($("<div class=twist>").text(twist ? "Twist: " + twist.label + ". " + twist.help : "No twist today."))
+    .append(plan.hardcore ? $("<div class=hc>").text("\u2620 Hardcore: one life.") : "");
+  var midnight = new Date(date + "T00:00:00Z").getTime() + 24 * 3600 * 1000;
+  var left = Math.max(0, midnight - Date.now()) / 60000;
+  $("#dailyNext").text("Next challenge in " + Math.floor(left / 60) + "h " + Math.floor(left % 60) + "m");
+
+  storage.loadDailies(function (book) {
+    storage.loadRoster(function (games) {
+      var today = book[date];
+      var hero = null;
+      Object.keys(games).forEach(function (k) {
+        var g = games[k];
+        if (g.daily && g.daily.date == date) hero = g;
+      });
+      // Settled entries in the book win over what the hero's save says
+      var status = today ? today.status : "";
+      if (hero && hero.daily.status) status = hero.daily.status;
+      $("#dailyStart").toggle(!today).prop("disabled", false);
+      $("#dailyResume").toggle(!!(today && hero && !hero.dead))
+        .attr("href", hero ? "main.html#" + EncodeName(hero.Traits.Name) : "#")
+        .text(status && status != "started" ? "Visit today's hero" : "Resume today's hero");
+      if (today && !hero) $("#dailyNext").text("Today's try: " + DailyStatusText(today) + ". " + $("#dailyNext").text());
+      else if (today && status && status != "started")
+        $("#dailyNext").text("Today: " + DailyStatusText({ status: status, played: hero.daily.played }) + ". " + $("#dailyNext").text());
+
+      var past = Object.keys(book).sort().reverse().slice(0, 10).map(function (d) { return book[d]; });
+      if (!past.length) { $("#dailyPast").empty(); return; }
+      var table = $("<table>");
+      past.forEach(function (e) {
+        table.append($("<tr>")
+          .append($("<td>").text(e.date))
+          .append($("<td>").text(e.name + ", " + e.race + " " + e.klass))
+          .append($("<td>").text(e.label))
+          .append($("<td>").addClass(e.status).text(DailyStatusText(e) +
+            (e.cheater || !SealOk(e) ? " \u26a0" : ""))
+            .attr("title", e.cheater ? "Branded a cheater: " + e.cheater : !SealOk(e) ? "Edited outside the game" : "")));
+      });
+      $("#dailyPast").empty().append($("<b>").text("Your dailies")).append(table);
+    });
+  });
+}
+
+// One try a day: make the hero, write it in the book, and play
+function StartDaily() {
+  var date = DailyDate();
+  $("#dailyStart").prop("disabled", true);
+  storage.loadDailies(function (book) {
+    if (book[date]) { ShowDailyCard(); return; }
+    storage.loadRoster(function (games) {
+      var hero = MakeDaily(date);
+      var name = hero.Traits.Name, base = name, n = 2;
+      while (games[name]) name = base + " " + toRomanLite(n++);
+      hero.Traits.Name = name;
+      storage.addToRoster(hero, function () {
+        storage.noteDaily(date, {
+          date: date, name: name, race: hero.Traits.Race, klass: hero.Traits.Class,
+          label: hero.daily.label, status: "started", startedAt: hero.daily.startedAt
+        }, function () {
+          window.location.href = "main.html#" + EncodeName(name);
+        });
+      });
+    });
+  });
+}
+
+function toRomanLite(n) {
+  return ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"][n] || String(n);
+}
+
+// ---- Custom Run ---------------------------------------------------------------
+
+function ShowCustomCard() {
+  var box = $("#customMutators");
+  if (!box.children().length)
+    K.Mutators.forEach(function (m) {
+      box.append($("<label>").attr("title", m.help)
+        .append($("<input type=checkbox>").val(m.key)).append(" " + m.label));
+    });
+  // New Game+ needs a legend in the Hall
+  $("#customPlusLabel").toggleClass("disabled", !legendCount)
+    .attr("title", legendCount ? "" : "Retire a hero to the Hall of Legends first")
+    .find("input").prop("disabled", !legendCount);
+}
+
+function StartCustom() {
+  var mode = $("input[name=customMode]:checked").val() || "";
+  var seedText = String($("#customSeed").val() || "").trim().slice(0, 64);
+  var muts = $("#customMutators input:checked").map(function () { return this.value; }).get();
+  var extra = [];
+  if (seedText) extra.push("seed=" + encodeURIComponent(seedText));
+  if (muts.length) extra.push("mut=" + muts.join(","));
+  OpenWindow("dlgNew", mode, extra.join("&"));
 }
 
 // How many heroes are in the Hall (New Game+ unlocks at 1), and the menu
@@ -117,6 +245,7 @@ function ShowRoster(games) {
                             (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
                             (c.mode == "plus" ? " \u00b7 New Game+" : "") +
                             (c.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
+                            RunTags(c.daily && c.daily.date, c.mutators, c.runSeed) +
                             (c.cheater || SaveSealState(c) == "bad" ? " \u00b7 \u26a0 branded a cheater" : ""));
     var href = "main.html#" + EncodeName(name);
     row.find(".play").attr("href", href);
@@ -300,6 +429,7 @@ function ShowHall(legends) {
     var when = l.retired ? new Date(l.retired).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) : "";
     row.find(".where").text("Level " + l.level + " " + l.klass + (l.mode == "plus" ? " \u00b7 New Game+" : "") +
                             (l.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
+                            RunTags(l.daily, l.mutators, l.runSeed) +
                             (when ? " \u00b7 retired " + when : ""));
     row.find(".feat").text("Beat the Old Bastard\u2122 at level " + l.wonLevel + ", " + Hours(l.wonAt || 0) +
       " in, " + (l.tries > 1 ? "on the " + Ordinal(l.tries) + " try" : "on the first try") +
@@ -311,7 +441,8 @@ function ShowHall(legends) {
     if (!LegendCounts(l)) {
       row.addClass("void");
       row.find(".where").append($("<span class='voided'>").text(
-        " \u00b7 \u26a0 " + (l.cheater ? "branded a cheater (" + l.cheater + ")" : "this entry was edited") +
+        " \u00b7 \u26a0 " + (l.cheater ? "branded a cheater (" + l.cheater + ")" :
+                               !SealOk(l) ? "this entry was edited" : "started at level " + l.startLevel) +
         "; doesn't count for New Game+"));
     }
     row.find(".del").on("click", function () {
@@ -394,6 +525,8 @@ $(function () {
   $("#importFile").on("change", function () { ImportSaves(this.files); this.value = ""; });
   $("#hallRestore").on("change", function () { if (this.files[0]) RestoreHall(this.files[0]); this.value = ""; });
   $("#startHardcore").on("click", function () { OpenWindow("dlgHardcore"); });
+  $("#dailyStart").on("click", StartDaily);
+  $("#customStart").on("click", StartCustom);
 
   EnableDropImport();
   TickClock();

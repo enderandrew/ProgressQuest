@@ -319,6 +319,25 @@ dialog::backdrop { background: rgba(0, 20, 80, 0.25); }
 /* Challenge Modes and the Hall of the Fallen */
 .mode-card { border: 1px solid #b0a99a; background: #f7f6f0; padding: 10px 12px; margin-bottom: 12px; }
 .mode-card h2 { color: #7a0000; }
+.mode-card.daily h2 { color: #1f4fa8; }
+.mode-card.custom h2 { color: #2c6e1f; }
+.mode-card h2 small { font-weight: normal; font-size: 11px; color: var(--xp-muted); }
+.daily-plan { background: #fff; border: 1px solid var(--xp-list-border); padding: 6px 8px; line-height: 1.6; }
+.daily-plan .goal { font-weight: bold; }
+.daily-plan .twist { color: #806000; }
+.daily-plan .hc { color: #900; font-weight: bold; }
+.mode-card .dim { flex: 1; color: var(--xp-muted); font-size: 11px; }
+#dailyPast { margin-top: 8px; font-size: 11px; }
+#dailyPast:empty { display: none; }
+#dailyPast table { width: 100%; border-collapse: collapse; }
+#dailyPast td { padding: 1px 4px; border-top: 1px solid #e3e0d4; }
+#dailyPast .done { color: #2c6e1f; }
+#dailyPast .failed, #dailyPast .died { color: #900; }
+.custom-grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 10px; align-items: center; }
+.custom-grid label { white-space: nowrap; margin-right: 10px; }
+#customMutators label { display: inline-block; }
+#customSeed { width: 100%; max-width: 280px; box-sizing: border-box; }
+@media (max-width: 480px) { .custom-grid { grid-template-columns: 1fr; } }
 #fallen { max-height: 30vh; }
 .xp-list .fallen .badge { color: #555; }
 .xp-list .fallen .feat { font-size: 11px; color: var(--xp-muted); }

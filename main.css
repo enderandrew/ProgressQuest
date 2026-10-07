@@ -435,6 +435,8 @@ body.bare #desktop { display: none; }
 /* New Game+ legacy */
 div.profile#Legacy { color: #806000; }
 div.profile#Legacy:empty { display: none; }
+div.profile#DailyLine { color: #1f4fa8; }
+div.profile#DailyLine:empty { display: none; }
 #Stats tr.legacy td:first-child { color: #806000; }
 
 /* Branded a cheater */

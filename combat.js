@@ -114,6 +114,30 @@ K.Hardcore = {
   DeathMax: 0.25
 };
 
+// Mutators: twists on the rules for a challenge run (Challenge Modes, and
+// each day's Daily Challenge). game.mutators lists the keys. Each one:
+//   castMult    spells cast this many times as often (0: never)
+//   noShop      never buy gear (loot and rewards only)
+//   damageMult  your damage times this
+//   hpMult      HP Max times this
+//   giveUpMult  beaten monsters give up this many times as easily
+//   xp          XP per fight times this
+//   carryMult   carrying capacity times this
+K.Mutators = [
+  { key: "nospells",    label: "Spell Monk",       castMult: 0,
+    help: "You took a vow. No spells in fights; heal by resting like everyone else." },
+  { key: "noshop",      label: "Hand-me-downs",    noShop: true,
+    help: "The shops won't serve you. Gear comes from loot, quests and events only." },
+  { key: "glasscannon", label: "Glass Cannon",     damageMult: 1.5, hpMult: 0.5,
+    help: "You hit half again as hard, with half the HP." },
+  { key: "pacifist",    label: "Conscientious Objector", damageMult: 0.6, giveUpMult: 3,
+    help: "You hit like a wet noodle, but monsters give up three times as easily." },
+  { key: "heavypockets", label: "Holey Pockets",   carryMult: 0.5,
+    help: "You can carry half as much. More trips to market." },
+  { key: "slowlearner", label: "Slow Learner",     xp: 0.75,
+    help: "Three quarters of the XP from every fight." }
+];
+
 // Tactics: the player's standing orders (the Tactics panel in the game,
 // game.tactics). The hero still plays itself; these change how. "normal"
 // is how the game has always played. Each option: key, label, help, and
@@ -383,7 +407,7 @@ function ResolveCombat(hero, foe, seed) {
       }
       break;
     default:  // damage
-      var sdmg = baseHP / C.SpellHitsToKill *
+      var sdmg = baseHP / C.SpellHitsToKill * (hero.damageMult || 1) *
         Math.pow(ratio(hero.INT, mon.INT), C.SpellDamageExponent) *
         levelF(spell) * (1 + buff) * (1 + debuff) * between(0.8, 1.2);
       monHP -= sdmg;
@@ -400,7 +424,7 @@ function ResolveCombat(hero, foe, seed) {
     // Melee
     var hit = _clamp(C.HeroHitBase + C.HitSlope * _log2(ratio(hero.DEX, mon.DEX)), C.HitMin, C.HitMax);
     if (roll() < hit) {
-      var dmg = baseHP / C.MeleeHitsToKill *
+      var dmg = baseHP / C.MeleeHitsToKill * (hero.damageMult || 1) *
         Math.pow(ratio(hero.STR, mon.STR), C.DamageExponent) * weaponF *
         (1 + buff) * (1 + debuff) * between(0.8, 1.2);
       monHP -= dmg;
@@ -454,7 +478,8 @@ function ResolveCombat(hero, foe, seed) {
 
     // CHA: a beaten monster may give up
     if (!foe.boss && monHP < monMax / 2) {
-      var giveUp = _clamp(C.GiveUpBase * ratio(hero.CHA, mon.CHA), 0, C.GiveUpMax);
+      var giveUp = _clamp(C.GiveUpBase * ratio(hero.CHA, mon.CHA) * (hero.giveUpMult || 1), 0,
+                          C.GiveUpMax * (hero.giveUpMult || 1));
       if (roll() < giveUp) {
         log.push(ProperName(name) + " gives up and runs off");
         outcome = "win"; foeFled = true;

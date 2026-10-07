@@ -531,7 +531,7 @@ K.Events = [
       { label: 'A hot bowl of stew and {loot}',
         lines: ['He grunts approvingly and trades you a keepsake from his pack',
                 'To each their own, barbarian style'],
-        effect: { item: 'special' } ] },
+        effect: { item: 'special' } } ] },
 
   { key: 'reddinner', where: ['town', 'road'],
     lines: ['A messenger hands you an urgent wedding invitation from Lord {guy} of {kingdom}',

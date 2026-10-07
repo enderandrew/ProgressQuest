@@ -23,7 +23,7 @@ index.html is the main menu, a Windows XP desktop on Bliss: New Game (the
 character roller, newguy.html, in a window), Resume (your saved heroes,
 with backup, import and delete), New Game+ (a new hero with a legacy, see
 below), Hall of Legends (retired heroes, and the Hall of the Fallen),
-Challenge Modes (Hardcore; more to come), FAQ
+Challenge Modes (the Daily Challenge, Custom Run and Hardcore), FAQ
 (faq.php, in a window) and GitHub. Each opens in its own window;
 index.html#resume, #new, #hall, #faq, #github and so on open one directly.
 Quitting a game comes back to Resume, and the old roster.html redirects
@@ -41,6 +41,7 @@ seconds. Runs with the same seed are identical.
 
     node sim.js --levels 50 --seed pq
     node sim.js --race "4chan Troll" --class "Barbarian Pretzel" --quiet
+    node sim.js --daily 2026-10-07 --quiet     # play that day's Daily Challenge
     node sim.js --help
 
 Use it to check that a change behaves the way you expect before playing.
@@ -282,6 +283,17 @@ at the top of the file, and story placeholders ({guy}, {kingdom},
 {nemesis}...) work in the lines. K.EventChance and K.EventCooldown set
 how often they happen (about one every 10 minutes of play by default).
 
+Check events.js after editing it:
+
+    node check-events.js
+
+One missing comma or brace stops the whole file from loading, and then no
+events happen at all (the browser only says so in its console). The
+checker says which line the parser gave up on, and also catches duplicate
+keys, misspelled 'where' places and effects, unknown {placeholders}, and
+choice events with the wrong number of choices. It exits with an error if
+anything is wrong.
+
 Seeing them: the narrator is quick, so each event also opens in a pop-up
 window, one line at a time as it is spoken, ending with what it did to
 you. It closes itself a few seconds after the event is over (it waits
@@ -351,6 +363,64 @@ each): heroes lose hundreds to thousands of fights, mostly in their 40s.
 So it is hard but not impossible once the Hall is full, and nearly
 hopeless without it. Tactics matter more here: Play it safe and Careful
 resting mean fewer defeats.
+
+
+Seeds, the Daily Challenge and mutators
+---------------------------------------
+
+Every roll in the game comes from one seeded random number generator
+(Random and Pick in config.js); the only other randomness makes IDs for
+saves. A hero's dice are fixed when it is created, and saved with it. So
+a run is decided by its seed plus the choices and tactics the player
+picks (game.choiceLog), and two players who start from the same seed and
+make the same picks play the same game.
+
+Custom Run (Challenge Modes): type a seed (any text) and the roller's
+stats and every roll after follow from it; Reroll is switched off, since
+it would only roll the same again. Tick mutators to opt into bad ideas
+(K.Mutators in combat.js):
+
+  Spell Monk               no spells in fights
+  Hand-me-downs            the shops won't serve you
+  Glass Cannon             x1.5 damage, half the HP
+  Conscientious Objector   x0.6 damage, monsters give up 3x as easily
+  Holey Pockets            carry half as much
+  Slow Learner             75% XP
+
+Pick Normal, New Game+ or Hardcore too. The roller takes the same as URL
+parameters (newguy.html?seed=abc&mut=nospells,glasscannon). The seed and
+mutators show on the roster and in the Hall; mutators show under the
+stats in the game (hover for what they do).
+
+The Daily Challenge (daily.js): one hero a day, the same for everyone,
+all of it decided by the UTC date: race, class, name, a level from 8 to
+25, stats around what is typical for that level, gear of that level,
+spells, a twist (a mutator on most days; Hardcore one day in seven), the
+goal, and the seed for every roll. Start it from Challenge Modes; you get
+one try a day and 24 hours (K.DailyHours) to reach the goal. The line
+under the stats shows the goal, progress and time left; reaching it
+brings up a dialog, and either way the result goes into your book of
+dailies (sealed, like saves) shown under the Daily card. After that the
+hero is an ordinary hero and can keep playing. A Daily hero that reaches
+50 can retire to the Hall, but doesn't honor its race and class (it
+skipped the climb). A hero branded a cheater fails the daily.
+
+Goals (K.DailyGoals) were tuned on 6 simulated heroes from level 1 to 32,
+and then on 16 actual dailies, so a typical one takes about two hours
+of play at any starting level:
+
+  goal                    target                        16 dailies
+  Reach level L + n       n = 8 below 12, 5 below 16,   1.3 - 2.3 h
+                          4 below 20, 3 from 20
+  Complete 45 quests                                    1.6 - 2.8 h
+  Win 900 fights                                        1.7 - 2.4 h
+
+Gold earned and winning streaks were tried as goals and dropped: they
+swing tenfold from hero to hero (a few big sales make most of the gold,
+and some heroes rarely go 40 fights without a defeat), so a day could be
+over in 20 minutes or next to impossible. The hero's counters
+(game.wins, game.streak, game.questsDone, game.goldEarned) are kept
+anyway. Saves are now version 11.
 
 
 Choices

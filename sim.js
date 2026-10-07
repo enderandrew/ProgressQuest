@@ -15,6 +15,8 @@
 //   --name NAME     character name                            (default random)
 //   --race RACE     race, e.g. "4chan Troll"                  (default random)
 //   --class CLASS   class, e.g. "Barbarian Pretzel"           (default random)
+//   --daily DATE    play that day's Daily Challenge hero, e.g. 2026-10-07
+//                   (stops when the challenge is done or lost)
 //   --quiet         print only the final summary
 //   --json FILE     write the final character sheet as JSON to FILE
 //   --dir DIR       load the game scripts from DIR            (default: here)
@@ -42,6 +44,7 @@ function parseArgs(argv) {
       case "--name":   opts.name = next(); break;
       case "--race":   opts.race = next(); break;
       case "--class":  opts.klass = next(); break;
+      case "--daily":  opts.daily = next(); break;
       case "--quiet":  opts.quiet = true; break;
       case "--json":   opts.json = next(); break;
       case "--dir":    opts.dir = path.resolve(next()); break;
@@ -141,6 +144,13 @@ function run(opts) {
   // Character creation, in the same order as NewGuyFormLoad() so a given
   // seed rolls the same character it would in the browser.
   ctx.__seed = opts.seed;
+  if (opts.daily) {
+    // The day's Daily Challenge hero instead of a new level 1 hero
+    load(ctx, opts.dir, "daily.js");
+    ctx.__date = opts.daily;
+    g("seed = new Alea(__seed); var __d = MakeDaily(__date);" +
+      "storage.addToRoster(__d, function () {}); window.location.href = 'main.html#' + EncodeName(__d.Traits.Name);");
+  } else
   g("seed = new Alea(__seed); RollEm(); GenClick();" +
     "fill(null, K.Races, 'Race'); fill(null, K.Klasses, 'Class');");
 
@@ -154,7 +164,7 @@ function run(opts) {
   if (opts.race)  ctx.traits.Race = pickFrom("K.Races", opts.race, "race");
   if (opts.klass) ctx.traits.Class = pickFrom("K.Klasses", opts.klass, "class");
 
-  g("sold()");          // adds the character to the roster, sets location
+  if (!opts.daily) g("sold()");   // adds the character to the roster, sets location
   g("FormCreate()");    // loads the game from the roster and starts it
 
   const game = () => ctx.game;
@@ -177,7 +187,7 @@ function run(opts) {
   let n = 0;
   let lastFight = null;
   const fights = { total: 0 };
-  while (level() < opts.levels) {
+  while (level() < opts.levels && !(opts.daily && game().daily.status)) {
     if (++n > MAX_TASKS) throw new Error("Simulation did not finish; is the game stuck?");
     // Finish the current task instantly, then let the game react.
     const bar = ctx.TaskBar;

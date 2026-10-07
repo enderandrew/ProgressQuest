@@ -335,6 +335,7 @@ function Dequeue() {
         amt = Math.round(amt * ChaFactor(K.Loot.PriceSlope, K.Loot.PriceMin, K.Loot.PriceMax));
         Inventory.remove1();
         Add(Inventory, 'Gold', amt);
+        game.goldEarned = (game.goldEarned || 0) + amt;
       }
       if (Inventory.length() > 1) {
         Inventory.scrollToTop();
@@ -379,7 +380,7 @@ function Dequeue() {
       Task('Heading to market to sell viscera-covered loot',4 * 1000);
       game.task = 'market';
     } else if ((Pos('kill|',old) <= 0) && (old != 'heading') && (old != 'rest')) {
-      if (GetI(Inventory, 'Gold') > EquipPrice() && !game.shopped) {
+      if (GetI(Inventory, 'Gold') > EquipPrice() && !game.shopped && !HasMutator('noShop')) {
         Task('Haggling over the price of better equipment', 5 * 1000);
         game.task = 'buying';
       } else {
@@ -390,7 +391,7 @@ function Dequeue() {
       StartFinale();   // queues the cinematic and the fight; picked up next time round
     } else if (NeedsRest()) {
       // A heal spell gets you back on your feet twice as fast
-      var heals = game.Spells.filter(function (sp) { return SpellType(sp[0]) == 'heal'; });
+      var heals = MutatorProduct('castMult') ? game.Spells.filter(function (sp) { return SpellType(sp[0]) == 'heal'; }) : [];
       if (heals.length) {
         Task('Casting ' + Pick(heals)[0] + ' on yourself', RestTime() / 2);
       } else {
@@ -411,7 +412,7 @@ function Dequeue() {
       fight.foe = t.foe.name;
       fight.foeLevel = t.foe.level;
       fight.qty = t.foe.qty;
-      fight.xp = nn / 1000 * (Tactic('fights').xp || 1);   // the Fights tactic pays for the risk
+      fight.xp = nn / 1000 * (Tactic('fights').xp || 1) * MutatorProduct('xp');   // tactics pay for risk
       game.combat = fight;
       Task('Executing ' + t.description, Math.round(nn * FightLength(fight)));
     }
@@ -432,7 +433,9 @@ function HeroSnapshot() {
     armor: ArmorPowerAvg(),
     physicality: CharProfile().physicality,
     wounded: game.wounded > 0,
-    castMult: Tactic('spells').castMult,
+    castMult: Tactic('spells').castMult * MutatorProduct('castMult'),
+    damageMult: MutatorProduct('damageMult'),
+    giveUpMult: MutatorProduct('giveUpMult'),
     spells: game.Spells.map(function (s) {
       return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
     })
@@ -464,6 +467,12 @@ function FinishFight() {
   if (game.wounded > 0) { --game.wounded; ShowCondition(); }
   if (fight.outcome == 'win' || fight.outcome == 'close')
     game.caution = Max(0, (game.caution || 0) - K.Defeat.CautionDecay);
+  if (fight.outcome == 'win' || fight.outcome == 'close') {
+    game.wins = (game.wins || 0) + 1;
+    game.streak = (game.streak || 0) + 1;
+  } else {
+    game.streak = 0;   // a defeat or running away ends a winning streak
+  }
 
   if (fight.outcome == 'defeat') {
     // Hardcore: this defeat may be the last
@@ -513,6 +522,7 @@ function Die(fight) {
   var obit = MakeObituary(fight);
   game.dead = obit;
   game.queue.length = 0;
+  if (game.daily && !game.daily.status) SettleDaily('died');
   if (storage.noteHardcore) storage.noteHardcore(game);   // the ledger remembers
   HPBar.reposition(0);
   Log('Died: ' + obit.cause);
@@ -762,7 +772,7 @@ function CheckForCheating() {
   var level = GetI(Traits,'Level');
   if (level >= 5) {
     var xpTime = 0;
-    for (var l = 1; l < level; ++l) xpTime += LevelUpTime(l);
+    for (var l = game.startLevel || 1; l < level; ++l) xpTime += LevelUpTime(l);   // (a Daily hero starts higher)
     if (elapsed < xpTime * G.LevelPace)
       return Brand("they reached level " + level + " faster than is possible");
   }
@@ -807,6 +817,10 @@ function MakeLegend() {
     beststat: game.beststat || '',
     taunt: (prologue && prologue.taunt) || '',
     mode: game.mode || 'normal',
+    startLevel: game.startLevel || 1,
+    mutators: game.mutators || [],
+    runSeed: game.runSeed || '',
+    daily: game.daily ? game.daily.date : null,
     cheater: game.cheater ? game.cheater.reason : null
   };
 }
@@ -1261,6 +1275,30 @@ function BuffAmount(stat) {
   return total;
 }
 
+// ---- Mutators (K.Mutators in combat.js) -------------------------------------
+
+function Mutators() {
+  return (game.mutators || []).map(function (key) {
+    for (var i = 0; i < K.Mutators.length; ++i) if (K.Mutators[i].key == key) return K.Mutators[i];
+    return null;
+  }).filter(Boolean);
+}
+
+function HasMutator(prop) {
+  return Mutators().some(function (m) { return !!m[prop]; });
+}
+
+// The product of a numeric property over this hero's mutators (1 if none)
+function MutatorProduct(prop) {
+  var p = 1;
+  Mutators().forEach(function (m) { if (typeof m[prop] == 'number') p *= m[prop]; });
+  return p;
+}
+
+function CarryMax() {
+  return Max(5, Math.round((10 + GetI(Stats,'STR')) * MutatorProduct('carryMult')));
+}
+
 // A stat as it counts right now: buffs and the New Game+ legacy included
 function EffStat(stat) {
   return GetI(Stats, stat) + BuffAmount(stat) + LegacyAmount(stat);
@@ -1282,7 +1320,8 @@ function LegacyAmount(stat) {
 // HP Max and MP Max as they count (the bars' maximum): the legacy share of
 // the hero's own
 function PoolMax(stat) {
-  return Math.round(GetI(Stats, stat) * (1 + LegacyPct(stat)));
+  var mult = stat == 'HP Max' ? MutatorProduct('hpMult') : 1;
+  return Max(1, Math.round(GetI(Stats, stat) * (1 + LegacyPct(stat)) * mult));
 }
 
 // "New Game+ legacy: 6 races and classes" under the stats
@@ -1302,6 +1341,98 @@ function ShowLegacy() {
     var pct = LegacyPct(Key(this));
     $(this).toggleClass("legacy", pct > 0);
   });
+}
+
+// ---- The Daily Challenge (see daily.js) -----------------------------------
+
+// game.daily: { date, goal: {type, target}, label, startedAt, deadline,
+// start: {level, quests, gold, wins}, status, doneAt, played }.
+// status is "" while the challenge runs, then "done", "failed" or "died".
+// After that the hero is an ordinary hero and plays on.
+
+// How far along the goal is
+function DailyProgress() {
+  var d = game.daily, s = d.start || {};
+  switch (d.goal.type) {
+    case 'level':  return GetI(Traits,'Level');
+    case 'quests': return (game.questsDone || 0) - (s.quests || 0);
+    case 'gold':   return (game.goldEarned || 0) - (s.gold || 0);
+    case 'wins':   return (game.wins || 0) - (s.wins || 0);
+  }
+  return 0;
+}
+
+// Write the result down in the book of dailies (one entry per day)
+function NoteDaily() {
+  var d = game.daily;
+  if (!storage.noteDaily) return;
+  storage.noteDaily(d.date, {
+    date: d.date, name: Get(Traits,'Name'),
+    race: Get(Traits,'Race'), klass: Get(Traits,'Class'),
+    label: d.label, status: d.status || 'started',
+    progress: DailyProgress(), target: d.goal.target,
+    startedAt: d.startedAt, doneAt: d.doneAt || null,
+    played: d.played || null,
+    cheater: game.cheater ? game.cheater.reason : null
+  });
+}
+
+// End the challenge one way or the other
+function SettleDaily(status) {
+  var d = game.daily;
+  if (!d || d.status) return;
+  d.status = status;
+  d.doneAt = +new Date();
+  d.played = Math.round(game.elapsed || 0);
+  NoteDaily();
+  ShowDaily();
+  Log('Daily challenge ' + status);
+  if (!document) return;
+  if (status == 'done') {
+    $("#DailyResult").text(Get(Traits,'Name') + " did it: " + d.label + ", in " +
+      RoughTime(d.played) + " of play (" + RoughTime((d.doneAt - d.startedAt) / 1000) + " on the clock).");
+    var dlg = document.getElementById("DailyDialog");
+    if (dlg && !dlg.open) dlg.showModal();
+    Narrate("Daily challenge complete! " + d.label + ".");
+  } else if (status == 'failed') {
+    Narrate("Time's up. The daily challenge is over.");
+  }
+}
+
+// After each task: is it done, or out of time?
+function CheckDaily() {
+  var d = game.daily;
+  if (!d || d.status) return;
+  if (game.dead) { SettleDaily('died'); return; }
+  if (game.cheater) { SettleDaily('failed'); return; }
+  if (DailyProgress() >= d.goal.target) SettleDaily('done');
+  else if (+new Date() > d.deadline) SettleDaily('failed');
+  else ShowDaily();
+}
+
+// "Daily 2026-10-07: Win 600 fights (212) · 21h left" under the stats
+function ShowDaily() {
+  if (!document) return;
+  var d = game.daily;
+  var twist = Mutators().map(function (m) { return m.label; }).join(", ");
+  if (!d) {
+    $("#DailyLine").text(twist ? "Twist: " + twist : "")
+      .attr("title", Mutators().map(function (m) { return m.label + ": " + m.help; }).join("\n"));
+    return;
+  }
+  var text = "Daily " + d.date + ": " + d.label;
+  if (d.status == 'done') text += " ✔ done in " + RoughTime(d.played);
+  else if (d.status == 'failed') text += " ✘ out of time";
+  else if (d.status == 'died') text += " ☠ died trying";
+  else {
+    var left = Max(0, d.deadline - +new Date()) / 3600000;
+    text += " (" + DailyProgress().toLocaleString() + ") · " +
+      (left >= 1 ? Math.floor(left) + "h" : Math.ceil(left * 60) + "m") + " left";
+  }
+  $("#DailyLine").text(text).attr("title",
+    "Today's Daily Challenge. Everyone gets the same hero and the same dice." +
+    (twist ? "\nTwist: " + Mutators().map(function (m) { return m.label + " (" + m.help + ")"; }).join(", ") : "") +
+    (game.mode == 'hardcore' ? "\nHardcore: one life." : ""));
 }
 
 // "Buffed: +14 STR (9:41) +12 WIS (3:20)" under the health bars, and the
@@ -1751,6 +1882,7 @@ function DropLoot(part) {
 // Market day: the purse goes in the bank
 function BankPurse() {
   if (game.purse) {
+    game.goldEarned = (game.goldEarned || 0) + game.purse;
     Add(Inventory, 'Gold', game.purse);
     game.purse = 0;
   }
@@ -1786,7 +1918,7 @@ function Put(list, key, value) {
   list.PutUI(key, value);
 
   if (key === 'STR')
-    EncumBar.reset(10 + value, EncumBar.Position());
+    EncumBar.reset(CarryMax(), EncumBar.Position());
   if (key === 'HP Max')
     HPBar.reset(PoolMax('HP Max'), HPBar.Position());
   if (key === 'MP Max')
@@ -2170,6 +2302,7 @@ function WinItem() {
 function CompleteQuest() {
   QuestBar.reset(50 + Random(100));
   if (Quests.length()) {
+    game.questsDone = (game.questsDone || 0) + 1;
     Log('Quest completed: ' + game.bestquest);
     Quests.CheckAll();
     [WinSpell,WinEquip,WinStat,WinItem][Random(4)]();
@@ -2427,6 +2560,7 @@ function Timer1Timer() {
     ShowBuffs();
     ShowRecentAge();
     if (game.tasks % K.Guard.CheckEvery == 0) CheckForCheating();
+    CheckDaily();
   } else {
     var elapsed = timeGetTime() - clock.lasttick;
     if (elapsed > 100) elapsed = 100;
@@ -2511,6 +2645,8 @@ function FormCreate() {
     $("#DeathHall").on("click", function () { window.location.href = "index.html#hall/fallen"; });
     $("#DeathMenu").on("click", function () { window.location.href = "index.html"; });
     $("#RetireNo").on("click", function () { this.closest("dialog").close(); });
+    $("#DailyOk").on("click", function () { this.closest("dialog").close(); });
+    $("#DailyMenu").on("click", function () { window.location.href = "index.html#challenge"; });
     // Close the event pop-up with a click anywhere on it (or its backdrop)
     $("#EventDialog").on("click", function (e) {
       // while a choice waits, only OK (or Esc) closes it; the buttons choose
@@ -2663,6 +2799,7 @@ function LoadGame(sheet) {
   ShowRecentEvent();
   ShowRetire();
   ShowLegacy();
+  ShowDaily();
   ShowTactics();
   ShowFight(true);
   if (Kill)

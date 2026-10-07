@@ -23,6 +23,9 @@ var total = 0;
 var seedHistory = [];
 
 function RollEm() {
+  // A seeded run: the same seed always rolls the same stats, and starts the
+  // game's random numbers in the same place
+  if (RunSeed()) seed = new Alea("pq-seed:" + RunSeed());
   stats.seed = randseed();
   total = 0;
   var best = -1;
@@ -104,6 +107,7 @@ function ShowNewGuyProfile() {
 function NewGuyFormLoad() {
   seed = new Alea();
   RollEm();
+  ShowRunOptions();
   GenClick();
 
   fill("#races", K.Races, "Race");
@@ -173,6 +177,9 @@ function sold() {
     buffs: [],
     recentEvent: null,
     finale: null,
+    runSeed: RunSeed(),
+    mutators: RunMutators(),
+    wins: 0, streak: 0, questsDone: 0, goldEarned: 0,
     tactics: { fights: "normal", resting: "normal", spells: "normal" },
     choiceLog: [],
     mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : "normal",
@@ -221,6 +228,11 @@ function sold() {
       bar.max = bar.position = Math.round(stats[pool] * (1 + (newguy.legacy.bonus[pool] || 0)));
     });
   }
+  // Mutators: Glass Cannon halves HP, Holey Pockets halves what you carry
+  var mutators = (K.Mutators || []).filter(function (m) { return newguy.mutators.indexOf(m.key) >= 0; });
+  var product = function (prop) { return mutators.reduce(function (p, m) { return p * (m[prop] || 1); }, 1); };
+  newguy.HPBar.max = newguy.HPBar.position = Math.max(1, Math.round(newguy.HPBar.max * product("hpMult")));
+  newguy.EncumBar.max = Math.max(5, Math.round(newguy.EncumBar.max * product("carryMult")));
 
 
   if (document && $("#multiplayer:checked").length > 0) {
@@ -254,6 +266,37 @@ function sold() {
   }
 }
 
+
+// ---- Seeds and mutators (from Challenge Modes) --------------------------------
+
+function UrlParam(name) {
+  try {
+    var m = String(window.location.search || "").match(new RegExp("[?&]" + name + "=([^&]*)"));
+    return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+  } catch (e) { return ""; }
+}
+
+// newguy.html?seed=...: every roll of the run follows from it
+function RunSeed() { return UrlParam("seed").slice(0, 64); }
+
+// newguy.html?mut=nospells,glasscannon
+function RunMutators() {
+  var keys = K.Mutators ? K.Mutators.map(function (m) { return m.key; }) : [];
+  return UrlParam("mut").split(",").filter(function (k) { return keys.indexOf(k) >= 0; });
+}
+
+function ShowRunOptions() {
+  if (!document) return;
+  var notes = [];
+  if (RunSeed()) notes.push("Seed: " + RunSeed() + " (fixed stats)");
+  var muts = RunMutators();
+  if (muts.length && K.Mutators) notes.push("Mutators: " + K.Mutators.filter(function (m) {
+    return muts.indexOf(m.key) >= 0; }).map(function (m) { return m.label; }).join(", "));
+  if (!notes.length) return;
+  $("#RunOptions").text(notes.join(" \u00b7 ")).show();
+  // the seed decides the stats: rerolling would just roll the same again
+  if (RunSeed()) $("#Reroll, #Unroll").prop("disabled", true).attr("title", "The seed decides the stats");
+}
 
 // ---- Legacy -----------------------------------------------------------------
 

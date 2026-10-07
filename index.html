@@ -26,6 +26,9 @@
 <link rel="stylesheet" href="menu.css">
 <script src="jquery-4.0.0.min.js"></script>
 <script src="config.js"></script>
+<script src="story.js"></script>
+<script src="combat.js"></script>
+<script src="daily.js"></script>
 <script src="menu.js"></script>
 <script src="guard.js"></script>
 </head>
@@ -136,6 +139,39 @@
     <button class="xp-close" aria-label="Close" data-close></button>
   </div>
   <div class="xp-body">
+    <div class="mode-card daily">
+      <h2>&#x1F4C5; Daily Challenge <small id="dailyDate"></small></h2>
+      <p>Everyone in the world gets the same hero today: same race, class, level,
+         stats, gear and spells, the same twist, and the same dice for every roll.
+         You get one try and <span class="dailyHours">24</span> hours to reach the goal.
+         The score is how much play it took.</p>
+      <div id="dailyPlan" class="daily-plan"></div>
+      <div class="xp-actions">
+        <span id="dailyNext" class="dim"></span>
+        <a class="xp-button default" id="dailyResume" href="#" style="display:none">Resume today's hero</a>
+        <button class="xp-button default" id="dailyStart">Start today's challenge</button>
+      </div>
+      <div id="dailyPast"></div>
+    </div>
+    <div class="mode-card custom">
+      <h2>&#x1F527; Custom Run</h2>
+      <p>Roll a hero your way. A <b>seed</b> fixes the stats and every roll after,
+         so two people with the same seed (and the same choices) play the same game.
+         <b>Mutators</b> are bad ideas you can opt into.</p>
+      <div class="custom-grid">
+        <label for="customSeed">Seed</label>
+        <input type="text" id="customSeed" maxlength="64" placeholder="leave blank for a random game" spellcheck="false">
+        <span>Mode</span>
+        <span>
+          <label><input type="radio" name="customMode" value="" checked> Normal</label>
+          <label id="customPlusLabel"><input type="radio" name="customMode" value="plus"> New Game+</label>
+          <label><input type="radio" name="customMode" value="hardcore"> &#x2620; Hardcore</label>
+        </span>
+        <span>Mutators</span>
+        <span id="customMutators"></span>
+      </div>
+      <div class="xp-actions"><button class="xp-button default" id="customStart">Roll a custom hero</button></div>
+    </div>
     <div class="mode-card">
       <h2>&#x2620; Hardcore</h2>
       <p>One life. Every defeat has a small chance to be your hero's last: more while
@@ -147,11 +183,6 @@
          legacies, about 3 heroes in 10 reach level 50 alive; with none, about 1 in 50.</span></p>
       <div class="xp-actions"><button class="xp-button default" id="startHardcore">Start a Hardcore hero</button></div>
     </div>
-    <h2>Coming soon</h2>
-    <ul class="xp-bullets">
-      <li><b>Daily Challenge.</b> Everyone gets the same seed, hero and twist for the day.</li>
-      <li><b>Mutators.</b> No spells, no shopping, glass cannon, pacifist, and other bad ideas.</li>
-    </ul>
     <div class="xp-actions"><button class="xp-button" data-close>Close</button></div>
   </div>
 </dialog>
