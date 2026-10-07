@@ -469,8 +469,57 @@ function IsFallen(sheet, fallen) {
   });
 }
 
+// ---- The Hardcore ledger ------------------------------------------------------
+//
+// No save-scumming: every Hardcore hero has a life ID (game.lifeId) and a
+// save number (game.saveGen) that goes up each time it saves; both are
+// sealed into the save, and so into its backups. The browser keeps a
+// ledger, sealed too, of the last save number written for each life, and
+// whether that life has ended. A backup older than the ledger's (a rewind),
+// a backup of a hero who died, or a roster entry swapped for an older copy
+// is caught. What can't be caught: the same backup imported into a
+// different browser, which has never seen that hero.
+
+function LifeId(sheet) {
+  return sheet.lifeId || ((sheet.birthstamp || 0) + ":" + (sheet.Traits ? sheet.Traits.Name : ""));
+}
+
+// callback(entries, trusted): entries[lifeId] = { gen, name, dead }
+storage.loadLedger = function (callback) {
+  this.getItem("hardcoreLedger", function (value) {
+    var book = null;
+    try { book = JSON.parse(value || "null"); } catch (e) { book = { broken: true }; }
+    if (!book) return callback({}, true);   // nothing yet
+    callback(book.entries || {}, SealOk(book));
+  });
+};
+
+// Record a Hardcore save (or death) in the ledger
+storage.noteHardcore = function (sheet, callback) {
+  var self = this;
+  this.loadLedger(function (entries, trusted) {
+    if (!trusted) return callback && callback();   // a broken ledger stays broken
+    entries[LifeId(sheet)] = { gen: sheet.saveGen || 0, name: sheet.Traits.Name,
+                               dead: !!(sheet.dead || (entries[LifeId(sheet)] || {}).dead) };
+    self.setItem("hardcoreLedger", JSON.stringify(Seal({ entries: entries })), callback);
+  });
+};
+
+// What the ledger says about a Hardcore save: null (fine), "dead",
+// "older" (a rewind) or "tampered" (the ledger itself was edited)
+function LedgerVerdict(sheet, entries, trusted) {
+  if (!sheet || sheet.mode != "hardcore") return null;
+  if (!trusted) return "tampered";
+  var e = entries[LifeId(sheet)];
+  if (!e) return null;
+  if (e.dead) return "dead";
+  if ((sheet.saveGen || 0) < (e.gen || 0)) return "older";
+  return null;
+}
+
 storage.addToRoster = function (newguy, callback) {
   Seal(newguy);
+  if (newguy.mode == "hardcore") this.noteHardcore(newguy);
   this.loadRoster(function (games) {
     games[newguy.Traits.Name] = newguy;
     storage.storeRoster(games, callback);

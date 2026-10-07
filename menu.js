@@ -152,8 +152,19 @@ function ImportSaves(files) {
       // Hardcore heroes stay dead: no bringing one back from a backup
       var fallenNow = null;
       storage.loadFallen(function (f) { fallenNow = f; });
-      if (IsFallen(sheet, fallenNow)) {
+      var verdict = null;
+      storage.loadLedger(function (entries, trusted) { verdict = LedgerVerdict(sheet, entries, trusted); });
+      if (IsFallen(sheet, fallenNow) || verdict == "dead") {
         alert(sheet.Traits.Name + " died in Hardcore and is in the Hall of the Fallen. Hardcore heroes stay dead.");
+        return;
+      }
+      if (verdict == "older") {
+        alert(file.name + " is an older copy of " + sheet.Traits.Name + " than the one this browser last saved. " +
+              "Hardcore heroes can't go back in time.");
+        return;
+      }
+      if (verdict == "tampered") {
+        alert("This browser's Hardcore ledger was edited, so Hardcore backups can't be imported here.");
         return;
       }
       // An edited backup (or one with its seal removed) imports branded

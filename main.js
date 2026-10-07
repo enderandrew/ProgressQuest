@@ -513,6 +513,7 @@ function Die(fight) {
   var obit = MakeObituary(fight);
   game.dead = obit;
   game.queue.length = 0;
+  if (storage.noteHardcore) storage.noteHardcore(game);   // the ledger remembers
   HPBar.reposition(0);
   Log('Died: ' + obit.cause);
   if (!document) return;   // (the simulator just records it)
@@ -2622,6 +2623,7 @@ function SaveGame(callback) {
   game.date = ''+new Date();
   game.stamp = +new Date();
   game.seed = randseed();
+  if (game.mode == 'hardcore') game.saveGen = (game.saveGen || 0) + 1;   // see the Hardcore ledger
   storage.addToRoster(game, callback);
 }
 
@@ -2670,6 +2672,22 @@ function LoadGame(sheet) {
     this.CheckAll(true);
   });
 
+  // Hardcore: no going back in time, and the dead stay dead
+  if (game.mode == 'hardcore' && !game.dead) {
+    var verdict = null;
+    storage.loadLedger(function (entries, trusted) { verdict = LedgerVerdict(game, entries, trusted); });
+    if (verdict == 'dead') {
+      SuspendAutosave();
+      alert(Get(Traits,'Name') + " died in Hardcore. Hardcore heroes stay dead.");
+      storage.loadRoster(function (games) {
+        delete games[Get(Traits,'Name')];
+        storage.storeRoster(games, function () { window.location.href = "index.html#hall/fallen"; });
+      });
+      return;
+    }
+    if (verdict == 'older') Brand("an older copy of this Hardcore hero was put back (a rewind)", true);
+    if (verdict == 'tampered') Brand("the Hardcore ledger was edited", true);
+  }
   ShowBrand();
   CheckForCheating();
   Log('Loaded game: ' + game.Traits.Name);

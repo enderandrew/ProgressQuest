@@ -176,6 +176,8 @@ function sold() {
     tactics: { fights: "normal", resting: "normal", spells: "normal" },
     choiceLog: [],
     mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : "normal",
+    lifeId: Hardcore() ? Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e9).toString(36) : undefined,
+    saveGen: 0,
     legacy: (NewGamePlus() || Hardcore()) && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } : null,
     queue: [
       "scene|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",

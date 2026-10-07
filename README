@@ -330,6 +330,16 @@ in story.js; add your own). The hero leaves the roster and the obituary
 goes to the Hall of the Fallen, at the bottom of the Hall of Legends. A
 backup of a dead hero can't be imported: they stay dead.
 
+No save-scumming: a Hardcore hero has a life ID and a save number that
+goes up with every save, both sealed into the save and its backups, and
+the browser keeps a sealed ledger of the last save number it wrote for
+each life (and whether it has ended). Importing a backup older than that
+("rewinding") is refused, a roster entry swapped for an older copy brands
+the hero a cheater, the dead stay dead even if the Hall of the Fallen is
+cleared, and an edited ledger blocks Hardcore imports. Importing the same
+backup into a different browser can't be caught: that browser has never
+seen the hero.
+
 Tuned on every defeat of simulated heroes on the way to level 50 (6-8
 each): heroes lose hundreds to thousands of fights, mostly in their 40s.
 
