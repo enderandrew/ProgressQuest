@@ -59,7 +59,7 @@ K.Stories = [
       'You are privy to a council of powerful do-gooders. There is much to be done.',
       'Unsurprisingly, you are chosen to go forth. Time to Progress™ more!',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bring snacks for the council of do-gooders', 'Learn the secret handshake of the do-gooders'] },
+    quests: ['Bring snacks for the council of do-gooders', 'Learn the secret handshake of the do-gooders', 'Convince at least two do-gooders to sign a petition for you to join.', 'Find a map to the hidden oasis of the do-gooders'] },
 
   { key: 'nemesis', title: 'The Nemesis',
     setup: '{nemesis} stands between you and the Old Bastard™, literally. Grow strong enough to face them.',
@@ -70,7 +70,7 @@ K.Stories = [
       'Victory! {nemesis} is slain! Old Bastard™ hits you with pocket sand!',
       'They escape! They really are a bastard!',
       'You follow the trail of Old Bastard™ and vow not to fall for pocket sand again.'],
-    quests: ['Spy on {nemesis}', 'Find out what {nemesis} is weak to', 'Sharpen your weapon for {nemesis}'] },
+    quests: ['Spy on {nemesis}', 'Find out what {nemesis} is weak to', 'Sharpen your weapon for {nemesis}', 'Ask {nemesis} to politely stand-aside since Old Bastard™ is behind them.'] },
 
   { key: 'doubledealer', title: 'The Double-Dealer',
     setup: '{guy} has promised you shelter, a hot meal and secrets about the Old Bastard™. Reach their protection.',
@@ -82,7 +82,7 @@ K.Stories = [
       'Could {guy} be a dirty double-dealer?',
       'Who can possibly be trusted with this news!? -- Oh yes, of course',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bring {guy} a housewarming {boring}', 'Keep an eye on {guy}'] },
+    quests: ['Bring {guy} a housewarming {boring}', 'Keep an eye on {guy}', 'Get Google Maps directions to find {guy}', 'Buy a nice housewarming gift for {guy}'] },
 
   { key: 'maguffin', title: 'The Sacred Maguffin',
     setup: '{giver} begs you to find the sacred {item} to save their village. {guy} says it can be found in the lands of {kingdom}.',
@@ -93,7 +93,7 @@ K.Stories = [
       'I guess {giver} and their suffering village will just have to go without.',
       'You decide that the real {item} was the friends you made along the way.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Ask around {kingdom} about the {item}', 'Check Ye Olde eBay for the {item}'] },
+    quests: ['Ask around {kingdom} about the {item}', 'Check Ye Olde eBay for the {item}', 'Sell {boring} to afford {item}'] },
 
   { key: 'wedding', title: 'The Royal Wedding',
     setup: 'The kingdoms of {kingdom} and {kingdom2} are on the brink of war since the wedding of {guy} and {guy2} was called off. Restore the peace.',
@@ -104,7 +104,7 @@ K.Stories = [
       'You seduce {guy} and then also seduce {guy2}',
       'Both are satiated and content for the moment. Peace is restored for the time being.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Find a wedding present for {guy} and {guy2}', 'RSVP to the wedding of {guy} and {guy2}'] },
+    quests: ['Find a wedding present for {guy} and {guy2}', 'RSVP to the wedding of {guy} and {guy2}', 'Prepare a special wedding cake for {guy} and {guy2}'] },
 
   { key: 'rescue', title: 'The Rescue',
     setup: '{guy} of {kingdom} says {nemesis} kidnapped their beloved {guy2}. Rescue them.',
@@ -114,7 +114,7 @@ K.Stories = [
       'You discover {guy2} and {nemesis} eloped and are about to wed. This is awkward.',
       'You tell {guy} that {guy2} is dead so they can continue their secret love.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Track {nemesis} through {kingdom}', 'Bring {guy2} a change of clothes'] },
+    quests: ['Track {nemesis} through {kingdom}', 'Console {guy} in this tough time.', 'Promise {guy} that you will bring {guy2} home.'] },
 
   { key: 'turningpoint', title: 'The Turning Point',
     setup: 'You feel your great quest is approaching a crucial turning point. Prepare yourself for whatever comes.',
@@ -126,7 +126,7 @@ K.Stories = [
       'You know that true change comes from within.',
       'Or is that gas? Time for a massive Baja Blast.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Meditate on your journey so far', 'Journal about your feelings'] },
+    quests: ['Meditate on your journey so far', 'Journal about your feelings', 'Ask {guy} the Guru for advice.', 'Dramatically pose in this turning point moment.'] },
 
   { key: 'fishmonger', title: 'The Sighting',
     setup: 'Someone matching the Old Bastard™’s description has been seen near the docks of {kingdom}. Track him down.',
@@ -138,7 +138,7 @@ K.Stories = [
       'You stab them right in the back!',
       'Nevermind, that was just the fishmonger. Their widow cries.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Stake out the docks of {kingdom}', 'Interview the fishmongers of {kingdom}'] },
+    quests: ['Stake out the docks of {kingdom}', 'Interview the fishmongers of {kingdom}', 'Bribe {guy} the fishmonger with {boring} for intel.'] },
 
   { key: 'nightmares', title: 'The Nightmares',
     setup: 'The Old Bastard™ haunts your dreams every night: “{insult}” You are not ready. Grind until you are.',
@@ -148,7 +148,7 @@ K.Stories = [
       'But deep down you know you are not ready for the final showdown.',
       'All epic tales need a grinding montage.',
       'Let us grind longer. The Old Bastard™ from your vision can wait.'],
-    quests: ['Buy a dreamcatcher', 'Think of a good comeback to “{insult}”'] },
+    quests: ['Buy a dreamcatcher', 'Think of a good comeback to “{insult}”', 'Try to desensitize yourself to "{insult}"'] },
 
   { key: 'intermission', title: 'The Intermission',
     setup: 'This feels like a natural stopping point, as if some chapter or Act were about to finish. Push on to the end of it.',
@@ -158,7 +158,7 @@ K.Stories = [
       'But you can’t stop. You just take a brief break.',
       'You use the chamber pot. You forage for snacks.',
       'You are ready to continue this super-epic journey. The Old Bastard™ will pay!'],
-    quests: ['Find a clean chamber pot', 'Forage for snacks'] },
+    quests: ['Find a clean chamber pot', 'Forage for snacks', , 'Ask {guy} if there will a post-credit scene when this is over.'] },
 
   { key: 'retirement', title: 'The Retirement Plan',
     setup: 'You could buy a tavern and retire. Earn enough gold to seriously consider it.',
@@ -168,7 +168,7 @@ K.Stories = [
       'You invest all the gold and dream of a happy retirement.',
       'Old Bastard™ tanks the stock market in some crypto scheme and you are broke.',
       'Time to hunt down Old Bastard™!'],
-    quests: ['Tour a tavern for sale in {kingdom}', 'Ask {guy} about a small business loan'] },
+    quests: ['Tour a tavern for sale in {kingdom}', 'Ask {guy} about a small business loan', 'Ask {guy} what it takes to run a tavern in {kingdom}'] },
 
   { key: 'bath', title: 'The Bath',
     setup: 'You are covered in what is left of {nemesis} and {nemesis2}. A bath can wait; the Old Bastard™ cannot.',
@@ -178,7 +178,7 @@ K.Stories = [
       'You never could quite wash the viscera from {nemesis2} out of your hair.',
       'You have come so far in your journey, but you also probably need a good bath.',
       'Not time for a bath because you must get that Old Bastard™!'],
-    quests: ['Find soap that works on {nemesis2}', 'Air out your armor'] },
+    quests: ['Find soap that works on {nemesis2}', 'Air out your armor', 'Trade a {boring} for a special degreaser', 'Buy some shampoo that smells like {boring}.'] },
 
   { key: 'killingfields', title: 'The Killing Fields',
     setup: 'Search every corner of the Killing Fields™ for any sign of the Old Bastard™.',
@@ -188,7 +188,7 @@ K.Stories = [
       'Should you look somewhere else?',
       'But there are lots of monsters on the Killing Fields™ and they drop lots of gold.',
       'You like gold, so back to the Killing Fields™!'],
-    quests: ['Map the Killing Fields™', 'Put up "Have You Seen This Old Bastard™?" posters'] },
+    quests: ['Map the Killing Fields™', 'Put up "Have You Seen This Old Bastard™?" posters', 'Ponder if maybe he is not considerate enough to be on the Killing Fields™'] },
 
   { key: 'heist', title: 'The Heist',
     setup: '{guy} hires you to steal the {item} from the vaults of {kingdom}. It is definitely not a setup.',
@@ -210,7 +210,7 @@ K.Stories = [
       'You win! Your opponent in the final forgets to show up. You win again!',
       'Your prize is a lifetime supply of {boring}. It fits in one hand.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Register for the Grand Tournament of {kingdom}', 'Practice your victory pose', 'Scout {nemesis}’s technique'] },
+    quests: ['Register for the Grand Tournament of {kingdom}', 'Practice your victory pose', 'Scout {nemesis}’s technique', 'Scout out how to best beat {klass} in combat', 'Research {race} weaknesses for the tournament'] },
 
   { key: 'prophecy', title: 'The Prophecy',
     setup: 'A blind seer foretells that the Chosen One will defeat the Old Bastard™. Prove that it is you.',
@@ -221,7 +221,7 @@ K.Stories = [
       'Juan wishes you the best of luck.',
       'You decide prophecies are more of a suggestion.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Get the prophecy notarized', 'Find out who Juan is'] },
+    quests: ['Get the prophecy notarized', 'Ask {guy} the Guru if you are the Chosen One', 'Fulfill parts of the prophecy as best you can.'] },
 
   { key: 'escort', title: 'The Escort',
     setup: 'Escort {guy} safely to {kingdom}. They are faster than your walk but slower than your run.',
@@ -232,7 +232,7 @@ K.Stories = [
       'At long last, you arrive in {kingdom}. {guy} tips you a {boring}.',
       'You curse the devs who put in an escort quest.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Wait for {guy} to catch up', 'Find {guy}, who has wandered off again'] },
+    quests: ['Wait for {guy} to catch up', 'Find {guy}, who has wandered off again', 'Ask {guy} to pick a speed you can easily match.', 'Curse {guy} for their terrible pathfinding.'] },
 
   { key: 'curse', title: 'The Curse',
     setup: 'You picked up a cursed {item}. Lift the curse before it gets any worse.',
@@ -243,7 +243,7 @@ K.Stories = [
       'The curse is lifted by accepting the terms of service.',
       'The {item} is now only mildly haunted.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Ask a cleric in {kingdom} about the {item}', 'Get your {boring} to stop talking'] },
+    quests: ['Ask a cleric in {kingdom} about the {item}', 'Get your {boring} to stop talking', 'Ask {guy} the therapist if you can learn to live with the curse', 'Travel to {kingdom} where curses are normalized.', 'Curse {item} for being cursed.'] },
 
   { key: 'strike', title: 'The Strike',
     setup: 'The {race} of {kingdom} are on strike, and nobody is guarding the bridge. Negotiate an end to the strike.',
@@ -253,7 +253,7 @@ K.Stories = [
       '*Highlander Theme Music*',
       '{nemesis} loses their head. The bridge is guarded. The dental plan is mediocre.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement'] },
+    quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement', , 'Ask {guy} for {kingdom} to meet with the {race} rep.', 'Call out the {class} who crossed the picket line.'] },
 
   { key: 'dungeon', title: 'The Dungeon Crawl',
     setup: '{guy} has drawn you a map to the Dungeon of {kingdom}. Several squares are labeled "probably fine".',
@@ -265,7 +265,7 @@ K.Stories = [
       '*Mortal Kombat theme music*',
       'The treasure is a coupon. It has expired.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Buy a ten-foot pole', 'Check the map for squares marked "probably fine"'] },
+    quests: ['Buy a ten-foot pole', 'Check the map for squares marked "probably fine"', 'Look for treasure chests'] },
 
   { key: 'timeloop', title: 'The Time Loop',
     setup: 'Every morning you wake up in {kingdom} on the same day. Figure out how to break the loop.',
@@ -276,7 +276,7 @@ K.Stories = [
       'You wake up in {kingdom}. It is the next day. The loop was broken by being nice to {guy}.',
       'You can no longer juggle.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Be nice to {guy}', 'Learn the lute (again)'] },
+    quests: ['Be nice to {guy}', 'Learn the lute (again)', 'Memorize everything in {kingdom} that happens that day', 'Slowly go insane, like you do.'] },
 
   { key: 'sidekick', title: 'The Sidekick',
     setup: '{guy} insists on being your sidekick. Survive the Act without them getting you killed.',
@@ -286,7 +286,7 @@ K.Stories = [
       '{guy} reveals they are the Old Bastard™’s nephew. He says hi.',
       'There is a tearful goodbye. Mostly on {guy}’s side.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Teach {guy} to stop pulling aggro', 'Buy {guy} a helmet'] },
+    quests: ['Teach {guy} to stop pulling aggro', 'Buy {guy} a helmet', 'Train {guy} on how to be a {klass}'] },
 
   { key: 'ancientevil', title: 'The Ancient Evil',
     setup: 'Something ancient and evil stirs beneath {kingdom}. It is probably not the Old Bastard™, but you had better check.',
@@ -296,7 +296,7 @@ K.Stories = [
       '*Plug the episode sponsor*',
       'It was not the Old Bastard™. You unsubscribe.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Listen to an episode of {nemesis}’s podcast', 'Find the way beneath {kingdom}'] },
+    quests: ['Listen to an episode of {nemesis}’s podcast', 'Find the way beneath {kingdom}', 'Learn a Detect Evil spell to find this Ancient Evil'] },
 
   { key: 'imposter', title: 'The Imposter',
     setup: 'Someone in {kingdom} is pretending to be you, and they have more social media followers. Unmask the imposter.',
@@ -306,7 +306,7 @@ K.Stories = [
       'Honestly, they are better at being you than you are.',
       'You license your identity IP for a cut of the profits.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Collect reviews of "you" in {kingdom}', 'Practice being yourself'] },
+    quests: ['Collect reviews of "you" in {kingdom}', 'Practice being yourself', 'Ask yourself why someone else would want to be you'] },
 
   { key: 'taxes', title: 'Tax Season',
     setup: 'The Royal Treasury of {kingdom} says you owe back taxes on every {boring} you have ever looted. Settle up.',
@@ -317,7 +317,7 @@ K.Stories = [
       '*Itemize This!*',
       'You receive a refund of three copper pieces.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Find your receipts', 'Itemize your {boring} collection'] },
+    quests: ['Find your receipts', 'Itemize your {boring} collection', 'Hire {guy}, the famously-sketchy accountant', 'Hide your {boring} collection before the audit'] },
 
   { key: 'letter', title: 'The Letter',
     setup: 'A letter arrives from the Old Bastard™ himself. It reads, in full: “{insult}” Find out where it was posted from.',
@@ -327,7 +327,7 @@ K.Stories = [
       'It is the bed chambers of your mother in {kingdom2}.',
       'You send a strongly worded letter back.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Ask the postmaster of {kingdom} about a forwarding address', 'Draft a strongly worded reply'] },
+    quests: ['Ask the postmaster of {kingdom} about a forwarding address', 'Draft a strongly worded reply', 'Research the art of Comebacks'] },
 
   { key: 'dragon', title: 'The Dragon',
     setup: 'A dragon is terrorizing {kingdom}. The reward is the hand of {guy} in marriage, which {guy} has not agreed to. Slay the dragon.',
@@ -338,7 +338,7 @@ K.Stories = [
       '{guy} politely declines to marry you.',
       'You accept the cash equivalent instead.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Buy fireproof underwear', 'Ask {guy} if they actually agreed to this'] },
+    quests: ['Buy fireproof underwear', 'Ask {guy} if they actually agreed to this', 'Scout {kingdom} for signs of the dragon', 'Ask the citizens of {kingdom} if they understand consent'] },
 
   { key: 'bard', title: 'The Ballad',
     setup: 'A bard named {guy} is following you around writing songs about you. Make sure the songs are flattering.',
@@ -348,7 +348,7 @@ K.Stories = [
       'You pay {guy} to write a different song.',
       'The new song is worse. It is catchy, though.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bribe {guy}', 'Learn the words to “The Ballad of {hero}”'] },
+    quests: ['Bribe {guy}', 'Learn the words to “The Ballad of {hero}”', 'Show off your impressive {boring} to the bard'] },
 
   { key: 'codex', title: 'Knights of Good',
     setup: 'The Knights of Good need help defending Cheesybeards in {kingdom}.',
@@ -358,7 +358,7 @@ K.Stories = [
       'Vork charges {guy} a heating bill for being close to the fire.',
       'Codex arrives in {kingdom} just in time. Together you save Cheesybeards.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Find Cheesybeards {kingdom} in Google Maps', 'Steal the portrait of Codex and Fawkes from {hero}'] },
+    quests: ['Find Cheesybeards {kingdom} in Google Maps', 'Steal the portrait of Codex and Fawkes from {guy}', 'Ask Tinkerballa on how best to take down {klass}', 'Ask Vork on how to be a better leader', 'Ask Zaboo for their best pick-up lines'] },
 
   { key: 'pyramid', title: 'The Multi-Level Opportunity',
     setup: '{guy} in {kingdom} promises untold wealth and passive income while tracking down the Old Bastard™. Attend their informational seminar.',
@@ -369,7 +369,7 @@ K.Stories = [
       '*fight*',
       'You are now an Emerald Executive, but your inventory is full of unsold {boring}.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Sit through {guy}’s seminar in {kingdom}', 'Try to recruit {nemesis} into your downline'] },
+    quests: ['Sit through {guy}’s seminar in {kingdom}', 'Try to recruit {nemesis} into your downline', 'Unfriend {giver} who tried to recruit you into this nonsense'] },
 
   { key: 'hoa', title: 'The Neighborhood Association',
     setup: 'The Homeowners Association of {kingdom} cites your questing camp for having weeds taller than two inches. Pay the fine or fight City Hall.',
@@ -380,7 +380,7 @@ K.Stories = [
       'The citations are cleared, though you are still banned from parking your horse on the grass.',
       'You pack up your camp and resolve never to buy property.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Mow the moat outside {kingdom}', 'Appeal your citation to {nemesis}'] },
+    quests: ['Mow the moat outside {kingdom}', 'Appeal your citation to {nemesis}', 'Prepare to duel Karen'] },
 
   { key: 'influencer', title: 'The Brand Deal',
     setup: 'A lifestyle brand in {kingdom} wants to sponsor your crusade against the Old Bastard™. Keep up your engagement metrics.',
@@ -390,7 +390,7 @@ K.Stories = [
       'Your audience accuses you of selling out. Your follower count plummets.',
       'You cancel the sponsorship deal and throw the {item} into a swamp.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Record an unboxing video of your new {item}', 'Tag {kingdom} in your battle selfies'] },
+    quests: ['Record an unboxing video of your new {item}', 'Tag {kingdom} in your battle selfies', 'Ask {giver} what in the heck is a Lifestyle Brand'] },
 
   { key: 'cursedsword', title: 'The Sentient Weapon',
     setup: 'You loot a talking blade that promises ancient forbidden lore about the Old Bastard™. Put up with its constant commentary.',
@@ -401,7 +401,7 @@ K.Stories = [
       'You trade the annoying sword to {guy} for a slightly rusty {boring}.',
       'Blessed silence returns at last.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Muffle the talking blade with a dirty towel', 'Ask the blade what it knows about the Old Bastard™'] },
+    quests: ['Muffle the talking blade with a dirty towel', 'Ask the blade what it knows about the Old Bastard™', 'Record a podcast with the talking blade'] },
 
   { key: 'bakeoff', title: 'The Great Kingdom Bake-Off',
     setup: 'Rumor has it the Old Bastard™’s grandmother is judging the annual pastry tournament in {kingdom}. Bake your way to victory.',
@@ -412,7 +412,7 @@ K.Stories = [
       'You win second prize: a commemorative {boring}.',
       'The grandmother was actually just {guy} wearing a floral apron.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Knead dough until your arms give out', 'Sabotage {nemesis}’s sourdough starter'] },
+    quests: ['Knead dough with {boring} until your arms give out', 'Sabotage {nemesis}’s sourdough starter', 'Try to recreate a traditional {race} recipe', 'Practice getting a handshake from Paul Hollywood for your pastry', 'Keep opening the open because you are worried it will not finish in time as if that will help'] },
 
   { key: 'jury', title: 'Civic Duty',
     setup: 'A courier serves you a summons for jury selection in the municipal courts of {kingdom}. You cannot skip civic duty.',
@@ -423,7 +423,7 @@ K.Stories = [
       'The judge declares a mistrial due to excessive battlefield violence.',
       'You are compensated with two copper pieces and a voucher for dry cleaning.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Report to the courthouse in {kingdom}', 'Try to get dismissed during jury selection'] },
+    quests: ['Report to the courthouse in {kingdom}', 'Try to get dismissed during jury selection', 'Explain to {giver} that you are on a petty, personal quest for vengeance and that is more important than civic duty', 'Binge episodes of Judge Judy in preparation'] },
 
   { key: 'dmv', title: 'Cart Registration',
     setup: 'The road authorities of {kingdom} impound your war wagon for expired tags. Navigate the bureaucratic abyss.',
@@ -434,7 +434,7 @@ K.Stories = [
       '*fight*',
       'Your wagon registration is renewed, but you forgot to get your emissions sticker.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Take a number and wait in {kingdom}', 'Fill out Form 1040-EZ in triplicate'] },
+    quests: ['Take a number and wait in {kingdom}', 'Fill out Form 1040-EZ in triplicate', 'Research the permit laws in {kingdom}'] },
 
   { key: 'hauntedinn', title: 'The Bed and Breakfast',
     setup: 'Exhausted, you book a room at a quaint country inn near {kingdom}. The listing failed to mention the haunting.',
@@ -444,7 +444,7 @@ K.Stories = [
       'You conduct an impromptu exorcism using a {boring} and salt.',
       'The innkeeper, {guy}, still charges you a cleaning fee.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Ask the ghost to keep it down', 'Argue with {guy} about the hidden resort fee'] },
+    quests: ['Ask the ghost to keep it down', 'Argue with {guy} about the hidden resort fee', 'Record a Ghost Hunter podcast episode with {guy}', 'Try to chase the ghost away rather than asking it the secrets of what lies beyond death'] },
 
   { key: 'dating', title: 'The Blind Date',
     setup: '{guy} sets you up on a blind date in {kingdom}, promising they know someone with dirt on the Old Bastard™.',
@@ -455,7 +455,7 @@ K.Stories = [
       '*fight*',
       'You split the bill and slip out through the kitchen window.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Put on your least blood-spattered clothes', 'Endure awkward small talk with {nemesis}'] },
+    quests: ['Put on your least blood-spattered clothes', 'Endure awkward small talk with {nemesis}', 'Secretly hope the date is more than fact-finding, and that you may find love', 'Swipe left on {guy} and right on {guy2}', 'Get a dinner reservation in {kingdom}'] },
 
   { key: 'subscription', title: 'The Free Trial',
     setup: 'You signed up for a 30-day trial of Guild Membership in {kingdom} to find the Old Bastard™. Now you must cancel it.',
@@ -466,7 +466,18 @@ K.Stories = [
       '*fight*',
       'Your card is still charged for next month anyway.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Navigate the automated guild switchboard', 'Demand to speak to {nemesis}’s supervisor'] },
+    quests: ['Navigate the automated guild switchboard', 'Demand to speak to {nemesis}’s supervisor', 'Spend ages holding to speak with someone who probably will not help you out', 'Silently curse yourself for forgetting to cancel in time'] },
+
+  { key: 'bigfoot', title: 'Learn Kumite from The Master',
+    setup: 'There is a legendary master of Kumite, which can help you defeat Old Bastard™. You must learn these secrets..',
+    ending: [
+      'When the student is ready, the Master will appear...',
+      'Bigfoot steps out of the shadows with impossible grace, silence and stealth.',
+      'He teaches you the first lessons in mastering The Kumite.',
+      '*training montage*',
+      'You must continue your training and your journey.',
+      'You feel better prepared to literally kick the shit out of Old Bastard™.'],
+    quests: ['Demonstrate your honor and dedication to the hidden Master...', 'Wax on and wax off in case the Master is Mr. Miyagi', 'Keep on the look out for ninjas. Ninjas are always around.', 'Leave the hidden Master a gift offering of {boring}', 'Sing that awesome Last Dragon theme song for the hidden Master'] },
 ];
 
 // Fill a story's placeholders. vars is made once per Act by StoryVars().
@@ -587,7 +598,7 @@ K.Quests = [
   'hunt|Clean up {n} {monsters} tracking mud into {kingdom}.',
   'hunt|Extract {guy} from a swarm of {monsters}.',
   'hunt|{guy} demands you prevent {the-monsters} from forming a union.',
-  'hunt|Practice retro-active {the-monsters} and unalive them.',
+  'hunt|Practice retro-active birth-control on {the-monsters} and unalive them.',
   'hunt|Serve {the-monsters} with a cease-and-desist order.',
   'hunt|Send {the-monsters} straight to voicemail.',
   'hunt|Collect {n} {monster} {drops} to pay off student loans.',
@@ -819,19 +830,32 @@ K.FinaleStory = {
 // (what killed them), {level}, {race}, {klass}, {boring}, {act}.
 K.Obituary = {
   lastWords: [
-    "I thought it would be bigger",
-    "Tell my {boring} I loved it",
+    "{foe} doesn't look so tough. Watch this!",
+	"I thought it would be bigger",
+	"Not like this",
+	"So that is what that feels like.",
+	"My blood hurts.",
+	"Oh Death, where is thy sting? Oh, there it is!",
+	"To my family I leave my {boring} and massive debt.",
+    "Tell my {boring} I loved it. My family, not so much.",
     "Hold my mead",
+	"Film this. This will make great content!",
     "It's only a flesh wound",
     "Who leveled {foe} this high?",
     "Wait, this isn't the tutorial?",
     "I regret nothing. Except the last few minutes",
-    "Did anyone else hear a death roll?",
+    "Did anyone else hear a death saving roll?",
     "Is it too late to switch to New Game?",
-    "Don't let the Old Bastard\u2122 win",
+    "Don't let the Old Bastard™ win",
     "I was going to retire next week",
     "Avenge me. Or don't. I'm not your mom",
-    "Put that on my tombstone. No, not that. Wait"
+    "Put that on my tombstone. No, not that. Wait",
+	"Do not try to cuddle (foe) on a cold night.",
+	"I wonder if (foe) is ticklish.",
+	"(foe) didn't tell me they added death to this game.",
+	"(what killed them) is better than dying to the plague, like Carl.",
+	"I hope to reincarnate with a better name than (hero).",
+	"I thought (boring) was a 1-up mushroom!",
   ],
   epitaphs: [
     "They let the game play itself, and the game played them.",
@@ -841,8 +865,20 @@ K.Obituary = {
     "Fought bravely. Mostly.",
     "Died as they lived: idling.",
     "Rest in progress.",
-    "Progress bar: 100%.",
+    "Life Progress bar: 100%.",
     "Here lies a {race} {klass}. Mind the {boring}.",
-    "Survived the Prologue. Did not survive {act}."
+	"Did anyone expect more from a {race} {klass}?",
+	"For all their strengths, {race} {klass} are weak to dying. And cake.",
+    "Survived the Prologue. Did not survive {act}.",
+	"Will we remember their life, or (what killed them).",
+	"The bards will remember (hero) for all the wrong reasons.",
+	"Honestly, no one had high expectations for (hero).",
+	"There is no tomb for (hero). (foe) ate them and shit them out.",
+	"If you want a better epitaph, make it past level (level).",
+	"They will be remembered as a hero amongst the (race). They have low standards.",
+	"Maybe they should have trained harder at (klass) school.",
+	"(hero) was a brave adventurer. Maybe not a great adventurer.",
+	"(hero) gave their life for (boring). Don't ask why.",
+	"(act) wasn't the end of the script, until it was.",
   ]
 };

@@ -37,6 +37,9 @@ jQuery 4 is bundled as jquery-4.0.0.min.js, so no network is needed.
 Simulator
 ---------
 
+You cannot easily balance or test a game that takes so long to play. I had
+to create a simulator for game balance.
+
 sim.js runs the real game scripts headlessly in Node, finishing every
 task instantly, so you can watch a character grow to level 50 in a few
 seconds. Runs with the same seed are identical.
@@ -44,6 +47,7 @@ seconds. Runs with the same seed are identical.
     node sim.js --levels 50 --seed pq
     node sim.js --race "4chan Troll" --class "Barbarian Pretzel" --quiet
     node sim.js --daily 2026-10-07 --quiet     # play that day's Daily Challenge
+    node sim.js --replay Hero.pqw              # replay a backup and check it
     node sim.js --help
 
 Use it to check that a change behaves the way you expect before playing.
@@ -82,10 +86,22 @@ keep the counts at 3.
   character casts spells.
 
 
+Alignment
+---------
+
+Every hero has an alignment, shown on the character sheet between Class
+and Level: Lawful, Neutral or Chaotic, then one of K.AlignmentFlaws in
+config.js ("Chaotic Gassy", "Lawful Murder-Hobo"). It is rolled with the
+stats (so Unroll brings the old one back, and a seed fixes it), shows in
+Resume and the Hall, and does nothing else. Heroes from before alignments
+get one picked from their name so loading them doesn't touch their random
+numbers. Add flaws to the list freely.
+
+
 Combat
 ------
 
-Every monster on the Killing Fields is now actually fought. combat.js
+Every monster on the Killing Fields™ is now actually fought. combat.js
 holds the rules as a pure function, ResolveCombat(hero, foe, seed): the
 same character, monster and seed always give the same fight, so a
 server can one day replay a character's history to catch cheaters.
@@ -165,8 +181,28 @@ armor slots sets how much damage you shrug off.
 - Everything you pick up, gold included, is unbanked until you sell it
   at market; the line under the inventory shows how much you carry.
 - CHA also raises the prices you get when selling.
+- You can carry 10 + STR cubits, but no more than 40 (K.Loot.CarryCap),
+  and with anything to sell you head to market at least once an hour of
+  play (K.Loot.MarketHours).
 
 Tuning knobs are in K.Loot in combat.js.
+
+Why the cap: STR grows exponentially and loot doesn't, so the pack took
+longer and longer to fill. Simulated heroes (3, to level 50) went to
+market 25-39 times in all, almost never after level 35; two of the three
+earned no gold at all from level 40 to 50, and town and road events (which
+happen on the way to and at market) dried up. With the cap and the hourly
+trip:
+
+                       market trips   gold earned     events seen   hours
+                       by level 50    by level 50     by level 50   to 50
+  before (uncapped)       25-39       107k-190k          42-43      147-248
+  after (cap 40, 1 h)    260-285      2.7M-3.4M          46-50      138-161
+
+Heroes reach the 40-cubit cap around level 30, so nothing changes before
+that. More gold buys more of the premium gear in the shop, so the slowest
+hero got to 50 in 161 hours instead of 248, and defeats on the way went
+down a little or stayed the same (3,996-4,760, against 4,345-6,747).
 
 
 Defeat
@@ -174,9 +210,10 @@ Defeat
 
 Lose a fight and:
 
-- the monster goes through your pockets: 30-60% of your unbanked gold
-  and about a third of your unsold loot. Banked gold and the gear you
-  are wearing are never taken.
+- the monster goes through your pockets: because to blaive means to bluff
+  and if someone is all the way dead, all you can is go through their 
+  pockets. 30-60% of your unbanked gold and about a third of your unsold loot.
+  Banked gold and the gear you are wearing are never taken.
 - someone drags you back to town ("You are dragged back to town by a
   Demi-Canadian Sailor Rune"), and you convalesce at a temple. The stay
   is longer at higher levels and shorter with more CON.
@@ -212,6 +249,15 @@ Checked by simulating one character for every race x class combination
 (91% on average); races are within 5 percentage points of one another and
 classes within 4; martial, arcane and mixed characters within a point.
 
+Balance is a tricky thing and is more than just what attributes make you
+win a single combat. How often do you need to rest? How often do you cast
+spells? How quickly do you run out of MP? What about carrying capacity,
+gold, loot, running away, recovering from defeat, etc?
+
+The original game was just a series of timers. Balance was not a concern.
+I am reasonably happy with how balanced the current design is, but I will
+likely continue to tweak for better balance in the future.
+
 
 Story
 -----
@@ -223,8 +269,8 @@ When the Act's bar fills, that same story's ending plays out as the
 cinematic, with the same people and places, and the next Act begins
 with a new story. Hover over an Act in the list to see what it was
 about and, once it is over, how it ended (handy, since the game idles
-and the cinematic is easy to miss). The Prologue is always the Old Bastard(TM) taunting you in your
-dreams, with a freshly generated Shakespearean insult.
+and the cinematic is easy to miss). The Prologue is always the Old Bastard™
+taunting you in your dreams, with a freshly generated Shakespearean insult.
 
 Quests come from a much longer list (hunt a monster, placate it,
 unionize it, escort someone, return an overdue library book...), and
@@ -275,7 +321,7 @@ Random events
 -------------
 
 Now and then something happens: while you rest, on the road to the
-Killing Fields(TM), in town, or after a fight. Events are narrated, and
+Killing Fields™, in town, or after a fight. Events are narrated, and
 most give a small reward or cost (gold, an item, a temporary stat buff, a
 spell, a piece of gear, healing, a few fights Wounded, a little XP).
 
@@ -285,13 +331,15 @@ at the top of the file, and story placeholders ({guy}, {kingdom},
 {nemesis}...) work in the lines. K.EventChance and K.EventCooldown set
 how often they happen (about one every 10 minutes of play by default).
 
+A typo in the main scripts are easily caught because they break the whole
+game right away. Events only trigger once in a while, so I added an 
+additional check for syntax errors there.
+
 Check events.js after editing it:
 
     node check-events.js
 
-One missing comma or brace stops the whole file from loading, and then no
-events happen at all (the browser only says so in its console). The
-checker says which line the parser gave up on, and also catches duplicate
+The checker says which line the parser gave up on, and also catches duplicate
 keys, misspelled 'where' places and effects, unknown {placeholders}, and
 choice events with the wrong number of choices. It exits with an error if
 anything is wrong.
@@ -331,7 +379,7 @@ Hardcore
 Challenge Modes (main menu) > Start a Hardcore hero. One life: every
 defeat may be the last. The chance (K.Hardcore in combat.js) is 0.05% per
 defeat, doubled while Wounded, 15% more for each level the monster is
-above you, tripled against the Old Bastard(TM), and never more than 25%.
+above you, tripled against the Old Bastard™, and never more than 25%.
 It is rolled with the game's seeded random numbers, so closing the tab or
 reloading doesn't change it. A Hardcore hero carries the legacy of the
 whole Hall of Legends (Hardcore is where it matters), and is marked with a
@@ -363,8 +411,7 @@ each): heroes lose hundreds to thousands of fights, mostly in their 40s.
   all 48 (+45%)          900             30%             24%
 
 So it is hard but not impossible once the Hall is full, and nearly
-hopeless without it. Tactics matter more here: Play it safe and Careful
-resting mean fewer defeats.
+hopeless without it. Tactics matter more here.
 
 
 Seeds, the Daily Challenge and mutators
@@ -422,7 +469,87 @@ swing tenfold from hero to hero (a few big sales make most of the gold,
 and some heroes rarely go 40 fights without a defeat), so a day could be
 over in 20 minutes or next to impossible. The hero's counters
 (game.wins, game.streak, game.questsDone, game.goldEarned) are kept
-anyway. Saves are now version 11.
+anyway.
+
+
+The menu bar
+------------
+
+The game window has a Windows 95 menu bar (menubar.js): click a menu, or
+press Alt and its underlined letter (or F10), then use the arrow keys,
+Enter and Esc. The links under the task bar stay too, so nobody misses
+them.
+
+  File   New Hero, Open Hero, Save (Ctrl+S), Export Hero (a .pqw backup),
+         Import Hero, Share Character Sheet, Retire, Exit
+  Edit   Copy Character Sheet (as text), and jokes
+  View   Narration, Event Pop-ups, Combat Log, Desktop Icons, Full Screen,
+         Pop Out Window (the toggles show a check mark)
+  Game   Pause, Tactics, Speed, Genome, Codex, Hall of Legends, Challenge
+         Modes, Main Menu
+  Help   Help Topics (F1, the FAQ), Tip of the Day, the Progress Quest
+         website, the original source, Wikipedia, this repo on GitHub,
+         Report a Bug, the old site's archives, About
+
+Some items are jokes (Undo, Cut, Paste, Print, Find, Zoom In, Cheat
+Codes, Speed > Fast, Check for Updates, Register...); their lines are in
+K.MenuJokes in menubar.js, and the tips in K.Tips. A menu is just a list
+in MenuBar: add an item with a label ("&" before its key letter, which
+must be unique in its menu) and an action or a link.
+
+
+Sharing a character sheet
+-------------------------
+
+File > Share Character Sheet (or Share under the task bar, or Share in
+Resume) makes a link to sheet.html with the whole sheet packed into the
+part after the # (compressed with the browser's CompressionStream, about
+1 KB). Anyone can open it: they see the sheet as it was when shared,
+with "Straight from the game" if it's untouched, or a warning if the link
+was edited. It isn't a save, so it can't be played or imported.
+
+
+Importing, and the anti-cheat scan
+----------------------------------
+
+Importing a hero (File > Import Hero in the game, or Import in Resume, or
+dropping .pqw files on the menu) runs the scan first, one line per check:
+
+- Seal: was the backup edited outside the game?
+- Hardcore: is the hero dead, or an older copy than this browser has?
+  (These two can't be imported at all.)
+- Finale, time played, level pace, stats, HP and MP, gear: the same rules
+  the game checks as it runs (AuditSheet in transfer.js, limits in K.Guard
+  in config.js).
+- Replay: the simulator plays the hero's whole game again (below).
+
+A suspicious hero can still be imported, branded a cheater.
+
+Replays. A hero's game follows from where it started, the seeded dice,
+and the player's choices and tactics. So every hero created from now on
+keeps a copy of where it started (game.replay.birth), every choice and
+tactics change with the task it happened on (game.choiceLog, including
+how long a choice took), and a fingerprint of the state every 500 tasks
+(game.replay.list). replay.js plays the game again from the start, with
+the same inputs at the same moments, in a Web Worker; each checkpoint
+must come out the same, and where the replay ends must be exactly the
+saved hero (level, stats, gear, spells, pack, experience, time played,
+plot, defeats). Change anything in the save, or play with a modified copy
+of the game, and the replay comes out different: changing one choice
+showed up at the next checkpoint, and adding 2 STR at the end showed up
+as "stats". The scan replays for up to 10 seconds (about 7,000 tasks,
+8 hours of play) and offers to replay the rest; a level 50 hero takes a
+few minutes. node sim.js --replay Hero.pqw does the same from the command
+line.
+
+A replay only works with the code the hero was played with: the game
+fingerprints the files that decide a game (K.Replay.Files: config.js,
+story.js, events.js, combat.js and main.js), and when a hero is loaded
+with different files their replay is switched off for good ("played with
+an older version of the game"). So every upload of one of those files
+(events.js included) means heroes from before it can't be replayed; new
+heroes can. Heroes from before this change can't be replayed either, but
+get every other check.
 
 
 Codex and achievements
@@ -442,7 +569,7 @@ main menu, or "Codex" under the task bar (it opens in a new tab), shows:
 - Journal: all the events in events.js, with how the first one went, how
   often each has happened, and for choice events how often each option
   was picked by you and by fate.
-- Achievements (K.Achievements in codex.js): 41 of them, for the climb,
+- Achievements (K.Achievements in codex.js): 42 of them, for the climb,
   the Hall, Hardcore, challenges, fighting, filling the Codex, and a few
   secrets that show as ??? until found. Each one has a value and a goal
   (progress bars show how close you are) and unlocks once, for good,
@@ -483,11 +610,8 @@ So most of the Bestiary comes early, and the last few dozen monsters
 keeps growing with WIS, past 50 too. Goals were set from this: 100 and
 400 monster kinds, 25, 100 and 200 spells, 25 events and all of them.
 
-The event count stalls after level 40 because town and road events only
-happen on trips to market, and those get rare: carrying capacity grows
-with STR, which grows exponentially, while loot doesn't. One simulated
-hero went to market twice in the 40 hours from level 35 to 42, and two of
-the three earned no gold at all from level 40 to 50.
+(Measured before the carrying cap below; since then heroes see 46-50
+events by level 50.)
 
 
 Choices
@@ -505,7 +629,7 @@ Choice events are ordinary entries in events.js with an ask and 2 or 3
 choices, each with its own label, lines and effect (the format is at the
 top of the file). Seven are included: a crossroads, a mystery box, a
 wounded stranger, a shrine, a pit fighter, hate mail from the Old
-Bastard(TM) and a giant egg.
+Bastard™ and a giant egg.
 
 For seeded runs (a daily challenge, say): fate's pick is drawn from the
 game's random numbers whether or not someone chose, so the stream of
@@ -547,7 +671,7 @@ The finale, retiring and the Hall of Legends
 --------------------------------------------
 
 At level 50 (K.Boss.Level in combat.js) the Prologue's promise comes due.
-Instead of the next monster, the hero tracks down the Old Bastard(TM),
+Instead of the next monster, the hero tracks down the Old Bastard™,
 who sneers the same insult he used in your dream, and they fight. It is
 a real fight (ResolveCombat) against a level 51 monster with twice the
 usual health who never gives up. The scenes are narrated, and their lines
@@ -568,13 +692,11 @@ are in story.js (K.FinaleStory) with the usual placeholders plus {taunt},
 
 The Hall of Legends (main menu) is kept in this browser and shared by all
 characters: each legend's race and class, level, when they beat the Old
-Bastard(TM) and on which try, defeats, time played, best gear, spell and
+Bastard™ and on which try, defeats, time played, best gear, spell and
 stat, and the Prologue taunt. It also shows which of the 24 races and 24
 classes have been honored, which New Game+ will turn into legacy bonuses.
 "Back up Hall" downloads it as a file, and "Restore" adds legends back
 from one. index.html#hall opens it directly.
-
-Saves are now version 7 (game.finale).
 
 
 New Game+ and legacies
@@ -606,9 +728,6 @@ It is a strong reward. Simulated heroes (6 each, to level 40):
   half (+22.5%)      28 h         195      98.1%
   all 48 (+45%)      24 h          71      99.4%
 
-Lower K.Legacy.Primary and Secondary to make it gentler. Saves are now
-version 8 (game.mode, game.legacy).
-
 
 Cheating
 --------
@@ -629,7 +748,7 @@ retire). What gets noticed:
   allows, or stats, HP/MP or gear far beyond the level. The limits
   (K.Guard in main.js) are several times what simulated heroes, even with
   a full New Game+ legacy, ever reach.
-- Beating the Old Bastard(TM) below the finale level.
+- Beating the Old Bastard™ below the finale level.
 - Hall of Legends entries are sealed too. An edited legend stops counting,
   and Restore leaves edited entries out.
 
@@ -641,10 +760,7 @@ for real one day.
 And then there is the Konami code (up up down down left right left right
 B A, on the menu or in the game): Konami.mp3 plays and a stop screen
 explains that no cheating is allowed (guard.js, which also draws pq.exe's
-stop screen). It doesn't brand anyone. Add Konami.mp3 to the site for the
-sound; without it the stop screen still shows.
-
-Saves are now version 9 (game.seal, game.cheater, game.birthVersion).
+stop screen). It doesn't brand anyone.
 
 
 Endgame: where the content runs out
