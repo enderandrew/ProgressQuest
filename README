@@ -23,9 +23,11 @@ index.html is the main menu, a Windows XP desktop on Bliss: New Game (the
 character roller, newguy.html, in a window), Resume (your saved heroes,
 with backup, import and delete), New Game+ (a new hero with a legacy, see
 below), Hall of Legends (retired heroes, and the Hall of the Fallen),
-Challenge Modes (the Daily Challenge, Custom Run and Hardcore), FAQ
+Challenge Modes (the Daily Challenge, Custom Run and Hardcore), Codex
+(Bestiary, Spellbook, Journal and achievements), FAQ
 (faq.php, in a window) and GitHub. Each opens in its own window;
-index.html#resume, #new, #hall, #faq, #github and so on open one directly.
+index.html#resume, #new, #hall, #codex, #faq, #github and so on open one
+directly.
 Quitting a game comes back to Resume, and the old roster.html redirects
 there.
 
@@ -421,6 +423,71 @@ and some heroes rarely go 40 fights without a defeat), so a day could be
 over in 20 minutes or next to impossible. The hero's counters
 (game.wins, game.streak, game.questsDone, game.goldEarned) are kept
 anyway. Saves are now version 11.
+
+
+Codex and achievements
+----------------------
+
+codex.js keeps a record of everything your heroes have seen, in this
+browser, shared by all of them (like the Hall of Legends). Codex on the
+main menu, or "Codex" under the task bar (it opens in a new tab), shows:
+
+- Bestiary: all 526 monsters in K.Monsters, weakest first. Slain ones
+  show what they drop, how many your heroes have slain, how many times it
+  beat them, and who slew one first; the rest are ??? with their level.
+- Spellbook: all 404 spells, in K.Spells order, which is the order they
+  come within reach (a level-up teaches a spell whose number is below
+  WIS + level). Known ones show their kind, the highest level any hero
+  has known them at, and who learned them first.
+- Journal: all the events in events.js, with how the first one went, how
+  often each has happened, and for choice events how often each option
+  was picked by you and by fate.
+- Achievements (K.Achievements in codex.js): 41 of them, for the climb,
+  the Hall, Hardcore, challenges, fighting, filling the Codex, and a few
+  secrets that show as ??? until found. Each one has a value and a goal
+  (progress bars show how close you are) and unlocks once, for good,
+  with a toast in the corner (over pop-ups too) and a word from the
+  narrator.
+
+Searching only finds what you've found, so it can't spoil the rest. The
+Codex has its own Back up / Restore; restoring keeps the larger of each
+count, so restoring the same backup twice changes nothing.
+
+Rules: a hero branded a cheater adds nothing. The Codex is sealed like a
+save; if it's edited outside the game it is marked as edited for good,
+and an edited backup won't restore. Changes are saved every 30 seconds,
+when the game saves and when the page closes, and are added to whatever
+is stored, so heroes in two tabs both count. Recording uses no random
+numbers, so seeded runs play the same with or without it.
+
+To add an achievement, add an entry to K.Achievements: key, icon, label,
+help, goal (a number, or a function) and value(c), where c has the Codex
+counts (monsters, spells, events), totals (wins, gold, choseYou,
+choseFate), bests from any one hero (bestLevel, bestHardcore, bestHours,
+best.streak, best.defeats), the Hall (legends, races, klasses, fallen),
+dailies completed, and flag(name) for one-off moments ("boss",
+"bossfirst", "bosshc", "boss:<mutator>", "dailyhc", "konami",
+"petrock", "icon:<desktop icon>"). A new flag is one CodexFlag("name")
+call wherever it happens.
+
+How fast the Codex fills, for one hero with no legacy (3 simulated heroes):
+
+  level   monsters slain   spells known   events seen   best streak
+   10        220-245            8-9           9-13          16-34
+   25        435-450           19-25         30-36          19-42
+   40        480-500           51-68            42          34-70
+   50        485-500           93-136         42-43         34-70
+
+So most of the Bestiary comes early, and the last few dozen monsters
+(the weakest, and those above level 50) take more heroes; the Spellbook
+keeps growing with WIS, past 50 too. Goals were set from this: 100 and
+400 monster kinds, 25, 100 and 200 spells, 25 events and all of them.
+
+The event count stalls after level 40 because town and road events only
+happen on trips to market, and those get rare: carrying capacity grows
+with STR, which grows exponentially, while loot doesn't. One simulated
+hero went to market twice in the 40 hours from level 35 to 42, and two of
+the three earned no gold at all from level 40 to 50.
 
 
 Choices

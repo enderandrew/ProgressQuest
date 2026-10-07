@@ -67,6 +67,7 @@ function SelectDesktopIcon(btn) {
 }
 
 function OpenDesktopIcon(icon) {
+  if (typeof CodexFlag == "function") CodexFlag("icon:" + icon.name);   // see codex.js
   if (icon.run) icon.run();
   else if (icon.open) window.open(icon.open, "_blank", "noopener");
 }

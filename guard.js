@@ -69,6 +69,7 @@ function KonamiKey(e) {
   }
   if (_konami < KonamiCode.length) return;
   _konami = 0;
+  if (typeof CodexFlag == "function") CodexFlag("konami");   // an achievement, of sorts
   NoCheating();
 }
 
@@ -87,7 +88,7 @@ function NoCheating() {
       "If this is the first time you've seen this Stop error screen, put down the controller. If " +
       "this screen appears again, follow these steps:",
       "Think about what you've done. Let the progress bars fill at their own pace. If problems " +
-      "continue, go outside."
+      "continue, go outside. Touch grass."
     ],
     technical: [
       "*** STOP: 0x00C0FFEE (0x00000030, 0x0000001E, 0x0000BA5E, 0x00000000)",

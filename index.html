@@ -24,11 +24,14 @@
   gtag('config', 'G-C7FZLTKS4Q');
 </script>
 <link rel="stylesheet" href="menu.css">
+<link rel="stylesheet" href="codex.css">
 <script src="jquery-4.0.0.min.js"></script>
 <script src="config.js"></script>
 <script src="story.js"></script>
 <script src="combat.js"></script>
+<script src="events.js"></script>
 <script src="daily.js"></script>
+<script src="codex.js"></script>
 <script src="menu.js"></script>
 <script src="guard.js"></script>
 </head>
@@ -52,6 +55,7 @@
       <button class="xp-button big" data-open="dlgPlus"><span class="ico">&#x2795;</span>New Game+<span class="count gold" id="plusCount"></span><span class="soon" id="plusLocked">locked</span></button>
       <button class="xp-button big" data-open="dlgHall"><span class="ico">&#x1F3C6;</span>Hall of Legends<span class="count gold" id="hallCount"></span></button>
       <button class="xp-button big" data-open="dlgChallenge"><span class="ico">&#x1F3B2;</span>Challenge Modes</button>
+      <button class="xp-button big" data-open="dlgCodex"><span class="ico">&#x1F4D6;</span>Codex<span class="count" id="codexCount"></span></button>
       <button class="xp-button big" data-open="dlgFaq"><span class="ico">&#x2753;</span>FAQ</button>
       <button class="xp-button big" data-open="dlgGitHub"><span class="ico">&#x1F4BB;</span>GitHub</button>
     </nav>
@@ -126,6 +130,41 @@
     <div class="xp-actions">
       <a class="xp-button" id="hallBackup" title="Download the Hall as a file">Back up Hall</a>
       <label class="xp-button" title="Add legends from a Hall backup">Restore&hellip;<input type="file" id="hallRestore" accept=".json,application/json" hidden></label>
+      <span class="hint">Kept in this browser, shared by all your heroes.</span>
+      <button class="xp-button" data-close>Close</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ---- Codex: Bestiary, Spellbook, Journal and achievements (codex.js) ------ -->
+<dialog class="xp-window" id="dlgCodex" aria-labelledby="dlgCodexTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgCodexTitle">Codex</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <div class="xp-tabs" role="tablist">
+      <button type="button" role="tab" data-tab="achievements">Achievements <span></span></button>
+      <button type="button" role="tab" data-tab="bestiary">Bestiary <span></span></button>
+      <button type="button" role="tab" data-tab="spellbook">Spellbook <span></span></button>
+      <button type="button" role="tab" data-tab="journal">Journal <span></span></button>
+    </div>
+    <div class="xp-tabpanel">
+      <p id="codexSummary"></p>
+      <div class="codex-tools">
+        <input type="search" id="codexSearch" placeholder="Search what you've found" spellcheck="false">
+        <select id="codexFilter" aria-label="Show">
+          <option value="all">All</option>
+          <option value="found">Found</option>
+          <option value="missing">Not yet</option>
+        </select>
+      </div>
+      <div id="codexPane"></div>
+    </div>
+    <div class="xp-actions">
+      <a class="xp-button" id="codexBackup" title="Download the Codex and achievements as a file">Back up Codex</a>
+      <label class="xp-button" title="Add what a Codex backup has seen">Restore&hellip;<input type="file" id="codexRestore" accept=".json,application/json" hidden></label>
       <span class="hint">Kept in this browser, shared by all your heroes.</span>
       <button class="xp-button" data-close>Close</button>
     </div>

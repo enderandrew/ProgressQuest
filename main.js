@@ -299,6 +299,9 @@ function Dequeue() {
         }
       }
       FinishFight();
+      // the Bestiary: the kind of monster (not a passing NPC), won or lost
+      if (Split(game.task,3) != '*' && game.combat && game.combat.outcome != 'flee')
+        CodexMonster(Split(game.task,1), FightWon());
       if (FightWon()) MaybeEvent('field', game.task);
     } else if (game.task == 'rest' || game.task == 'heal') {
       if (game.task == 'heal') PayTemple();
@@ -336,6 +339,7 @@ function Dequeue() {
         Inventory.remove1();
         Add(Inventory, 'Gold', amt);
         game.goldEarned = (game.goldEarned || 0) + amt;
+        CodexBump('gold', amt);
       }
       if (Inventory.length() > 1) {
         Inventory.scrollToTop();
@@ -470,6 +474,7 @@ function FinishFight() {
   if (fight.outcome == 'win' || fight.outcome == 'close') {
     game.wins = (game.wins || 0) + 1;
     game.streak = (game.streak || 0) + 1;
+    CodexBump('wins', 1);
   } else {
     game.streak = 0;   // a defeat or running away ends a winning streak
   }
@@ -668,6 +673,10 @@ function FinishBoss() {
     f.wonAt = game.elapsed || 0;
     f.wonLevel = GetI(Traits,'Level');
     Log('Defeated the Old Bastard\u2122 after ' + f.tries + (f.tries == 1 ? ' try' : ' tries'));
+    CodexFlag('boss');
+    if (f.tries == 1) CodexFlag('bossfirst');
+    if (game.mode == 'hardcore') CodexFlag('bosshc');
+    $.each(game.mutators || [], function (i, m) { CodexFlag('boss:' + m); });
     QueueFinale('victory', 'victory');
     ShowRetire();
     Brag('f');
@@ -969,6 +978,7 @@ function MaybeEvent(where, resume) {
   instance.where = where;
   instance.shown = 0;
   instance.lines = event.lines.map(function (line) { return EventLine(line, vars); });
+  CodexEvent(event.key, instance.lines[0]);
   // One task per line. Each line is shown (RevealEventLine) as its task
   // starts; 'event' marks the last one, after which the effect is applied.
   // A choice event asks its question after its lines (BeginChoice), and the
@@ -1124,6 +1134,7 @@ function ResolveChoice() {
   ev.by = mine ? 'you' : 'fate';
   ev.pending = false;
   game.choiceLog = (game.choiceLog || []).concat([{ t: game.tasks, event: ev.key, pick: ev.chosen, by: ev.by }]).slice(-500);
+  CodexChoice(ev.key, ev.chosen, ev.by);
   var o = ev.choices[ev.chosen];
   var lines = o.lines && o.lines.length ? o.lines : ['You decide: ' + o.label];
   var first = ev.lines.length;
@@ -1387,6 +1398,10 @@ function SettleDaily(status) {
   NoteDaily();
   ShowDaily();
   Log('Daily challenge ' + status);
+  if (status == 'done') {
+    storage.loadDailies(function (book) { CodexExtra.dailies = book; Codex.counts = null; CheckAchievements(); });
+    if (game.mode == 'hardcore') CodexFlag('dailyhc');
+  }
   if (!document) return;
   if (status == 'done') {
     $("#DailyResult").text(Get(Traits,'Name') + " did it: " + d.label + ", in " +
@@ -1883,6 +1898,7 @@ function DropLoot(part) {
 function BankPurse() {
   if (game.purse) {
     game.goldEarned = (game.goldEarned || 0) + game.purse;
+    CodexBump('gold', game.purse);
     Add(Inventory, 'Gold', game.purse);
     game.purse = 0;
   }
@@ -2109,6 +2125,7 @@ function WinSpell() {
   var spell = SpellName(K.Spells[RandomLow(Min(GetI(Stats,'WIS')+GetI(Traits,'Level'),
                                                K.Spells.length))]);
   AddR(Spells, spell, 1);
+  CodexSpell(spell, toArabic(Get(Spells, spell)));
   return spell;
 }
 
@@ -2561,6 +2578,7 @@ function Timer1Timer() {
     ShowRecentAge();
     if (game.tasks % K.Guard.CheckEvery == 0) CheckForCheating();
     CheckDaily();
+    CodexHero();
   } else {
     var elapsed = timeGetTime() - clock.lasttick;
     if (elapsed > 100) elapsed = 100;
@@ -2637,6 +2655,10 @@ function FormCreate() {
     });
     ShowEventPopupToggle();
     $("#TacticsLink").on("click", function (e) { e.preventDefault(); OpenTactics(); });
+    $("#CodexLink").on("click", function (e) {
+      e.preventDefault();
+      CodexFlush(function () { window.open("index.html#codex", "pq-codex"); });
+    });
     $("#TacticsClose").on("click", function () { this.closest("dialog").close(); });
     $("#RetireLink").on("click", function (e) { e.preventDefault(); AskRetire(); });
     $("#FinaleRetire").on("click", AskRetire);
@@ -2753,8 +2775,22 @@ function HotOrNot() {
 }
 
 
+// What this hero adds to the Codex's bests, and the achievements they lead to
+function CodexHero() {
+  if (!CodexOn()) return;
+  var level = GetI(Traits,'Level');
+  CodexBest('level', level);
+  if (game.mode == 'hardcore') CodexBest('hardcore', level);
+  CodexBest('streak', game.streak || 0);
+  CodexBest('defeats', game.deaths || 0);
+  if (game.tasks % 10 == 0) CodexBest('seconds', Math.floor(game.elapsed || 0));
+  if (level >= 10 && Get(Equips, 'Weapon') == 'Pet Rock') CodexFlag('petrock');
+  if (document && game.tasks % 10 == 0) CheckAchievements();
+}
+
 function SaveGame(callback) {
   Log('Saving game: ' + GameSaveName());
+  CodexFlush();
   HotOrNot();
   game.date = ''+new Date();
   game.stamp = +new Date();
@@ -2789,6 +2825,12 @@ function LoadGame(sheet) {
 
   randseed(game.seed);
   EnsureStory();
+  // The Codex, and the spells this hero already knows (for heroes from
+  // before the Codex)
+  if (document && !game.dead) CodexStart(function () {
+    $.each(game.Spells || [], function (i, s) { CodexSpell(s[0], toArabic(s[1])); });
+    CodexHero();
+  });
   $.each(AllBars.concat(AllLists), function (i, e) { e.load(game); });
   ShowStory();
   ShowProfile();

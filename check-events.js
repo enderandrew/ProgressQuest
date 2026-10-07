@@ -22,7 +22,7 @@ const error = (msg) => { errors++; console.log("ERROR   " + msg); };
 const warn = (msg) => { warnings++; console.log("warning " + msg); };
 
 // 1. Does every script parse?
-const scripts = ["config.js", "story.js", "combat.js", "events.js", "daily.js",
+const scripts = ["config.js", "story.js", "combat.js", "events.js", "daily.js", "codex.js",
                  "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js"];
 for (const file of scripts) {
   const full = path.join(dir, file);

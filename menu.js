@@ -24,6 +24,7 @@ function OpenWindow(id, mode, extra) {
   $("dialog[open]").each(function () { if (this !== dlg) this.close(); });
   if (id == "dlgNew") StartNewGame(mode, extra);
   if (id == "dlgChallenge") ShowChallenges();
+  if (id == "dlgCodex") CodexLoad(function () { ShowCodex(); CodexBadge(); });
   if (id == "dlgResume") LoadRoster();
   if (id == "dlgHall") LoadHall();
   if (id == "dlgFaq" && !$("#faqFrame").attr("src")) $("#faqFrame").attr("src", "faq.php");
@@ -36,7 +37,7 @@ function CloseWindows() {
   $("dialog[open]").each(function () { this.close(); });
 }
 
-// index.html#resume, #new, #plus, #hall, #challenge, #faq, #github
+// index.html#resume, #new, #plus, #hall, #challenge, #codex, #faq, #github
 // index.html#hall/<id> opens the Hall with that legend highlighted (a hero
 // who just retired).
 var hallHighlight = "";
@@ -45,7 +46,7 @@ function WindowFromHash() {
   var name = parts[0].toLowerCase();
   hallHighlight = parts[1] ? decodeURIComponent(parts[1]) : "";
   var ids = { "new": "dlgNew", resume: "dlgResume", plus: "dlgPlus", hall: "dlgHall",
-              challenge: "dlgChallenge", hardcore: "dlgHardcore", faq: "dlgFaq", github: "dlgGitHub" };
+              challenge: "dlgChallenge", hardcore: "dlgHardcore", codex: "dlgCodex", faq: "dlgFaq", github: "dlgGitHub" };
   if (ids[name]) OpenWindow(ids[name]);
 }
 
@@ -526,6 +527,10 @@ $(function () {
   $("#hallRestore").on("change", function () { if (this.files[0]) RestoreHall(this.files[0]); this.value = ""; });
   $("#startHardcore").on("click", function () { OpenWindow("dlgHardcore"); });
   $("#dailyStart").on("click", StartDaily);
+  $("#dlgCodex [data-tab]").on("click", function () { ShowCodex($(this).data("tab")); });
+  $("#codexSearch").on("input", function () { ShowCodex(); });
+  $("#codexFilter").on("change", function () { ShowCodex(); });
+  $("#codexRestore").on("change", function () { if (this.files[0]) RestoreCodex(this.files[0]); this.value = ""; });
   $("#customStart").on("click", StartCustom);
 
   EnableDropImport();
@@ -541,6 +546,8 @@ $(function () {
   if (HasLocalStorage() || window.openDatabase)
     storage.loadLegends(ShowLegendCount);
   $(".finaleLevel").text(FinaleLevel());
+  // The Codex, and any achievements the Hall has earned meanwhile
+  if (HasLocalStorage() || window.openDatabase) CodexStart(CodexBadge);
   WindowFromHash();
   $(window).on("hashchange", WindowFromHash);
 });
