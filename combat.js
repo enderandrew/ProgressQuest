@@ -99,6 +99,21 @@ K.Defeat = {
   CautionPerDefeat: 2, CautionDecay: 0.25, CautionMax: 10
 };
 
+// Hardcore (used by main.js): one life. Every defeat may be the last: the
+// chance is DeathChance, times WoundedMult if you were still Wounded, times
+// TougherMult for each level the monster was above you, times BossMult
+// against the Old Bastard(TM), and never more than DeathMax. Tuned on the
+// defeats of simulated heroes: with all 48 legacies (+45%; about 900
+// defeats on the way to 50) 3 in 10 reach level 50 alive; with half of
+// them 7 in 100; with no legacy (about 4,200 defeats) 1 in 50. See README.
+K.Hardcore = {
+  DeathChance: 0.0005,
+  WoundedMult: 2,
+  TougherMult: 1.15,
+  BossMult: 3,
+  DeathMax: 0.25
+};
+
 // Tactics: the player's standing orders (the Tactics panel in the game,
 // game.tactics). The hero still plays itself; these change how. "normal"
 // is how the game has always played. Each option: key, label, help, and

@@ -87,3 +87,4 @@ html.embedded #newguy.window { border: 0; padding: 0; margin: 0 auto; height: au
   color: #4a3500;
   border-radius: 2px;
 }
+#legacy.hardcore #LegacyMode { color: #900; }

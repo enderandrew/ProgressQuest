@@ -810,3 +810,39 @@ K.FinaleStory = {
     'He will be back. You will be ready. Probably'
   ]
 };
+
+
+// ---- Obituaries (Hardcore) ------------------------------------------------------
+//
+// When a Hardcore hero dies, the Hall of the Fallen remembers their last
+// words and an epitaph, picked from these. Placeholders: {hero}, {foe}
+// (what killed them), {level}, {race}, {klass}, {boring}, {act}.
+K.Obituary = {
+  lastWords: [
+    "I thought it would be bigger",
+    "Tell my {boring} I loved it",
+    "Hold my mead",
+    "It's only a flesh wound",
+    "Who leveled {foe} this high?",
+    "Wait, this isn't the tutorial?",
+    "I regret nothing. Except the last few minutes",
+    "Did anyone else hear a death roll?",
+    "Is it too late to switch to New Game?",
+    "Don't let the Old Bastard\u2122 win",
+    "I was going to retire next week",
+    "Avenge me. Or don't. I'm not your mom",
+    "Put that on my tombstone. No, not that. Wait"
+  ],
+  epitaphs: [
+    "They let the game play itself, and the game played them.",
+    "Gone, but not forgotten until the browser cache is cleared.",
+    "Level {level}. Not bad. Not 50, either.",
+    "Killed by {foe}, who would like that noted.",
+    "Fought bravely. Mostly.",
+    "Died as they lived: idling.",
+    "Rest in progress.",
+    "Progress bar: 100%.",
+    "Here lies a {race} {klass}. Mind the {boring}.",
+    "Survived the Prologue. Did not survive {act}."
+  ]
+};

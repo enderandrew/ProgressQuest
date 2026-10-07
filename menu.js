@@ -12,21 +12,24 @@ function b64_stringify(value) {
 
 // ---- Windows --------------------------------------------------------------
 
-function OpenWindow(id) {
+function OpenWindow(id, mode) {
   // New Game+ is the character roller with a legacy, once someone has
-  // retired to the Hall; until then its window explains how to unlock it
+  // retired to the Hall; until then its window explains how to unlock it.
+  // Hardcore (from Challenge Modes) is the roller too.
   var plus = id == "dlgPlus" && legendCount > 0;
-  if (plus) id = "dlgNew";
+  if (plus) { id = "dlgNew"; mode = "plus"; }
+  if (id == "dlgHardcore") { id = "dlgNew"; mode = "hardcore"; }
   var dlg = document.getElementById(id);
   if (!dlg) return;
   $("dialog[open]").each(function () { if (this !== dlg) this.close(); });
-  if (id == "dlgNew") StartNewGame(plus);
+  if (id == "dlgNew") StartNewGame(mode);
+  if (id == "dlgChallenge") ShowChallenges();
   if (id == "dlgResume") LoadRoster();
   if (id == "dlgHall") LoadHall();
   if (id == "dlgFaq" && !$("#faqFrame").attr("src")) $("#faqFrame").attr("src", "faq.php");
   if (!dlg.open) dlg.showModal();
   // a link to index.html#resume (or #new...) opens that window
-  history.replaceState(null, "", "#" + (plus ? "plus" : id.replace(/^dlg/, "").toLowerCase()));
+  history.replaceState(null, "", "#" + (mode || id.replace(/^dlg/, "").toLowerCase()));
 }
 
 function CloseWindows() {
@@ -42,15 +45,26 @@ function WindowFromHash() {
   var name = parts[0].toLowerCase();
   hallHighlight = parts[1] ? decodeURIComponent(parts[1]) : "";
   var ids = { "new": "dlgNew", resume: "dlgResume", plus: "dlgPlus", hall: "dlgHall",
-              challenge: "dlgChallenge", faq: "dlgFaq", github: "dlgGitHub" };
+              challenge: "dlgChallenge", hardcore: "dlgHardcore", faq: "dlgFaq", github: "dlgGitHub" };
   if (ids[name]) OpenWindow(ids[name]);
 }
 
 // The character roller runs in its own page (newguy.html) inside the New
 // Game window. It is reloaded each time, so every visit is a fresh roll.
-function StartNewGame(plus) {
-  $("#dlgNewTitle").text(plus ? "New Character (New Game+)" : "New Character");
-  $("#newguyFrame").attr("src", "newguy.html?embed" + (plus ? "&plus" : ""));
+function StartNewGame(mode) {
+  $("#dlgNewTitle").text(mode == "plus" ? "New Character (New Game+)" :
+                         mode == "hardcore" ? "New Character (\u2620 Hardcore)" : "New Character");
+  $("#newguyFrame").attr("src", "newguy.html?embed" + (mode ? "&" + mode : ""));
+}
+
+// Challenge Modes: what a Hardcore hero would start with
+function ShowChallenges() {
+  storage.loadLegends(function (legends) {
+    var hall = LegacyFromHall(legends);
+    var n = hall.races.length + hall.klasses.length;
+    $("#hardcoreLegacy").text(n ? n + " of " + (K.Races.length + K.Klasses.length) + " honored, +" +
+      Math.round(LegacyAverage(hall.bonus) * 1000) / 10 + "% on average" : "nothing honored yet");
+  });
 }
 
 // How many heroes are in the Hall (New Game+ unlocks at 1), and the menu
@@ -102,6 +116,7 @@ function ShowRoster(games) {
                             (c.bestplot ? " · " + c.bestplot : "") +
                             (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
                             (c.mode == "plus" ? " \u00b7 New Game+" : "") +
+                            (c.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
                             (c.cheater || SaveSealState(c) == "bad" ? " \u00b7 \u26a0 branded a cheater" : ""));
     var href = "main.html#" + EncodeName(name);
     row.find(".play").attr("href", href);
@@ -132,6 +147,13 @@ function ImportSaves(files) {
           throw new Error("No character in file");
       } catch (err) {
         alert(file.name + " doesn't look like a Progress Quest save.");
+        return;
+      }
+      // Hardcore heroes stay dead: no bringing one back from a backup
+      var fallenNow = null;
+      storage.loadFallen(function (f) { fallenNow = f; });
+      if (IsFallen(sheet, fallenNow)) {
+        alert(sheet.Traits.Name + " died in Hardcore and is in the Hall of the Fallen. Hardcore heroes stay dead.");
         return;
       }
       // An edited backup (or one with its seal removed) imports branded
@@ -171,6 +193,43 @@ function EnableDropImport() {
 
 function LoadHall() {
   storage.loadLegends(ShowHall);
+  storage.loadFallen(ShowFallen);
+}
+
+// The Hall of the Fallen: Hardcore heroes who died, newest first
+function ShowFallen(fallen) {
+  fallen = fallen.slice().sort(function (a, b) { return (b.died || "").localeCompare(a.died || ""); });
+  $("#fallenCount").text(fallen.length ? "(" + fallen.length + ")" : "");
+  var list = $("#fallen").empty();
+  if (!fallen.length) {
+    list.html('<div class="empty">Nobody has died in Hardcore yet. Give it time.</div>');
+    return;
+  }
+  $.each(fallen, function (i, o) {
+    var row = $(document.getElementById("fallenRow").content.cloneNode(true)).children().first();
+    row.find(".name").text(o.name);
+    row.find(".what").text("the " + o.race);
+    var when = o.died ? new Date(o.died).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) : "";
+    row.find(".where").text("Level " + o.level + " " + o.klass + (when ? " \u00b7 died " + when : "") +
+                            (SealOk(o) ? "" : " \u00b7 \u26a0 this entry was edited"));
+    row.find(".feat").text((o.cause || ("Slain by " + o.slainBy)) + ", " + Hours(o.played || 0) + " in, after " +
+      (o.survived || 0).toLocaleString() + (o.survived == 1 ? " defeat" : " defeats") + " survived" +
+      (o.chance ? " (this one: a " + Math.round(o.chance * 10000) / 100 + "% chance)" : ""));
+    row.find(".words").text(o.lastWords ? "\u201c" + o.lastWords + "\u201d" : "");
+    row.find(".epitaph").text(o.epitaph || "");
+    if (hallHighlight == "fallen" && i == 0) row.addClass("lit");
+    row.find(".del").on("click", function () {
+      if (!confirm("Remove " + o.name + "'s obituary from the Hall of the Fallen?")) return;
+      storage.loadFallen(function (all) {
+        storage.storeFallen(all.filter(function (x) { return x.id !== o.id; }), function () { storage.loadFallen(ShowFallen); });
+      });
+    });
+    list.append(row);
+  });
+  if (hallHighlight == "fallen") {
+    var head = document.getElementById("fallenHead");
+    if (head) head.scrollIntoView({ block: "start" });
+  }
 }
 
 function Ordinal(n) {
@@ -229,6 +288,7 @@ function ShowHall(legends) {
     row.find(".what").text("the " + l.race);
     var when = l.retired ? new Date(l.retired).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) : "";
     row.find(".where").text("Level " + l.level + " " + l.klass + (l.mode == "plus" ? " \u00b7 New Game+" : "") +
+                            (l.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
                             (when ? " \u00b7 retired " + when : ""));
     row.find(".feat").text("Beat the Old Bastard\u2122 at level " + l.wonLevel + ", " + Hours(l.wonAt || 0) +
       " in, " + (l.tries > 1 ? "on the " + Ordinal(l.tries) + " try" : "on the first try") +
@@ -322,6 +382,7 @@ $(function () {
   $("#start").on("click", CloseWindows);
   $("#importFile").on("change", function () { ImportSaves(this.files); this.value = ""; });
   $("#hallRestore").on("change", function () { if (this.files[0]) RestoreHall(this.files[0]); this.value = ""; });
+  $("#startHardcore").on("click", function () { OpenWindow("dlgHardcore"); });
 
   EnableDropImport();
   TickClock();

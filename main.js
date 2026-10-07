@@ -345,6 +345,7 @@ function Dequeue() {
       }
     }
 
+    if (game.dead) return;   // Hardcore: nothing more to do
     var old = game.task;
     if (Split(old,0) == 'event') old = game.eventResume || '';
     game.task = '';
@@ -404,7 +405,9 @@ function Dequeue() {
       nn = Math.floor((2 * InventoryLabelAlsoGameStyleTag * t.level * 1000) / nn);
       // The fight is settled now; the task bar just plays it out. Harder
       // fights (more rounds) take longer to watch.
-      var fight = ResolveCombat(HeroSnapshot(), t.foe, Random(0x7fffffff));
+      var hero = HeroSnapshot();
+      var fight = ResolveCombat(hero, t.foe, Random(0x7fffffff));
+      fight.wounded = hero.wounded;   // (for Hardcore's death roll)
       fight.foe = t.foe.name;
       fight.foeLevel = t.foe.level;
       fight.qty = t.foe.qty;
@@ -463,6 +466,15 @@ function FinishFight() {
     game.caution = Max(0, (game.caution || 0) - K.Defeat.CautionDecay);
 
   if (fight.outcome == 'defeat') {
+    // Hardcore: this defeat may be the last
+    if (game.mode == 'hardcore') {
+      fight.deathChance = DeathChance(fight);
+      if (Random(1000000) < fight.deathChance * 1000000) {
+        fight.done = true;
+        Die(fight);
+        return;
+      }
+    }
     Defeated(fight);
   } else {
     if (fight.outcome == 'flee')
@@ -473,6 +485,104 @@ function FinishFight() {
   }
   fight.done = true;
   ShowFight();
+}
+
+// ---- Hardcore ---------------------------------------------------------------
+//
+// One life (game.mode 'hardcore', chosen in the main menu's Challenge
+// Modes). Each defeat may be fatal (K.Hardcore in combat.js); the roll uses
+// the game's seeded random numbers, so reloading doesn't change it. A dead
+// hero gets an obituary in the Hall of the Fallen and leaves the roster.
+
+function DeathChance(fight) {
+  var H = K.Hardcore;
+  var p = H.DeathChance;
+  if (fight.wounded) p *= H.WoundedMult;
+  var above = (fight.foeLevel || 0) - GetI(Traits,'Level');
+  if (above > 0) p *= Math.pow(H.TougherMult, above);
+  if (fight.boss) p *= H.BossMult;
+  return Min(H.DeathMax, p);
+}
+
+function Percent(p) {
+  var pct = p * 100;
+  return (pct < 1 ? pct.toFixed(2).replace(/0$/, '') : pct < 10 ? pct.toFixed(1) : Math.round(pct)) + '%';
+}
+
+function Die(fight) {
+  var obit = MakeObituary(fight);
+  game.dead = obit;
+  game.queue.length = 0;
+  HPBar.reposition(0);
+  Log('Died: ' + obit.cause);
+  if (!document) return;   // (the simulator just records it)
+  StopTimer();
+  SuspendAutosave();
+  StopChoiceAlert();
+  CloseEventPopup();
+  Narrate(obit.headline + ". " + obit.cause + ". " + (obit.lastWords ? "Last words: " + obit.lastWords : ""));
+  storage.addFallen(obit, function () {
+    storage.loadRoster(function (games) {
+      delete games[Get(Traits,'Name')];
+      storage.storeRoster(games, function () { ShowDeath(obit); });
+    });
+  });
+}
+
+// What the Hall of the Fallen remembers
+function MakeObituary(fight) {
+  var level = GetI(Traits,'Level');
+  var foe = fight.foe || 'something';
+  var story = game.story && game.story.act == game.act ? game.story : null;
+  var vars = { hero: Get(Traits,'Name'), foe: foe, level: level,
+               race: Get(Traits,'Race'), klass: Get(Traits,'Class'),
+               boring: BoringItem(), act: game.bestplot || 'Prologue' };
+  var O = K.Obituary || { lastWords: [], epitaphs: [] };
+  var prologue = StoryFor(0);
+  return {
+    id: Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36),
+    name: Get(Traits,'Name'),
+    race: Get(Traits,'Race'),
+    klass: Get(Traits,'Class'),
+    level: level,
+    mode: game.mode || 'hardcore',
+    born: game.birthday || '',
+    birthstamp: game.birthstamp || 0,
+    died: new Date().toISOString(),
+    played: Math.round(game.elapsed || 0),
+    survived: game.deaths || 0,            // defeats lived through
+    slainBy: foe,
+    slainLevel: fight.foeLevel || level,
+    boss: !!fight.boss,
+    chance: fight.deathChance || 0,
+    act: game.bestplot || 'Prologue',
+    story: story ? story.title : '',
+    legacy: game.legacy ? (game.legacy.races || []).length + (game.legacy.klasses || []).length : 0,
+    taunt: (prologue && prologue.taunt) || '',
+    headline: 'Here lies ' + Get(Traits,'Name') + ', level ' + level + ' ' + Get(Traits,'Race') + ' ' + Get(Traits,'Class'),
+    cause: (fight.boss ? 'Slain by the Old Bastard\u2122 himself' : 'Slain by ' + foe) + ' at level ' + level,
+    lastWords: O.lastWords.length ? StoryText(Pick(O.lastWords), vars) : '',
+    epitaph: O.epitaphs.length ? StoryText(Pick(O.epitaphs), vars) : '',
+    cheater: game.cheater ? game.cheater.reason : null
+  };
+}
+
+// The tombstone
+function ShowDeath(obit) {
+  if (!document) return;
+  $("#main").addClass("dead");
+  var dlg = document.getElementById("DeathDialog");
+  if (!dlg) return;
+  $("#DeathHeadline").text(obit.headline);
+  var when = /^Prologue/.test(obit.act) ? "the Prologue" :
+             obit.story && obit.act.indexOf(obit.story) < 0 ? obit.act + ": " + obit.story : obit.act;
+  $("#DeathCause").text(obit.cause + ", during " + when + ".");
+  $("#DeathStats").text("Played " + RoughTime(obit.played) + " and lived through " + obit.survived +
+    (obit.survived == 1 ? " defeat" : " defeats") + ". This one had a " + Percent(obit.chance) + " chance of being fatal." +
+    (obit.legacy ? " Carried the legacy of " + obit.legacy + (obit.legacy == 1 ? " legend." : " legends.") : ""));
+  $("#DeathWords").text(obit.lastWords ? "Last words: \u201c" + obit.lastWords + "\u201d" : "");
+  $("#DeathEpitaph").text(obit.epitaph);
+  if (!dlg.open) dlg.showModal();
 }
 
 // ---- The finale -----------------------------------------------------------
@@ -522,7 +632,9 @@ function BeginBoss() {
   var foe = { name: 'the Old Bastard\u2122',
               level: Max(1, B.Level + B.BossLevelGap - Min(B.WeakenMax, escapes * B.WeakenPerEscape)),
               qty: 1, boss: true, hpMult: B.BossHP, maxRounds: B.BossMaxRounds };
-  var fight = ResolveCombat(HeroSnapshot(), foe, Random(0x7fffffff));
+  var hero = HeroSnapshot();
+  var fight = ResolveCombat(hero, foe, Random(0x7fffffff));
+  fight.wounded = hero.wounded;
   fight.foe = foe.name;
   fight.foeLevel = foe.level;
   fight.qty = 1;
@@ -537,6 +649,7 @@ function BeginBoss() {
 
 // The fight has played out (FinishFight has applied it)
 function FinishBoss() {
+  if (game.dead) return;
   var fight = game.combat || {};
   var f = game.finale = game.finale || { state: 'pending', tries: 1 };
   if (fight.outcome == 'win' || fight.outcome == 'close') {
@@ -1571,8 +1684,13 @@ function ShowCondition() {
   var deaths = game.deaths || 0;
   $("#Condition").text(
     (game.wounded > 0 ? "Wounded (" + game.wounded + (game.wounded == 1 ? " fight)" : " fights)") + " \u00b7 " : "") +
-    "Defeated " + deaths + (deaths == 1 ? " time" : " times"))
-    .toggleClass("wounded", game.wounded > 0);
+    "Defeated " + deaths + (deaths == 1 ? " time" : " times") +
+    (game.mode == 'hardcore' ? " \u00b7 \u2620 Hardcore" : ""))
+    .toggleClass("wounded", game.wounded > 0)
+    .attr("title", game.mode == 'hardcore' ?
+          "Hardcore: one life. Each defeat has a " + Percent(K.Hardcore.DeathChance) +
+          " chance to be your last (twice that while Wounded, more against tougher " +
+          "monsters, and more against the Old Bastard\u2122)." : "");
 }
 
 function NeedsRest() {
@@ -2264,6 +2382,7 @@ function Pos(needle, haystack) {
 var dealing = false;
 
 function Timer1Timer() {
+  if (game.dead) return;   // Hardcore: it's over
   if (TaskBar.done()) {
     game.tasks += 1;
     game.elapsed += TaskBar.Max().div(1000);
@@ -2388,6 +2507,8 @@ function FormCreate() {
     $("#FinaleRetire").on("click", AskRetire);
     $("#FinaleKeep").on("click", function () { this.closest("dialog").close(); });
     $("#RetireYes").on("click", Retire);
+    $("#DeathHall").on("click", function () { window.location.href = "index.html#hall/fallen"; });
+    $("#DeathMenu").on("click", function () { window.location.href = "index.html"; });
     $("#RetireNo").on("click", function () { this.closest("dialog").close(); });
     // Close the event pop-up with a click anywhere on it (or its backdrop)
     $("#EventDialog").on("click", function (e) {
@@ -2552,6 +2673,10 @@ function LoadGame(sheet) {
   ShowBrand();
   CheckForCheating();
   Log('Loaded game: ' + game.Traits.Name);
+  if (game.dead) {   // (only if removing a fallen hero from the roster failed)
+    ShowDeath(game.dead);
+    return;
+  }
   if (!game.elapsed)
     Brag('s');
   StartTimer();

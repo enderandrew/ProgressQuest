@@ -67,11 +67,13 @@ K.ChoiceSeconds = 20;
 K.Events = [
   { key: 'snoring', where: ['rest'],
     lines: ['While you rest, a {race-one} sits down next to you and starts snoring',
-            'You wake up an hour later. The {race-one} is gone. So is some of your gold'],
+            'You wake up an hour later. The {race-one} is gone.',
+			'So is their snoring, thankfully. So is some of your gold.'],
     effect: { gold: -1 } },
 
   { key: 'campfire', where: ['rest'],
     lines: ['You share a campfire with a wandering {klass}',
+			'They also have sworn vengeance against Old Bastard™',
             'They teach you a trick that 60% of the time, it works every time'],
     effect: { spell: true } },
 
@@ -83,7 +85,8 @@ K.Events = [
 
   { key: 'squirrel', where: ['rest'],
     lines: ['A squirrel brings you {loot}',
-            'You do not ask where it got it'],
+            'You do not ask where it got it'
+			'That squirrel scares you.'],
     effect: { item: 'special' } },
 
   { key: 'sitcom', where: ['rest'],
@@ -94,22 +97,26 @@ K.Events = [
 
   { key: 'stretch', where: ['rest'], weight: 0.5,
     lines: ['You do some stretches. A {race-one} points out you are doing them wrong',
-            'You do them right. Huh'],
+            'You do them right. Huh',
+			'You are less bad at stretching.'],
     effect: { stat: 'DEX' } },
 
   { key: 'pigeons', where: ['rest'], weight: 0.5,
     lines: ['You read a self-help scroll titled "Who Moved My {boring}?"',
-            'It changes your life, slightly'],
+            'It changes your life, slightly',
+			'You are wise enough not to harass everyone about the book.'],
     effect: { stat: 'WIS' } },
 
   { key: 'tollbridge', where: ['road'],
-    lines: ['A troll at a bridge demands a toll of {gold} gold',
-            'There is no river. You pay anyway'],
+    lines: ['A bridge troll demands a toll of {gold} gold',
+            'There is no river. You are not sure why this ia bridge.',
+			'The troll may have brought a portable bridge. You pay anyway'],
     effect: { gold: -2 } },
 
   { key: 'wallet', where: ['road'],
     lines: ['You find a coin purse on the road with {gold} gold in it',
-            'There is a name on it: {guy}. You decide that is a common name'],
+            'There is a name on it: {guy}. You decide that is a common name',
+			'Common else it is close to yours and you can take it.'],
     effect: { gold: 3 } },
 
   { key: 'peddler', where: ['road'],
@@ -132,7 +139,8 @@ K.Events = [
 
   { key: 'pothole', where: ['road'],
     lines: ['You step in a pothole the size of a {race-one}',
-            'You file a complaint with {kingdom}. Your ankle files one too'],
+            'You file a complaint with {kingdom}. Your ankle files one too'.
+			'They do not pay out your workers comp claim.'],
     effect: { wounded: 1 } },
 
   { key: 'blacksmith', where: ['town'],
@@ -143,6 +151,7 @@ K.Events = [
 
   { key: 'parkingticket', where: ['town'],
     lines: ['You find a parking ticket on your horse',
+			'They threaten to tow your horse.',
             'You do not have a horse. You pay the {gold} gold anyway'],
     effect: { gold: -2 } },
 
@@ -154,7 +163,8 @@ K.Events = [
 
   { key: 'gym', where: ['town'], weight: 0.5, minLevel: 3,
     lines: ['A personal trainer in town offers you a free trial session',
-            'You survive it. Barely'],
+            'Do you even lift bro?',
+			'You do and get stronger.'],
     effect: { stat: 'STR' } },
 
   { key: 'library', where: ['town'], weight: 0.5,
@@ -171,12 +181,14 @@ K.Events = [
 
   { key: 'pickpocket', where: ['town'],
     lines: ['Someone bumps into you in the crowd and apologizes',
-            'Later you notice your purse is {gold} gold lighter'],
+            'Later you notice your purse is {gold} gold lighter',
+			'But your encumbrance is slighly lower. Small victories.'],
     effect: { gold: -3 } },
 
   { key: 'souvenir', where: ['field'],
     lines: ['Among the remains of your last fight you find {loot}',
-            'It is still warm'],
+			'And a spleen from your last kill.',
+            'Both are still warm'],
     effect: { item: 'special' } },
 
   { key: 'heckler', where: ['field'],
@@ -193,7 +205,7 @@ K.Events = [
 
   { key: 'oldbastardsighting', where: ['road', 'town', 'rest'], weight: 0.5,
     lines: ['Wait. Was that the Old Bastard™, ducking into an alley?',
-            'You give chase',
+            'You give chase ready for vengenace!',
             'It was a coat rack. The Old Bastard™ remains at large'] },
 
   { key: 'hotsprings', where: ['rest'],
@@ -221,7 +233,7 @@ K.Events = [
     effect: { gold: -2 } },
 
   { key: 'abandonedcart', where: ['road'],
-    lines: ['You come across an overturned supply wagon on the trail',
+    lines: ['You come across an overturned supply wagon on the Oregon Trail',
             'The cargo is mostly spilled turnip mash, but you uncover {loot}',
             'Finders keepers, according to common law'],
     effect: { item: 'special' } },

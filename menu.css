@@ -315,3 +315,13 @@ dialog::backdrop { background: rgba(0, 20, 80, 0.25); }
 .xp-list .legend.void { background: #f6f0f0; }
 .xp-list .legend.void .badge { filter: grayscale(1); opacity: 0.5; }
 .xp-list .legend .voided { color: #b00; }
+
+/* Challenge Modes and the Hall of the Fallen */
+.mode-card { border: 1px solid #b0a99a; background: #f7f6f0; padding: 10px 12px; margin-bottom: 12px; }
+.mode-card h2 { color: #7a0000; }
+#fallen { max-height: 30vh; }
+.xp-list .fallen .badge { color: #555; }
+.xp-list .fallen .feat { font-size: 11px; color: var(--xp-muted); }
+.xp-list .fallen .words { display: block; font-size: 11px; font-style: italic; margin-top: 2px; }
+.xp-list .fallen .epitaph { display: block; font-size: 11px; font-family: Georgia, serif; color: #444; }
+.xp-list .fallen .words:empty, .xp-list .fallen .epitaph:empty { display: none; }

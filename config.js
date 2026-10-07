@@ -438,6 +438,37 @@ storage.addLegend = function (legend, callback) {
   });
 };
 
+// The Hall of the Fallen: Hardcore heroes who died (see MakeObituary in
+// main.js), sealed like legends.
+storage.loadFallen = function (callback) {
+  this.getItem("fallen", function (value) {
+    var list = [];
+    try { list = JSON.parse(value || "[]") || []; } catch (e) { list = []; }
+    callback(Array.isArray(list) ? list : []);
+  });
+};
+
+storage.storeFallen = function (list, callback) {
+  this.setItem("fallen", JSON.stringify(list), callback);
+};
+
+storage.addFallen = function (obit, callback) {
+  Seal(obit);
+  this.loadFallen(function (list) {
+    list.push(obit);
+    storage.storeFallen(list, callback);
+  });
+};
+
+// Is this save a Hardcore hero who already died? (They stay dead: an old
+// backup can't bring them back.)
+function IsFallen(sheet, fallen) {
+  if (!sheet || sheet.mode != "hardcore" || !sheet.Traits) return false;
+  return (fallen || []).some(function (o) {
+    return o.name == sheet.Traits.Name && (!o.birthstamp || !sheet.birthstamp || o.birthstamp == sheet.birthstamp);
+  });
+}
+
 storage.addToRoster = function (newguy, callback) {
   Seal(newguy);
   this.loadRoster(function (games) {

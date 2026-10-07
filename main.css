@@ -462,3 +462,21 @@ div.profile#Legacy:empty { display: none; }
 #Tactics .tactic-options { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; }
 #Tactics .tactic-options label { font-size: 9pt; cursor: pointer; white-space: nowrap; }
 #Tactics div.tactic-help { font-size: 8pt; color: #555; margin: 3px 0 0; min-height: 1.3em; }
+
+/* Hardcore: the tombstone */
+#DeathDialog .dlg-title { background-color: #333; }
+#DeathDialog .tombstone {
+  text-align: center;
+  background: linear-gradient(#cfcfcf, #a9a9a9);
+  border-radius: 90px 90px 4px 4px;
+  margin: 10px;
+  padding: 18px 18px 10px;
+  border: 2px solid #777;
+}
+#DeathDialog .tombstone div { margin-bottom: 8px; }
+#DeathDialog .rip { font: bold 22pt Georgia, serif; letter-spacing: 0.15em; color: #444; }
+#DeathHeadline { font-weight: bold; font-size: 11pt; }
+#DeathWords { font-style: italic; }
+#DeathEpitaph { font-family: Georgia, serif; font-style: italic; color: #333; }
+#DeathDialog .dlg-buttons { text-align: center; }
+#main.dead { filter: grayscale(1); }

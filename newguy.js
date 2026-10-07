@@ -175,8 +175,8 @@ function sold() {
     finale: null,
     tactics: { fights: "normal", resting: "normal", spells: "normal" },
     choiceLog: [],
-    mode: NewGamePlus() ? "plus" : "normal",
-    legacy: NewGamePlus() && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } : null,
+    mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : "normal",
+    legacy: (NewGamePlus() || Hardcore()) && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } : null,
     queue: [
       "scene|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",
 	  "scene|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",
@@ -262,6 +262,12 @@ function NewGamePlus() {
   try { return String(window.location.search || "").indexOf("plus") >= 0; } catch (e) { return false; }
 }
 
+// Hardcore (newguy.html?hardcore, from the main menu's Challenge Modes):
+// one life, with the Hall's legacy
+function Hardcore() {
+  try { return String(window.location.search || "").indexOf("hardcore") >= 0; } catch (e) { return false; }
+}
+
 var hall = null, honored = { races: {}, klasses: {} };
 
 function LoadLegacy() {
@@ -284,11 +290,11 @@ function LoadLegacy() {
 
 function ShowLegacyPanel() {
   if (!document || !hall) return;
-  var plus = NewGamePlus();
+  var plus = NewGamePlus() || Hardcore();
   var n = hall.races.length + hall.klasses.length;
   var total = K.Races.length + K.Klasses.length;
-  $("#legacy").toggleClass("plus", plus);
-  $("#LegacyMode").text(plus ? "New Game+" : "New Game");
+  $("#legacy").toggleClass("plus", plus).toggleClass("hardcore", Hardcore());
+  $("#LegacyMode").text(Hardcore() ? "\u2620 Hardcore" : plus ? "New Game+" : "New Game");
   $("#LegacyCount").text(n + " of " + total + " honored");
   var avg = Math.round(LegacyAverage(hall.bonus) * 1000) / 10;
   if (plus) {
