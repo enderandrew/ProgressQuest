@@ -173,6 +173,8 @@ function sold() {
     buffs: [],
     recentEvent: null,
     finale: null,
+    tactics: { fights: "normal", resting: "normal", spells: "normal" },
+    choiceLog: [],
     mode: NewGamePlus() ? "plus" : "normal",
     legacy: NewGamePlus() && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } : null,
     queue: [

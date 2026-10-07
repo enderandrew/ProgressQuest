@@ -308,6 +308,8 @@ function Dequeue() {
       MaybeEvent('road', 'heading');
     } else if (Split(game.task,0) == 'event') {
       FinishEvent();
+    } else if (game.task == 'choice') {
+      ResolveChoice();
     } else if (game.task == 'boss') {
       FinishFight();
       FinishBoss();
@@ -366,6 +368,9 @@ function Dequeue() {
       } else if (a == 'boss') {
         game.queue.shift();
         BeginBoss();
+      } else if (a == 'choice') {
+        game.queue.shift();
+        BeginChoice(n, s);
       } else {
         throw 'bah!' + a;
       }
@@ -394,7 +399,7 @@ function Dequeue() {
     } else {
       var nn = GetI(Traits, 'Level');
       // After a defeat, a sensible hero picks easier fights for a while
-      var t = MonsterTask(Max(1, nn - Math.floor(game.caution || 0)));
+      var t = MonsterTask(Max(1, nn - Math.floor(game.caution || 0) + Tactic('fights').levels));
       var InventoryLabelAlsoGameStyleTag = 3;
       nn = Math.floor((2 * InventoryLabelAlsoGameStyleTag * t.level * 1000) / nn);
       // The fight is settled now; the task bar just plays it out. Harder
@@ -403,7 +408,7 @@ function Dequeue() {
       fight.foe = t.foe.name;
       fight.foeLevel = t.foe.level;
       fight.qty = t.foe.qty;
-      fight.xp = nn / 1000;
+      fight.xp = nn / 1000 * (Tactic('fights').xp || 1);   // the Fights tactic pays for the risk
       game.combat = fight;
       Task('Executing ' + t.description, Math.round(nn * FightLength(fight)));
     }
@@ -424,6 +429,7 @@ function HeroSnapshot() {
     armor: ArmorPowerAvg(),
     physicality: CharProfile().physicality,
     wounded: game.wounded > 0,
+    castMult: Tactic('spells').castMult,
     spells: game.Spells.map(function (s) {
       return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
     })
@@ -590,7 +596,7 @@ K.Guard = {
   CheckEvery: 50,       // tasks between checks
   SpeedSlack: 1.1,      // game time may run this much faster than the clock...
   SpeedGrace: 600,      // ...plus this many seconds (a task already under way)
-  LevelPace: 0.3,       // game time >= this share of the XP time for the level
+  LevelPace: 0.2,       // game time >= this share of the XP time for the level
   StatMax: 4,           // a core stat <= 18 + this many times typical for the level
   PoolMax: 3,           // HP/MP Max <= this many times typical, + 100
   GearAbove: 20         // gear power <= level + this
@@ -814,28 +820,219 @@ function MaybeEvent(where, resume) {
   // Fill in the details now, so the lines and the effect agree
   var effect = event.effect || {};
   var vars = StoryVars();
-  var instance = { key: event.key, effect: effect };
-  if (effect.gold) {
-    instance.gold = Max(1, Math.round(Abs(effect.gold) * level * (0.5 + Random(100) / 100)));
-    vars.gold = instance.gold;
-  }
-  if (effect.item) {
-    instance.loot = effect.item == 'special' ? SpecialItem() : BoringItem();
-    vars.loot = Indefinite(instance.loot, 1);
+  var instance = EventAmounts(effect, level, { key: event.key, effect: effect });
+  if (instance.gold) vars.gold = instance.gold;
+  if (instance.loot) vars.loot = Indefinite(instance.loot, 1);
+  // A choice event: each option gets its own amounts and lines
+  if (event.choices && event.choices.length) {
+    instance.choices = event.choices.map(function (c) {
+      var o = EventAmounts(c.effect || {}, level, { effect: c.effect || {} });
+      var ov = Object.assign({}, vars);
+      if (o.gold) { ov.gold = o.gold; if (vars.gold === undefined) vars.gold = o.gold; }
+      if (o.loot) { ov.loot = Indefinite(o.loot, 1); if (vars.loot === undefined) vars.loot = ov.loot; }
+      o.label = ProperName(StoryText(c.label, ov));
+      o.lines = (c.lines || []).map(function (line) { return EventLine(line, ov); });
+      return o;
+    });
   }
   game.event = instance;
   game.eventResume = resume;
   game.lastEvent = game.tasks;
   instance.where = where;
   instance.shown = 0;
-  instance.lines = event.lines.map(function (line) {
-    return ProperName(StoryText(line, vars)).replace(/([^.])\.$/, '$1').replace(/\|/g, '/');
-  });
+  instance.lines = event.lines.map(function (line) { return EventLine(line, vars); });
   // One task per line. Each line is shown (RevealEventLine) as its task
   // starts; 'event' marks the last one, after which the effect is applied.
+  // A choice event asks its question after its lines (BeginChoice), and the
+  // chosen option's lines follow.
+  var asking = !!instance.choices;
   $.each(instance.lines, function (i, text) {
-    game.queue.push('scene|3|' + text + '|' + (i == instance.lines.length - 1 ? 'event' : 'ev'));
+    game.queue.push('scene|3|' + text + '|' + (i == instance.lines.length - 1 && !asking ? 'event' : 'ev'));
   });
+  if (asking) {
+    instance.ask = EventLine(event.ask || 'What do you do?', vars);
+    instance.askAt = instance.lines.length;
+    game.queue.push('choice|' + K.ChoiceSeconds + '|' + instance.ask);
+  }
+}
+
+function EventLine(line, vars) {
+  return ProperName(StoryText(line, vars)).replace(/([^.])\.$/, '$1').replace(/\|/g, '/');
+}
+
+// How much gold, and which item, an effect gives (into an object)
+function EventAmounts(fx, level, into) {
+  if (fx.gold)
+    into.gold = Max(1, Math.round(Abs(fx.gold) * level * (0.5 + Random(100) / 100)));
+  if (fx.item)
+    into.loot = fx.item == 'special' ? SpecialItem() : BoringItem();
+  return into;
+}
+
+// ---- Tactics ----------------------------------------------------------------
+//
+// Standing orders from the Tactics panel (K.Tactics in combat.js). They
+// apply from the next fight on, and each change is logged with the
+// choices (game.choiceLog) for replays.
+
+function Tactic(name) {
+  var group = K.Tactics[name], want = (game.tactics && game.tactics[name]) || 'normal';
+  for (var i = 0; i < group.options.length; ++i)
+    if (group.options[i].key == want) return group.options[i];
+  for (i = 0; i < group.options.length; ++i)
+    if (group.options[i].key == 'normal') return group.options[i];
+  return group.options[0];
+}
+
+function SetTactic(name, key) {
+  game.tactics = game.tactics || {};
+  if (game.tactics[name] == key) return;
+  game.tactics[name] = key;
+  game.choiceLog = (game.choiceLog || []).concat([{ t: game.tasks, tactic: name, value: key }]).slice(-500);
+  Log('Tactics: ' + K.Tactics[name].label + ' ' + Tactic(name).label);
+  ShowTactics();
+}
+
+// The Tactics link says what is set, if anything is not Normal
+function ShowTactics() {
+  if (!document) return;
+  var set = [];
+  $.each(K.Tactics, function (name, group) {
+    var t = Tactic(name);
+    if (t.key != 'normal') set.push(t.label);
+  });
+  $("#TacticsLink").text(set.length ? "Tactics: " + set.join(", ") : "Tactics")
+    .attr("title", "Standing orders for your hero (T)");
+  // the panel, if open
+  $.each(K.Tactics, function (name) {
+    var t = Tactic(name);
+    $("#Tactics input[name=tactic-" + name + "][value=" + t.key + "]").prop("checked", true);
+    $("#Tactics .help-" + name).text(t.help);
+  });
+}
+
+function OpenTactics() {
+  if (!document) return;
+  var dlg = document.getElementById("TacticsDialog");
+  if (!dlg) return;
+  var box = $("#Tactics");
+  if (!box.children().length) {
+    $.each(K.Tactics, function (name, group) {
+      var row = $("<fieldset class='tactic'>").appendTo(box);
+      $("<legend>").text(group.label).appendTo(row);
+      var opts = $("<div class='tactic-options'>").appendTo(row);
+      $.each(group.options, function (i, o) {
+        var id = "tactic-" + name + "-" + o.key;
+        $("<label>").attr("for", id).append(
+          $("<input type='radio'>").attr({ id: id, name: "tactic-" + name, value: o.key }),
+          document.createTextNode(" " + o.label)).appendTo(opts);
+      });
+      $("<div class='tactic-help'>").addClass("help-" + name).appendTo(row);
+      opts.on("change", "input", function () { SetTactic(name, this.value); });
+    });
+  }
+  ShowTactics();
+  if (!dlg.open) dlg.showModal();
+}
+
+// ---- Choices ----------------------------------------------------------------
+//
+// Now and then an event asks a question (K.Events entries with choices).
+// The narrator reads it out, the tab title flashes, and the pop-up and the
+// Last Event box show the options (or press 1, 2, 3). Nobody there after
+// K.ChoiceSeconds? Fate picks one at random and the game moves on.
+//
+// The random pick is drawn whether or not someone chose, so the game's
+// random numbers run the same either way, and every pick is logged
+// (game.choiceLog), so a seeded daily challenge can be replayed.
+
+function ChoicePending() {
+  return game.task == 'choice' && !!game.event && !!game.event.pending;
+}
+
+function BeginChoice(seconds, caption) {
+  var ev = game.event;
+  if (!ev || !ev.choices) return;   // nothing to ask (an older save)
+  ev.pending = true;
+  ev.picked = null;
+  Task('Deciding: ' + caption, seconds * 1000);
+  game.task = 'choice';
+  SyncRecentEvent();
+  ShowEventPopup(false);
+  Narrate("Decision time! " + caption + " " + OptionsSentence(ev.choices) + "?");
+  StartChoiceAlert();
+}
+
+// "Pay the toll, fight the troll, or ford the river"
+function OptionsSentence(choices) {
+  var labels = choices.map(function (c) { return c.label; });
+  if (labels.length < 2) return labels.join('');
+  return labels.slice(0, -1).join(', ') + (labels.length > 2 ? ',' : '') + ' or ' + labels[labels.length - 1];
+}
+
+// The player picked option i: finish the waiting task now
+function PickChoice(i) {
+  var ev = game.event;
+  if (!ChoicePending() || i < 0 || i >= ev.choices.length) return;
+  ev.picked = i;
+  ev.pending = false;
+  // the task ends now, counting only the time actually spent deciding
+  var pos = TaskBar.Position();
+  TaskBar.reset(Max(1, pos), pos);
+  SyncRecentEvent();
+  ShowEventPopup(false);
+  StopChoiceAlert();
+}
+
+// The deciding task is over: use the player's pick, or fate's
+function ResolveChoice() {
+  var ev = game.event;
+  StopChoiceAlert();
+  if (!ev || !ev.choices) return;
+  var n = ev.choices.length;
+  var fate = Random(n);   // always drawn, so the random numbers don't depend on who chose
+  var mine = ev.picked !== null && ev.picked !== undefined && ev.picked >= 0 && ev.picked < n;
+  ev.chosen = mine ? ev.picked : fate;
+  ev.by = mine ? 'you' : 'fate';
+  ev.pending = false;
+  game.choiceLog = (game.choiceLog || []).concat([{ t: game.tasks, event: ev.key, pick: ev.chosen, by: ev.by }]).slice(-500);
+  var o = ev.choices[ev.chosen];
+  var lines = o.lines && o.lines.length ? o.lines : ['You decide: ' + o.label];
+  var first = ev.lines.length;
+  ev.lines = ev.lines.concat(lines);
+  $.each(lines, function (i, text) {
+    game.queue.push('scene|3|' + text + '|' + (first + i == ev.lines.length - 1 ? 'event' : 'ev'));
+  });
+  SyncRecentEvent();
+  ShowEventPopup(false);
+}
+
+// Flash the tab title while a choice waits, for whoever is in another tab
+var _titleAlert = null, _titleSaved = null;
+function StartChoiceAlert() {
+  if (!document) return;
+  StopChoiceAlert();
+  _titleSaved = document.title;
+  var on = false;
+  _titleAlert = setInterval(function () {
+    on = !on;
+    document.title = on ? "\u26a0 Your hero needs you!" : _titleSaved;
+  }, 1000);
+}
+
+function StopChoiceAlert() {
+  if (!document) return;
+  if (_titleAlert) clearInterval(_titleAlert);
+  _titleAlert = null;
+  if (_titleSaved) document.title = _titleSaved;
+  _titleSaved = null;
+}
+
+// "Deciding for you in 12s", as the task bar runs down
+function ShowChoiceTimer() {
+  if (!document || !ChoicePending()) return;
+  var left = Math.ceil((TaskBar.Max() - TaskBar.Position()) / 1000);
+  $(".choice-timer").text("Fate decides in " + Max(0, left) + "s");
 }
 
 // The event's last line has played: apply what it does, and note what
@@ -844,23 +1041,41 @@ function FinishEvent() {
   var ev = game.event;
   game.event = null;
   if (!ev) return;
-  var fx = ev.effect || {};
   var result = [];
+  if (ev.choices && ev.chosen !== null && ev.chosen !== undefined) {
+    var o = ev.choices[ev.chosen];
+    ApplyEventEffect(o.effect || {}, o, result);
+  }
+  ApplyEventEffect(ev.effect || {}, ev, result);
+  Log('Event: ' + ev.key);
+
+  var shown = game.recentEvent;
+  if (!shown || shown.key != ev.key || shown.result.length)
+    shown = game.recentEvent = { key: ev.key, where: ev.where, lines: ev.lines || [],
+                                 at: game.elapsed || 0 };
+  shown.lines = ev.lines || shown.lines;
+  shown.result = result;
+  ShowRecentEvent();
+  ShowEventPopup(true);
+}
+
+// What an effect does, with its amounts (gold, loot) from amt
+function ApplyEventEffect(fx, amt, result) {
   if (fx.gold > 0) {
-    game.purse = (game.purse || 0) + ev.gold;
+    game.purse = (game.purse || 0) + amt.gold;
     ShowPurse();
-    result.push('Found ' + ev.gold + ' gold');
+    result.push('Found ' + amt.gold + ' gold');
   } else if (fx.gold < 0) {
-    var fromPurse = Min(game.purse || 0, ev.gold);
+    var fromPurse = Min(game.purse || 0, amt.gold);
     game.purse = (game.purse || 0) - fromPurse;
-    var fromBank = Min(GetI(Inventory,'Gold'), ev.gold - fromPurse);
+    var fromBank = Min(GetI(Inventory,'Gold'), amt.gold - fromPurse);
     if (fromBank) Add(Inventory, 'Gold', -fromBank);
     ShowPurse();
     result.push('Lost ' + (fromPurse + fromBank) + ' gold');
   }
-  if (fx.item && ev.loot) {
-    Add(Inventory, ev.loot, 1);
-    result.push('Got ' + Indefinite(ev.loot, 1));
+  if (fx.item && amt.loot) {
+    Add(Inventory, amt.loot, 1);
+    result.push('Got ' + Indefinite(amt.loot, 1));
   }
   if (fx.stat) {
     var stat = fx.stat == 'random' ? Pick(K.PrimeStats) : fx.stat;
@@ -887,15 +1102,6 @@ function FinishEvent() {
     ExpBar.increment(ExpBar.Max() * fx.xp);
     result.push('+' + Math.round(fx.xp * 100) + '% of the way to the next level');
   }
-  Log('Event: ' + ev.key);
-
-  var shown = game.recentEvent;
-  if (!shown || shown.key != ev.key || shown.result.length)
-    shown = game.recentEvent = { key: ev.key, where: ev.where, lines: ev.lines || [],
-                                 at: game.elapsed || 0 };
-  shown.result = result;
-  ShowRecentEvent();
-  ShowEventPopup(true);
 }
 
 // ---- Temporary buffs --------------------------------------------------------
@@ -1020,10 +1226,31 @@ function RevealEventLine() {
   var ev = game.event;
   if (!ev || !ev.lines) return;
   ev.shown = Min(ev.lines.length, (ev.shown || 0) + 1);
-  game.recentEvent = { key: ev.key, where: ev.where, lines: ev.lines.slice(0, ev.shown),
-                       result: [], at: game.elapsed || 0 };
-  ShowRecentEvent();
+  SyncRecentEvent();
   ShowEventPopup(false);
+}
+
+// The Last Event box (and the pop-up) show the event in progress: the lines
+// so far and, for a choice, the question and the options or the pick.
+function SyncRecentEvent() {
+  var ev = game.event;
+  if (!ev) return;
+  var prev = game.recentEvent;
+  var at = prev && prev.key == ev.key && !(prev.result || []).length ? prev.at : (game.elapsed || 0);
+  var shown = game.recentEvent = { key: ev.key, where: ev.where, lines: ev.lines.slice(0, ev.shown || 0),
+                                   result: [], at: at };
+  if (ev.choices && (ev.shown || 0) >= ev.askAt) {
+    shown.ask = ev.ask;
+    shown.askAt = ev.askAt;
+    shown.options = ev.choices.map(function (c) { return c.label; });
+    shown.pending = !!ev.pending;
+    var pick = ev.chosen !== null && ev.chosen !== undefined ? ev.chosen : ev.picked;
+    if (pick !== null && pick !== undefined) {
+      shown.picked = pick;
+      shown.by = ev.by || 'you';
+    }
+  }
+  ShowRecentEvent();
 }
 
 function EventPopupsOn() {
@@ -1048,8 +1275,29 @@ function RenderEvent(ev, $where, $lines, $result) {
   $lines.empty();
   $result.text('');
   if (!ev) return;
-  $.each(ev.lines || [], function (i, line) { $lines.append($("<div>").text(line)); });
+  $.each(ev.lines || [], function (i, line) {
+    if (ev.ask && i == ev.askAt) $lines.append(RenderChoice(ev));
+    $lines.append($("<div>").text(line));
+  });
+  if (ev.ask && (ev.lines || []).length <= ev.askAt) $lines.append(RenderChoice(ev));
   $result.text((ev.result || []).join(' · '));
+}
+
+// The question, then the buttons while it waits, or what was picked
+function RenderChoice(ev) {
+  var box = $("<div class='event-choice'>");
+  $("<div class='ask'>").text(ev.ask).appendTo(box);
+  if (ev.pending) {
+    var buttons = $("<div class='choices'>").appendTo(box);
+    $.each(ev.options || [], function (i, label) {
+      $("<button type='button'>").attr("data-pick", i).text((i + 1) + ". " + label).appendTo(buttons);
+    });
+    $("<div class='choice-timer'>").appendTo(box);
+  } else if (ev.picked !== undefined && ev.picked !== null) {
+    $("<div class='picked'>").text((ev.by == 'fate' ? "Nobody answered, so fate chose: " : "You chose: ") +
+                                   (ev.options || [])[ev.picked]).appendTo(box);
+  }
+  return box;
 }
 
 function ShowRecentEvent() {
@@ -1086,6 +1334,7 @@ function ShowEventPopup(finished) {
   var dlg = document.getElementById("EventDialog");
   if (!dlg || !dlg.showModal || !game.recentEvent) return;
   RenderEvent(game.recentEvent, $("#EventWhere"), $("#EventLines"), $("#EventResult"));
+  ShowChoiceTimer();
   if (!dlg.open) dlg.showModal();
   clearTimeout(_popupTimer);
   if (finished) _popupTimer = setTimeout(PopupTimeout, K.EventPopupLinger * 1000);
@@ -1327,7 +1576,7 @@ function ShowCondition() {
 }
 
 function NeedsRest() {
-  return HPBar.Position() < HPBar.Max() * K.Combat.RestBelow;
+  return HPBar.Position() < HPBar.Max() * Tactic('resting').restBelow;
 }
 
 // Resting takes 3-8 seconds depending on how hurt you are; more CON, less.
@@ -2065,6 +2314,7 @@ function Timer1Timer() {
     TaskBar.increment(elapsed);
     ShowFight();
     ShowBuffs();
+    ShowChoiceTimer();
   }
 
   StartTimer();
@@ -2132,13 +2382,23 @@ function FormCreate() {
       ToggleEventPopups();
     });
     ShowEventPopupToggle();
+    $("#TacticsLink").on("click", function (e) { e.preventDefault(); OpenTactics(); });
+    $("#TacticsClose").on("click", function () { this.closest("dialog").close(); });
     $("#RetireLink").on("click", function (e) { e.preventDefault(); AskRetire(); });
     $("#FinaleRetire").on("click", AskRetire);
     $("#FinaleKeep").on("click", function () { this.closest("dialog").close(); });
     $("#RetireYes").on("click", Retire);
     $("#RetireNo").on("click", function () { this.closest("dialog").close(); });
     // Close the event pop-up with a click anywhere on it (or its backdrop)
-    $("#EventDialog").on("click", CloseEventPopup);
+    $("#EventDialog").on("click", function (e) {
+      // while a choice waits, only OK (or Esc) closes it; the buttons choose
+      if (ChoicePending() && !$(e.target).is("#EventOk")) return;
+      CloseEventPopup();
+    });
+    $(document).on("click", "[data-pick]", function (e) {
+      e.stopPropagation();
+      PickChoice(parseInt($(this).attr("data-pick"), 10));
+    });
     try {
       if (window.localStorage.getItem("pq.combatlog") === "1")
         $("body").addClass("show-log");
@@ -2280,6 +2540,7 @@ function LoadGame(sheet) {
   ShowRecentEvent();
   ShowRetire();
   ShowLegacy();
+  ShowTactics();
   ShowFight(true);
   if (Kill)
     Kill.text(game.kill);
@@ -2395,6 +2656,14 @@ function FormKeyDown(e) {
 
   if (e.key === 'n') {
     ToggleNarration();
+  }
+
+  if (/^[1-9]$/.test(e.key) && ChoicePending()) {
+    PickChoice(parseInt(e.key, 10) - 1);
+  }
+
+  if (e.key === 't') {
+    OpenTactics();
   }
 
   if (e.key === 'e') {

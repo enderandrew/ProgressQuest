@@ -99,6 +99,32 @@ K.Defeat = {
   CautionPerDefeat: 2, CautionDecay: 0.25, CautionMax: 10
 };
 
+// Tactics: the player's standing orders (the Tactics panel in the game,
+// game.tactics). The hero still plays itself; these change how. "normal"
+// is how the game has always played. Each option: key, label, help, and
+// what it changes:
+//   fights   levels:    pick monsters this many levels above (or below)
+//                       the usual
+//            xp:        XP per fight times this (easy fights are quick, so
+//                       without it playing safe would also be fastest)
+//   resting  restBelow: stop to rest when HP falls below this share
+//   spells   castMult:  cast spells this many times as often (MP allowing)
+// See the README for what each one does, measured.
+K.Tactics = {
+  fights: { label: "Fights", options: [
+    { key: "safe",     label: "Play it safe", levels: -2, xp: 0.7, help: "Weaker monsters, 70% XP. A third slower, fewer defeats, about three times the gold." },
+    { key: "normal",   label: "Normal",       levels: 0,  xp: 1,   help: "Monsters about your level." },
+    { key: "bold",     label: "Bold",         levels: 2,  xp: 1.4, help: "Monsters 2 levels tougher, 140% XP. A little faster, half again as many defeats, little gold left." },
+    { key: "reckless", label: "Reckless",     levels: 4,  xp: 1.8, help: "Monsters 4 levels tougher, 180% XP. A fifth faster; you will lose a lot. Glory, or the temple." } ] },
+  resting: { label: "Resting", options: [
+    { key: "normal",   label: "Normal",       restBelow: 0.35, help: "Rest below 35% HP." },
+    { key: "careful",  label: "Careful",      restBelow: 0.6,  help: "Rest below 60% HP. Fewer close calls, more time resting." } ] },
+  spells: { label: "Spells", options: [
+    { key: "rarely",   label: "Rarely",       castMult: 0.5, help: "Cast half as often. Save MP, swing more." },
+    { key: "normal",   label: "Normal",       castMult: 1,   help: "Cast as your race and class suggest." },
+    { key: "often",    label: "Often",        castMult: 1.5, help: "Cast half again as often, while MP lasts." } ] }
+};
+
 // The finale (used by main.js): at Level the hero tracks down the Old
 // Bastard(TM) and fights him. He is a monster of level Level +
 // BossLevelGap (not your level: getting stronger helps), with BossHP times
@@ -262,6 +288,7 @@ function ResolveCombat(hero, foe, seed) {
   }
   var castChance = C.CastChanceArcane +
     (C.CastChanceMartial - C.CastChanceArcane) * (hero.physicality === undefined ? 0.5 : hero.physicality);
+  castChance = Math.min(0.9, castChance * (hero.castMult || 1));   // the Spells tactic
   var spells = hero.spells || [];
   var name = foe.name || "the foe";
 

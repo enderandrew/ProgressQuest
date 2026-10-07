@@ -236,6 +236,7 @@
   <a id="NarrateToggle" href="#" title="Read cinematics and events aloud (N)">Narration: on</a>
   <a id="EventPopupToggle" href="#" title="Show events in a pop-up window (E)">Event pop-ups: on</a>
   <a id="RetireLink" href="#" title="Retire this hero to the Hall of Legends" style="display:none">Retire</a>
+  <a id="TacticsLink" href="#" title="Standing orders for your hero (T)">Tactics</a>
   <a id="LogToggle" href="#" title="Show or hide the combat log (C)">Combat log</a>
 </div>
 <div id="CombatLog" class="listbox"></div>
@@ -262,6 +263,16 @@
       <button type="button" id="FinaleRetire">Retire to the Hall of Legends</button>
       <button type="button" id="FinaleKeep">Keep playing</button>
     </div>
+  </div>
+</dialog>
+
+<dialog id="TacticsDialog" class="pq-dialog" aria-labelledby="TacticsTitle">
+  <div class="dlg-title"><span id="TacticsTitle">Tactics</span></div>
+  <div class="dlg-body">
+    <div>Standing orders. Your hero still plays itself; these change how, from
+      the next fight on.</div>
+    <div id="Tactics"></div>
+    <div class="dlg-buttons"><button type="button" id="TacticsClose">Close</button></div>
   </div>
 </dialog>
 

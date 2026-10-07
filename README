@@ -311,6 +311,59 @@ under one. Raise K.BuffPercent for stronger ones; even 40% only moved the
 win rate by about a point.
 
 
+Choices
+-------
+
+Now and then (about one event in six; roughly once an hour) an event
+asks a question: buy the mystery box, haggle, or walk away? The narrator
+reads it out ("Decision time!"), the tab title flashes "Your hero needs
+you!", and the pop-up and the Last Event box show the options with a
+countdown. Click one, or press 1, 2 or 3. If nobody answers within
+K.ChoiceSeconds (20), fate picks one at random and the game moves on, so
+the game still plays itself.
+
+Choice events are ordinary entries in events.js with an ask and 2 or 3
+choices, each with its own label, lines and effect (the format is at the
+top of the file). Seven are included: a crossroads, a mystery box, a
+wounded stranger, a shrine, a pit fighter, hate mail from the Old
+Bastard(TM) and a giant egg.
+
+For seeded runs (a daily challenge, say): fate's pick is drawn from the
+game's random numbers whether or not someone chose, so the stream of
+random numbers is the same either way, and every pick (and every tactics
+change) is logged with the turn it happened on (game.choiceLog), so a run
+can be replayed.
+
+
+Tactics
+-------
+
+"Tactics" under the task bar (or T) sets standing orders. The hero still
+plays itself; these change how, from the next fight on, and every change
+is logged. Normal is how the game has always played. K.Tactics in
+combat.js holds them.
+
+- Fights: how much tougher the monsters you pick are, with an XP
+  multiplier (easy fights are over quickly, so without one playing safe
+  would also be fastest).
+- Resting: Normal rests below 35% HP; Careful below 60%.
+- Spells: cast half as often, normally, or half again as often.
+
+Measured on 6 simulated heroes each, to level 30:
+
+  Fights                         time    defeats   win rate   gold
+  Play it safe (-2 lv, 70% XP)   19.4 h    211      93.7%     31,000
+  Normal                         14.6 h    232      90.5%      9,800
+  Bold (+2 lv, 140% XP)          13.5 h    366      83.2%        600
+  Reckless (+4 lv, 180% XP)      11.7 h    336      81.2%        650
+
+So they trade speed against gold and safety, which matters for a
+challenge that scores one of them (and defeats will matter a lot in
+Hardcore). Careful resting and the Spells settings change little on
+average (within what 6 heroes can tell apart); they depend on the hero.
+Saves are now version 10 (game.tactics, game.choiceLog).
+
+
 The finale, retiring and the Hall of Legends
 --------------------------------------------
 

@@ -482,7 +482,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 9;
+var SaveVersion = 10;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -562,6 +562,12 @@ var SaveMigrations = [
   // branded for good (game.cheater: { reason, at, level }).
   function (sheet) {
     sheet.cheater = sheet.cheater || null;
+  },
+  // 9 -> 10: event choices and tactics (game.tactics, and game.choiceLog:
+  // every pick and tactics change, for replaying a seeded run).
+  function (sheet) {
+    sheet.tactics = sheet.tactics || { fights: "normal", resting: "normal", spells: "normal" };
+    sheet.choiceLog = sheet.choiceLog || [];
   }
 ];
 

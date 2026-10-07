@@ -26,6 +26,18 @@
 //             wounded: number of fights spent Wounded
 //             xp:      share of the way to the next level (0.1 = 10%)
 //
+// Choice events also have:
+//
+//   ask      the question, asked after the lines ('What do you do?')
+//   choices  2 or 3 options, each { label, lines, effect }: the label is
+//            the button, the lines play after it is picked, the effect is
+//            applied with the event's own (if any). {gold} and {loot} in an
+//            option mean that option's amounts.
+//
+// The player has K.ChoiceSeconds to pick (buttons, or keys 1-3); after that
+// fate picks one at random. Keep choice events uncommon: the game is
+// supposed to play itself.
+//
 // Lines can use the story placeholders ({guy}, {kingdom}, {nemesis},
 // {boring}, {item}, {race}, {klass}, {insult}, {hero}...; see story.js),
 // plus {gold} and {loot} above. They are filled in when the event starts.
@@ -48,6 +60,9 @@ K.BuffPercent = 0.25;
 
 // How long the event pop-up stays open once the event is over (seconds).
 K.EventPopupLinger = 12;
+
+// How long a choice waits for the player before fate picks (seconds).
+K.ChoiceSeconds = 20;
 
 K.Events = [
   { key: 'snoring', where: ['rest'],
@@ -276,4 +291,107 @@ K.Events = [
             'You forgot to cancel your subscription to {boring} of the month club.',
             'You never remember to cancel it when you are in town.'],
     effect: { gold: -5 } },
+
+  // ---- Choice events ----------------------------------------------------------
+
+  { key: 'crossroads', where: ['road'],
+    lines: ['You reach a fork in the road',
+            'A signpost points both ways. Both arrows say “Adventure”'],
+    ask: 'Which way?',
+    choices: [
+      { label: 'Take the left path',
+        lines: ['The left path winds through {kingdom}', 'You learn a thing or two on the way'],
+        effect: { xp: 0.05 } },
+      { label: 'Take the right path',
+        lines: ['The right path leads past an abandoned camp', 'Someone left {loot} behind'],
+        effect: { item: 'special' } },
+      { label: 'Ask for directions',
+        lines: ['Nobody knows the way. Everybody has an opinion', 'A {race-one} sells you a map for {gold} gold. It is a drawing of a duck'],
+        effect: { gold: -1 } } ] },
+
+  { key: 'mysterybox', where: ['town'],
+    lines: ['A hooded merchant offers you a mystery box for {gold} gold',
+            '“Could be anything,” he says. “Mostly it could be a box”'],
+    ask: 'Buy the box?',
+    choices: [
+      { label: 'Buy it',
+        lines: ['You pay {gold} gold and open the box', 'Inside is {loot}. And some packing peanuts'],
+        effect: { gold: -3, item: 'special' } },
+      { label: 'Haggle',
+        lines: ['You haggle him down to {gold} gold', 'Inside is {loot}. You get what you pay for'],
+        effect: { gold: -1, item: 'boring' } },
+      { label: 'Walk away',
+        lines: ['You walk away', 'You will always wonder what was in the box'] } ] },
+
+  { key: 'woundedstranger', where: ['road'],
+    lines: ['A wounded {race-one} lies by the road, moaning theatrically',
+            '“Help,” they say. “Or don\'t. I\'m not your mom”'],
+    ask: 'What do you do?',
+    choices: [
+      { label: 'Help them',
+        lines: ['You patch them up as best you can', 'They teach you a trick before limping off'],
+        effect: { spell: true } },
+      { label: 'Rob them',
+        lines: ['You take {gold} gold from their pockets', 'They were faking. Karma trips you on the way out'],
+        effect: { gold: 3, wounded: 2 } },
+      { label: 'Walk on by',
+        lines: ['You walk on by', 'Somewhere, a bard writes a song about you. It is not flattering'] } ] },
+
+  { key: 'shrine', where: ['rest'],
+    lines: ['You find a shrine to a god you have never heard of',
+            'The plaque says “Saint {guy}, Patron of Mild Inconveniences”'],
+    ask: 'What do you do at the shrine?',
+    choices: [
+      { label: 'Pray',
+        lines: ['You pray for a bit', 'You feel watched over, if not exactly helped'],
+        effect: { stat: 'random' } },
+      { label: 'Leave an offering',
+        lines: ['You leave {gold} gold on the altar', 'A warm glow washes over you. It might be the sun'],
+        effect: { gold: -2, heal: true } },
+      { label: 'Take the offerings',
+        lines: ['You pocket {gold} gold from the altar', 'Saint {guy} sends a mild inconvenience your way'],
+        effect: { gold: 4, wounded: 1 } } ] },
+
+  { key: 'pitfight', where: ['town'], minLevel: 3,
+    lines: ['A pit fighter in the market challenges anyone to a bout',
+            '“I will even let you hit me first,” they say, flexing'],
+    ask: 'Accept the challenge?',
+    choices: [
+      { label: 'Fight',
+        lines: ['You fight. You lose, but you learn', 'The crowd respects you, a little'],
+        effect: { xp: 0.06, wounded: 1 } },
+      { label: 'Bet on the pit fighter',
+        lines: ['You bet against yourself, which is allowed', 'The pit fighter wins on a forfeit. You collect {gold} gold'],
+        effect: { gold: 3 } },
+      { label: 'Decline politely',
+        lines: ['You decline politely', 'The crowd boos. Your dignity remains mostly intact'] } ] },
+
+  { key: 'hatemail', where: ['rest'],
+    lines: ['A letter arrives from the Old Bastard™',
+            'It reads, in its entirety: “{insult}”'],
+    ask: 'What do you do with the letter?',
+    choices: [
+      { label: 'Write a scathing reply',
+        lines: ['You write a reply so scathing it singes the parchment', 'You feel great about yourself'],
+        effect: { stat: 'CHA' } },
+      { label: 'Burn it',
+        lines: ['You burn the letter and warm your hands on it', 'Petty, but cozy'],
+        effect: { heal: true } },
+      { label: 'Frame it',
+        lines: ['You frame the letter', 'It is a conversation piece. You carry it everywhere. It weighs a ton'],
+        effect: { item: 'boring' } } ] },
+
+  { key: 'dragonegg', where: ['field'], minLevel: 8,
+    lines: ['Behind the fallen monster you find an egg the size of a {race-one}'],
+    ask: 'What do you do with the egg?',
+    choices: [
+      { label: 'Make an omelette',
+        lines: ['It is the best omelette of your life', 'It serves forty. You eat it all'],
+        effect: { heal: true } },
+      { label: 'Sell it',
+        lines: ['A collector pays {gold} gold for it, no questions asked', 'You ask some questions anyway. He leaves'],
+        effect: { gold: 6 } },
+      { label: 'Hatch it',
+        lines: ['You keep the egg warm. It hatches', 'It is a very large chicken. It imprints on you, then on a rock', 'You learn a lot about responsibility'],
+        effect: { xp: 0.05 } } ] },
 ];
