@@ -70,6 +70,10 @@ the primary counts 2, the secondary 1, and an attribute named by both
 race and class counts twice. On the character sheet, primaries get a
 filled star and secondaries an open one.
 
+Renamed races and classes go in K.Renamed in config.js (old name -> new
+name): heroes are updated when they load, and legends in the Hall count
+for the new name. Internal Combustion Felon is now Dark Starry Knight.
+
 The attributes are spread evenly: each of the 8 is the primary of exactly
 3 races and 3 classes, and the secondary of 3 more of each, and no two
 races (or classes) share the same pair. Across all 576 combinations every
@@ -314,6 +318,32 @@ They are in desktop.js: each icon is a box in pixels of back.jpg
 wallpaper is stretched. To add one, paint it into back.jpg and add a line
 to DesktopIcons. The icons are hidden on screens narrower than 860px,
 where the game window covers the desktop anyway.
+
+
+Screen sizes
+------------
+
+The game window fits the screen it's on (the end of main.css):
+
+- Phones (up to 699px wide): one column. Each panel (Character Sheet,
+  Spell Book, Equipment, Inventory, Plot Development, Quests, Last Event)
+  collapses when you tap its heading; Spell Book, Equipment and Inventory
+  start collapsed, and your choices are remembered per browser (View >
+  Expand All Panels / Collapse All Panels too). The dock, with a one-line
+  summary (level, HP, MP, XP), the current task, the task bar and the
+  links, stays at the bottom of the screen. The links scroll sideways.
+- Tablets (700-959px): two columns, with the plot, quests and last event
+  side by side underneath.
+- Laptops and desktops (960px and up): the three columns as before, up to
+  1440px wide on big screens, with taller lists on tall screens.
+- Touch screens show the text on the progress bars all the time (there's
+  no hovering), and the lists no longer scroll the whole page to their
+  newest row, which on a phone jumped the screen around.
+
+The collapse buttons only exist on phones: on wider screens the headings
+are plain headings. The character roller (New Game) stacks the same way
+on a phone: race and class lists side by side, stats and legacy under
+them, and Sold! always in reach.
 
 
 Narration

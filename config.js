@@ -580,7 +580,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 12;
+var SaveVersion = 13;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -687,6 +687,13 @@ var SaveMigrations = [
       sheet.Traits.Alignment = K.Alignments[h % K.Alignments.length] + " " +
         K.AlignmentFlaws[Math.floor(h / K.Alignments.length) % K.AlignmentFlaws.length];
     }
+  },
+  // 12 -> 13: races and classes that were renamed (K.Renamed)
+  function (sheet) {
+    if (sheet.Traits) {
+      if (K.Renamed[sheet.Traits.Race]) sheet.Traits.Race = K.Renamed[sheet.Traits.Race];
+      if (K.Renamed[sheet.Traits.Class]) sheet.Traits.Class = K.Renamed[sheet.Traits.Class];
+    }
   }
 ];
 
@@ -737,6 +744,13 @@ function GameFingerprint(callback) {
 
 
 K.Traits = ["Name", "Race", "Class", "Alignment", "Level"];
+
+// Races and classes that have been renamed: old name -> new name. Heroes
+// are updated when they load (save v13); the Hall of Legends keeps the old
+// names (its entries are sealed) but they count for the new ones.
+K.Renamed = {
+  "Internal Combustion Felon": "Dark Starry Knight"
+};
 
 K.PrimeStats = ["STR","CON","DEX","INT","WIS","CHA"];
 K.Stats = K.PrimeStats.slice(0).concat(["HP Max","MP Max"]);
@@ -836,8 +850,9 @@ K.Legacy = { Primary: 0.05, Secondary: 0.025 };
 function HonoredBy(legends) {
   var races = {}, klasses = {};
   (legends || []).filter(LegendCounts).forEach(function (l) {
-    (races[l.race] = races[l.race] || []).push(l.name);
-    (klasses[l.klass] = klasses[l.klass] || []).push(l.name);
+    var race = K.Renamed[l.race] || l.race, klass = K.Renamed[l.klass] || l.klass;
+    (races[race] = races[race] || []).push(l.name);
+    (klasses[klass] = klasses[klass] || []).push(l.name);
   });
   return { races: races, klasses: klasses };
 }

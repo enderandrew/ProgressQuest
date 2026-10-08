@@ -63,7 +63,9 @@
 <div class="hbox">
   <div class="vbox" id="Izquierda">
 
-    <span class="label head" >Character Sheet</span>
+    <section class="panel" id="Panel-sheet">
+    <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-sheet">Character Sheet</button></h2>
+    <div class="panel-body" id="PanelBody-sheet">
 
     <table class="listbox" id="Trats">
       <thead>
@@ -138,7 +140,12 @@
       <div class="bar"></div>
     </div>
 
-    <span class="label head" >Spell Book</span>
+        </div>
+    </section>
+
+    <section class="panel" id="Panel-spells">
+    <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-spells">Spell Book</button></h2>
+    <div class="panel-body" id="PanelBody-spells">
     <div id="Spells" class="scroll listbox">
       <table>
         <thead>
@@ -151,10 +158,14 @@
         </tbody>
       </table>
     </div>
+    </div>
+    </section>
   </div>
 
   <div class="vbox" id="Centro">
-    <span class="label head">Equipment</span>
+    <section class="panel" id="Panel-equipment">
+    <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-equipment">Equipment</button></h2>
+    <div class="panel-body" id="PanelBody-equipment">
 
     <table id="Equips" class="listbox">
       <tbody>
@@ -173,7 +184,12 @@
     </table>
     <div id="GearPower" class="profile"></div>
 
-    <span class="label head" >Inventory</span>
+        </div>
+    </section>
+
+    <section class="panel" id="Panel-inventory">
+    <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-inventory">Inventory</button></h2>
+    <div class="panel-body" id="PanelBody-inventory">
     <div id="Inventory" class="scroll listbox">
       <table >
         <thead>
@@ -194,12 +210,16 @@
       <div class="hint"></div>
       <div class="bar"></div>
     </div>
+    </div>
+    </section>
   </div>
 
 
   <div class="vbox" id="Derecha">
 
-    <span class="label head">Plot Development</span>
+    <section class="panel" id="Panel-plot">
+    <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-plot">Plot Development</button></h2>
+    <div class="panel-body" id="PanelBody-plot">
     <div id="Story" class="listbox">
       <div id="StoryTitle"></div>
       <div id="StoryText"></div>
@@ -216,7 +236,12 @@
       <div class="bar"></div>
     </div>
 
-    <span class="label head">Quests</span>
+        </div>
+    </section>
+
+    <section class="panel" id="Panel-quests">
+    <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-quests">Quests</button></h2>
+    <div class="panel-body" id="PanelBody-quests">
     <div id="Quests" class="scroll listbox">
       <table>
         <tbody>
@@ -229,16 +254,25 @@
       <div class="bar"></div>
     </div>
 
-    <span class="label head">Last Event<span id="RecentAge"></span></span>
+        </div>
+    </section>
+
+    <section class="panel" id="Panel-event">
+    <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-event">Last Event</button><span id="RecentAge"></span></h2>
+    <div class="panel-body" id="PanelBody-event">
     <div id="RecentEvent" class="listbox empty">
       <div id="RecentWhere"></div>
       <div id="RecentLines"></div>
       <div id="RecentResult"></div>
     </div>
+    </div>
+    </section>
   </div>
 
 </div>
 
+<div id="Dock">
+<div id="DockStats" aria-live="off"></div>
 <div id="Kill" class="label"></div>
 
 <div class="progress-container" id="TaskBar">
@@ -248,6 +282,7 @@
 
 <div id="FightBar">
   <span id="FightLine"></span>
+  <span id="LinkBar">
   <a id="NarrateToggle" href="#" title="Read cinematics and events aloud (N)">Narration: on</a>
   <a id="EventPopupToggle" href="#" title="Show events in a pop-up window (E)">Event pop-ups: on</a>
   <a id="RetireLink" href="#" title="Retire this hero to the Hall of Legends" style="display:none">Retire</a>
@@ -256,6 +291,8 @@
   <a id="LogToggle" href="#" title="Show or hide the combat log (C)">Combat log</a>
   <a id="ShareLink" href="#" title="A link to this character sheet, for showing off">Share</a>
   <a id="ExportLink" href="#" title="Download a backup of this hero (.pqw)">Back up</a>
+  </span>
+</div>
 </div>
 <div id="CombatLog" class="listbox"></div>
 

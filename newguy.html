@@ -20,6 +20,7 @@
 <script src="combat.js"></script>
 <script src="newguy.js"></script>
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 input, button { display: inline; }
 
@@ -45,19 +46,19 @@ input, button { display: inline; }
     <button id="RandomName" alt="Random Name">Random Name</button>
   </div>
 
-  <div class=hbox>
+  <div class=hbox id="Roll">
 
     <fieldset class="vbox groupbox" id="races">
       <legend>Race</legend>
     </fieldset>
 
-    <div class=vbox>
-      <div class=hbox>
+    <div class=vbox id="RollRight">
+      <div class=hbox id="RollTop">
         <fieldset class="vbox groupbox" id="classes">
           <legend>Class</legend>
         </fieldset>
 
-        <div class="vbox">
+        <div class="vbox" id="RollSide">
         <fieldset class="groupbox" id="stats">
           <legend>Stats</legend>
 
@@ -106,7 +107,7 @@ input, button { display: inline; }
       <div class=hbox>
       </div>
 
-      <div class=hbox style="text-align:right">
+      <div class=hbox id="SoldRow" style="text-align:right">
 
 
         <span id="RunOptions" style="display:none"></span>

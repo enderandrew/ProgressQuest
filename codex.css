@@ -146,3 +146,8 @@
   .codex-table th:nth-child(3), .codex-table td:nth-child(3),
   .codex-table th:nth-child(6), .codex-table td:nth-child(6) { display: none; }
 }
+
+/* On a phone, above the dock (the task bar stuck to the bottom of the game) */
+@media (max-width: 699px) {
+  .achievement-toast { inset: auto 8px 104px 8px; width: auto; }
+}

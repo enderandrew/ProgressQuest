@@ -303,15 +303,7 @@ body.show-log #CombatLog { display: block; }
 #CombatLog .fight-head { font-weight: bold; margin-top: 3px; }
 #CombatLog .fight-result { font-style: italic; color: #555; margin-bottom: 2px; }
 
-/* ---- Small screens: one column ----------------------------------------- */
-@media (max-width: 860px) {
-  body { margin-top: 0; }
-  #main.window { width: 100%; border-width: 0; }
-  #main > .hbox { grid-template-columns: 1fr; }
-  #Spells, #Inventory, #Plots, #Quests { height: 160px; }
-}
-/* tables fill their column (the XUL-ish .vbox rule makes them blocks) */
-#Izquierda > table, #Centro > table { display: table; }
+/* (The layouts for other screen sizes are at the end of this file.) */
 #Spells table, #Inventory table, #Plots table, #Quests table { width: 100%; }
 #main td { height: 15px; line-height: 1.2; }
 
@@ -482,3 +474,131 @@ div.profile#DailyLine:empty { display: none; }
 #DeathEpitaph { font-family: Georgia, serif; font-style: italic; color: #333; }
 #DeathDialog .dlg-buttons { text-align: center; }
 #main.dead { filter: grayscale(1); }
+
+
+/* ---- Panels and layouts for every screen size --------------------------------
+   Phones (up to 699px): one column, panels that collapse when you tap their
+   heading, and a dock with the task bar stuck to the bottom of the screen.
+   Tablets (700-959px): two columns, with the plot,
+   quests and last event below. Laptops and desktops (960px and up): three columns,
+   wider on big screens, with taller lists on tall ones. See SetUpPanels()
+   in main.js. */
+
+.panel { margin: 0; padding: 0; }
+.panel-head { margin: 2px 0; padding: 0; font-weight: bold; font-size: 9pt; }
+.panel-head #RecentAge { font-weight: normal; }
+.panel-toggle {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: default;
+}
+.panel-toggle:focus-visible { outline: 1px dotted #000; }
+#LinkBar { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+#DockStats { display: none; }
+
+/* Tablets and small laptops: two columns */
+@media (min-width: 700px) and (max-width: 959px) {
+  #main.window { width: calc(100vw - 16px); }
+  #main > .hbox {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "left middle" "right right";
+  }
+  #Izquierda { grid-area: left; }
+  #Centro { grid-area: middle; }
+  #Derecha {
+    grid-area: right;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 4px;
+    align-items: start;
+  }
+  #Panel-plot { grid-column: 1; grid-row: 1; }
+  #Panel-event { grid-column: 1; grid-row: 2; }
+  #Panel-quests { grid-column: 2; grid-row: 1 / span 2; }
+  #Quests { height: 340px; }
+}
+
+/* Desktops: three columns (above), wider on big screens */
+@media (min-width: 1500px) {
+  #main.window { width: min(1440px, calc(100vw - 48px)); }
+}
+/* ...with taller lists when there's room */
+@media (min-width: 960px) and (min-height: 920px) {
+  #Spells { height: 330px; }
+  #Inventory { height: 360px; }
+  #Plots { height: 120px; }
+  #Quests { height: 380px; }
+}
+@media (min-width: 960px) and (min-height: 1150px) {
+  #Spells { height: 460px; }
+  #Inventory { height: 500px; }
+  #Plots { height: 160px; }
+  #Quests { height: 520px; }
+}
+
+/* Touch screens can't hover, so the progress bars always say how far along */
+@media (hover: none) {
+  div.progress-container div.hint { visibility: visible; color: #333; }
+}
+
+/* Phones: one column, collapsible panels, and the dock */
+@media (max-width: 699px) {
+  body { margin-top: 0; }
+  body > br { display: none; }
+  #desktop { display: none; }
+  #main.window { width: 100%; border-width: 0; }
+  #main > .hbox { grid-template-columns: 1fr; gap: 0; }
+  #titlebar { font-size: 10pt; }
+  .menu-top { padding: 5px 9px; }
+
+  .panel { margin-bottom: 3px; }
+  .panel-head { margin: 0 0 2px; }
+  .panel-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 8px;
+    font-size: 10pt;
+    cursor: pointer;
+    background: #d4d0c8;
+    border: 1px solid;
+    border-color: #fff #808080 #808080 #fff;
+  }
+  .panel-toggle::after { content: "\25BE"; margin-left: auto; padding-left: 8px; }
+  .panel.collapsed .panel-toggle::after { content: "\25B8"; }
+  .panel.collapsed .panel-toggle { background: #c0c0c0; }
+  .panel.collapsed > .panel-body { display: none; }
+  .panel-head #RecentAge { display: none; }
+
+  #Spells, #Inventory, #Quests { height: auto; max-height: 45vh; }
+  #Plots { height: auto; max-height: 25vh; }
+  #main td { height: auto; padding-top: 2px; padding-bottom: 2px; }
+  #Trats td, #Equips td, #Spells td, #Inventory td, #Plots td, #Quests td { font-size: 9pt; }
+
+  #Dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 25;
+    background: #e7e7e7;
+    border-top: 2px solid #808080;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.2);
+    padding: 3px 4px 4px;
+  }
+  #DockStats { display: block; font-weight: bold; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #FightBar { flex-wrap: wrap; row-gap: 2px; }
+  #FightLine { flex-basis: 100%; }
+  #LinkBar {
+    flex-basis: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  #LinkBar a { padding: 2px 0; }
+}

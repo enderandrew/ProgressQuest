@@ -219,6 +219,8 @@ var MenuBar = [
     { label: "&Event Pop-ups", key: "E", checked: EventPopupsOn, action: ToggleEventPopups },
     { label: "&Combat Log", key: "C", checked: function () { return $("body").hasClass("show-log"); }, action: ToggleCombatLog },
     { label: "&Desktop Icons", checked: function () { return !DesktopIconsHidden(); }, action: ToggleDesktopIcons },
+    { label: "E&xpand All Panels", enabled: CompactLayout, action: function () { SetAllPanels(false); } },
+    { label: "Collapse All Pane&ls", enabled: CompactLayout, action: function () { SetAllPanels(true); } },
     "-",
     { label: "&Full Screen", key: "F11", checked: function () { return !!document.fullscreenElement; }, action: ToggleFullScreen },
     { label: "&Pop Out Window", key: "W", enabled: function () { return !window.opener; }, action: PopOut },

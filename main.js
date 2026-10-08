@@ -1987,6 +1987,86 @@ function ProgressBar(id, tmpl) {
 
 
 
+// Show a new row by scrolling its list box, never the page (the old
+// scrollIntoView() also scrolled the whole window to the row, which on a
+// phone yanked the screen to the Spell Book or Quests at every change)
+function ScrollIntoList(el) {
+  var box = el.closest ? el.closest(".scroll") : null;
+  if (!box) return;
+  var top = el.offsetTop - box.offsetTop, bottom = top + el.offsetHeight;
+  if (top < box.scrollTop) box.scrollTop = top;
+  else if (bottom > box.scrollTop + box.clientHeight) box.scrollTop = bottom - box.clientHeight;
+}
+
+// ---- Panels and the dock (small screens) ---------------------------------------
+//
+// On a phone the window is one column, and each panel (Character Sheet,
+// Spell Book, Equipment...) can be collapsed by tapping its heading. Which
+// ones are collapsed is remembered per browser. On wider screens nothing
+// collapses and the headings are just headings. The dock (current task, task
+// bar, and a one-line summary) stays at the bottom of the screen.
+
+var K_CompactQuery = "(max-width: 699px)";
+var K_PanelsCollapsed = { spells: true, equipment: true, inventory: true };   // the default
+
+function CompactLayout() {
+  return !!(window.matchMedia && window.matchMedia(K_CompactQuery).matches);
+}
+
+function PanelState() {
+  try { return JSON.parse(localStorage.getItem("pq.panels")) || K_PanelsCollapsed; }
+  catch (e) { return K_PanelsCollapsed; }
+}
+
+function SetPanel(key, collapsed) {
+  var state = PanelState();
+  state[key] = !!collapsed;
+  try { localStorage.setItem("pq.panels", JSON.stringify(state)); } catch (e) {}
+  ShowPanels();
+}
+
+function SetAllPanels(collapsed) {
+  var state = {};
+  $(".panel").each(function () { state[this.id.replace(/^Panel-/, "")] = !!collapsed; });
+  try { localStorage.setItem("pq.panels", JSON.stringify(state)); } catch (e) {}
+  ShowPanels();
+}
+
+function ShowPanels() {
+  var state = PanelState(), compact = CompactLayout();
+  $(".panel").each(function () {
+    var key = this.id.replace(/^Panel-/, ""), shut = compact && !!state[key];
+    $(this).toggleClass("collapsed", shut);
+    $(this).find(".panel-toggle").attr("aria-expanded", !shut)
+      .attr("tabindex", compact ? null : -1)
+      .attr("title", compact ? (shut ? "Show " : "Hide ") + $(this).find(".panel-toggle").text() : null);
+  });
+}
+
+function SetUpPanels() {
+  $(".panel-toggle").on("click", function () {
+    if (!CompactLayout()) return;
+    var panel = $(this).closest(".panel");
+    SetPanel(panel.attr("id").replace(/^Panel-/, ""), !panel.hasClass("collapsed"));
+  });
+  if (window.matchMedia) {
+    var mq = window.matchMedia(K_CompactQuery);
+    if (mq.addEventListener) mq.addEventListener("change", ShowPanels);
+  }
+  ShowPanels();
+  ShowDock();
+  setInterval(ShowDock, 1000);
+}
+
+// "Lv 25 · HP 180/230 · MP 200/214 · XP 56%" for the dock
+function ShowDock() {
+  if (!document || !game || !game.Traits) return;
+  var xp = ExpBar.Max() ? Math.floor(100 * ExpBar.Position() / ExpBar.Max()) : 0;
+  $("#DockStats").text("Lv " + GetI(Traits,'Level') + " \u00b7 HP " + Math.round(HPBar.Position()) + "/" + HPBar.Max() +
+    " \u00b7 MP " + Math.round(MPBar.Position()) + "/" + MPBar.Max() + " \u00b7 XP " + xp + "%" +
+    (game.mode == 'hardcore' ? " \u00b7 \u2620" : ""));
+}
+
 function Key(tr) {
   return $(tr).children().first().text();
 }
@@ -2009,7 +2089,7 @@ function ListBox(id, columns, fixedkeys) {
       $("<td>").append($("<input>", { type: "checkbox", disabled: true }),
                        document.createTextNode(" " + caption)));
     tr.appendTo(this.box);
-    tr.each(function () {this.scrollIntoView();});
+    tr.each(function () { ScrollIntoList(this); });
     if (this.decorate) this.decorate(tr, caption);
     return tr;
   };
@@ -2032,7 +2112,7 @@ function ListBox(id, columns, fixedkeys) {
     item.children().last().text(value);
     item.addClass("selected");
     if (this.decorate) this.decorate(item, key);
-    item.each(function () {this.scrollIntoView();});
+    item.each(function () { ScrollIntoList(this); });
   };
 
   this.scrollToTop = function () {
@@ -2647,6 +2727,7 @@ function FormCreate() {
     });
     ShowEventPopupToggle();
     $("#TacticsLink").on("click", function (e) { e.preventDefault(); OpenTactics(); });
+    SetUpPanels();
     $("#CodexLink").on("click", function (e) {
       e.preventDefault();
       CodexFlush(function () { window.open("index.html#codex", "pq-codex"); });
