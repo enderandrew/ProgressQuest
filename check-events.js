@@ -67,8 +67,17 @@ const PLACEHOLDERS = ["nemesis", "nemesis2", "guy", "guy2", "giver", "kingdom", 
                       "item", "boring", "race", "race-one", "klass", "insult", "hero",
                       "gold", "loot"];
 
+// A doubled comma in a list (['a', , 'b']) leaves a hole, which forEach
+// skips but the game can still pick (and then crash on)
+function checkHoles(name, list, what) {
+  if (!Array.isArray(list)) return;
+  for (let i = 0; i < list.length; ++i)
+    if (!(i in list)) error(`${name}: ${what} has an empty entry after item ${i} (a doubled comma?)`);
+}
+
 function checkLines(name, lines, what) {
   if (!Array.isArray(lines)) { error(`${name}: ${what} should be a list of lines`); return []; }
+  checkHoles(name, lines, what);
   const used = [];
   lines.forEach((line, i) => {
     if (typeof line !== "string") { error(`${name}: ${what} line ${i + 1} isn't text`); return; }
@@ -165,6 +174,8 @@ function checkStory(name, st) {
   if (!st.setup) error(`${name}: no setup`);
   if (!Array.isArray(st.ending) || !st.ending.length) error(`${name}: no ending lines`);
   if (!Array.isArray(st.quests) || st.quests.length < 3) warn(`${name}: fewer than 3 quests`);
+  checkHoles(name, st.ending, "ending");
+  checkHoles(name, st.quests, "quests");
   [st.setup].concat(st.ending || [], st.quests || []).forEach((line) => {
     if (typeof line !== "string") { error(`${name}: a line isn't text`); return; }
     if (line.indexOf("|") >= 0) error(`${name}: "${line}" has a "|", which the game uses to separate fields`);
@@ -179,6 +190,9 @@ names(K.Races).forEach((r) => checkStory(`Act I story for the ${r} race`, (K.Rac
 names(K.Klasses).forEach((c) => checkStory(`Act II story for the ${c} class`, (K.ClassStories || {})[c]));
 Object.keys(K.RaceStories || {}).forEach((r) => { if (names(K.Races).indexOf(r) < 0) warn(`K.RaceStories has "${r}", which isn't a race`); });
 Object.keys(K.ClassStories || {}).forEach((c) => { if (names(K.Klasses).indexOf(c) < 0) warn(`K.ClassStories has "${c}", which isn't a class`); });
+
+// The word lists (K.Monsters, K.Spells, K.Quests...) can have holes too
+Object.keys(K).forEach((k) => { if (Array.isArray(K[k])) checkHoles(`K.${k}`, K[k], "the list"); });
 
 console.log(`\n${storyCount} stories (${Object.keys(K.RaceStories || {}).length} races, ` +
             `${Object.keys(K.ClassStories || {}).length} classes, ${(K.Stories || []).length} others).`);

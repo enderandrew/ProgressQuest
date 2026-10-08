@@ -118,6 +118,16 @@ function makeSandbox() {
     clearTimeout: () => {},
     escape, unescape,
   };
+  // A context with an ordinary global object where Node supports it
+  // (v22.8+). A contextified sandbox object routes every global lookup
+  // (Math, K, game...) through an interceptor, which makes the game run
+  // many times slower here than in a browser.
+  if (vm.constants && vm.constants.DONT_CONTEXTIFY) {
+    const ctx = vm.createContext(vm.constants.DONT_CONTEXTIFY);
+    Object.assign(ctx, sandbox);
+    ctx.window = ctx;
+    return ctx;
+  }
   sandbox.window = sandbox;
   return vm.createContext(sandbox);
 }

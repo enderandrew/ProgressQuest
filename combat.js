@@ -551,7 +551,8 @@ function SpellType(name) {
     });
   }
   if (_spellTypes[name]) return _spellTypes[name];
-  return K.SpellTypes[Math.floor(Mash()(name) * K.SpellTypes.length)];
+  // (remembered: every fight asks about every spell)
+  return _spellTypes[name] = K.SpellTypes[Math.floor(Mash()(name) * K.SpellTypes.length)];
 }
 
 function SpellName(entry) {

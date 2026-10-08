@@ -11,6 +11,9 @@ function StartTimer() {
   if (!clock) {
     clock = new Worker('clock.js');
     clock.addEventListener('message', e => {
+      // A tick the worker sent before it got 'stop' can still arrive after
+      // StopTimer(); don't let it play on (or restart the clock)
+      if (!clock.running) return;
       Timer1Timer();
       clock.lasttick = timeGetTime();
     });
@@ -822,6 +825,7 @@ function Retire() {
   CheckForCheating();   // a branded hero still retires, but won't count
   SuspendAutosave();   // or leaving the page would save them back
   StopTimer();
+  game.retired = true;   // and nothing else saves them either (SaveGame)
   var legend = MakeLegend();
   var name = Get(Traits,'Name');
   storage.addLegend(legend, function () {
@@ -1687,7 +1691,7 @@ function ShowStory() {
 function FightSummary(fight) {
   var rounds = fight.rounds + (fight.rounds == 1 ? " round" : " rounds");
   var cost = [];
-  if (fight.hpLost) cost.push(fight.hpLost + " HP");
+  if (fight.hpLost > 0) cost.push(fight.hpLost + " HP");   // (healing can make it negative)
   if (fight.mpSpent) cost.push(fight.mpSpent + " MP");
   cost = cost.length ? " (cost " + cost.join(", ") + ")" : "";
   var foe = fight.foe || "the foe";
@@ -1703,26 +1707,31 @@ function FightSummary(fight) {
 // The fight plays out as the task bar fills: the combat log reveals its
 // lines in step with the bar, and the line under the bar shows the latest
 // blow, then the result once the fight is over.
-var _shownLines = -1, _shownFight = null, _shownLive = null;
+var _shownLines = -1, _shownFight = null, _shownResult = null;
 function ShowFight(force) {
   if (!document) return;
   var fight = game.combat;
   if (!fight || !fight.log) { $("#FightLine").text(""); return; }
-  var live = Pos('kill|', game.task) == 1 && !fight.done;
+  // The fight plays out while its task runs: a monster, or the Old Bastard
+  var playing = Pos('kill|', game.task) == 1 || game.task == 'boss';
+  var live = playing && !fight.done;
   var n = live ? Math.floor(fight.log.length * TaskBar.Position() / Max(1, TaskBar.Max())) : fight.log.length;
-  if (!force && fight === _shownFight && n === _shownLines && live === _shownLive) return;
+  if (!force && fight === _shownFight && n === _shownLines && (live || _shownResult === fight)) return;
   if (fight !== _shownFight) {
     $("#CombatLog").empty();
     $("<div class='fight-head'>").text("vs " + fight.foe).appendTo("#CombatLog");
     _shownLines = 0;
+    _shownResult = null;
   }
   for (var i = Max(0, _shownLines); i < n; ++i)
     $("<div>").text(fight.log[i]).appendTo("#CombatLog");
-  if (!live && (fight !== _shownFight || _shownLive !== false || force))
+  // the result, once per fight
+  if (!live && _shownResult !== fight) {
     $("<div class='fight-result'>").text(FightSummary(fight)).appendTo("#CombatLog");
+    _shownResult = fight;
+  }
   _shownFight = fight;
   _shownLines = n;
-  _shownLive = live;
   var log = $("#CombatLog")[0];
   if (log) log.scrollTop = log.scrollHeight;
   $("#FightLine").text(live ? (n ? fight.log[n - 1] : "Sizing each other up...") :
@@ -2331,8 +2340,13 @@ function ShowGearPower() {
 function Square(x) { return x * x; }
 
 // The current character's attribute profile (see AttributeProfile).
+// (Cached: it is asked for every fight. Treat the result as read-only.)
+var _charProfile = { key: null, profile: null };
 function CharProfile() {
-  return AttributeProfile(Get(Traits,'Race'), Get(Traits,'Class'));
+  var key = Get(Traits,'Race') + '|' + Get(Traits,'Class');
+  if (_charProfile.key !== key)
+    _charProfile = { key: key, profile: AttributeProfile(Get(Traits,'Race'), Get(Traits,'Class')) };
+  return _charProfile.profile;
 }
 
 function WinStat() {
@@ -2452,7 +2466,11 @@ function toRoman(n) {
   return s;
 }
 
+// (Cached: every fight converts every spell's level)
+var _arabic = Object.create(null);
 function toArabic(s) {
+  if (s in _arabic) return _arabic[s];
+  var key = s;
   var n = 0;
   s = s.toUpperCase();
   function _arab(ds,dn) {
@@ -2478,7 +2496,7 @@ function toArabic(s) {
   _arab("V",5);
   _arab("IV",4);
   while (_arab("I",1)) {0;}
-  return n;
+  return _arabic[key] = n;
 }
 
 function CompleteAct() {
@@ -2660,8 +2678,8 @@ function Timer1Timer() {
     ShowBuffs();
     ShowChoiceTimer();
   }
-
-  StartTimer();
+  // (No StartTimer() here: it used to undo every StopTimer() made during
+  // the tick, such as a Hardcore death or a pause)
 }
 
 function FormCreate() {
@@ -2899,6 +2917,9 @@ function CheckReplayCode() {
 }
 
 function SaveGame(callback) {
+  // A Hardcore hero who died, or one who retired, has left the roster: a
+  // save now (S, Q, the File menu...) would put them back in it
+  if (game.dead || game.retired) { if (callback) callback(); return; }
   Log('Saving game: ' + GameSaveName());
   CodexFlush();
   HotOrNot();
@@ -3063,6 +3084,11 @@ function FormKeyDown(e) {
   // keydown also fires for shortcuts (Ctrl+S, Cmd+Q...) and auto-repeat,
   // which the old keypress handler never saw. Leave those to the browser.
   if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+  // Typing in a box, or a window (the tombstone, Retire, Tactics, a message
+  // box) is up: the keys are theirs. The event pop-up is the exception, so
+  // 1-9 can answer a choice and the game keys keep working behind it.
+  if (e.target && e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
+  if (document.querySelector("dialog[open]:not(#EventDialog)")) return;
 
   if (e.key === 'd') {
     alert("Your character's genome is " + ToDna(game.dna + ""));

@@ -158,7 +158,7 @@ K.Stories = [
       'But you can’t stop. You just take a brief break.',
       'You use the chamber pot. You forage for snacks.',
       'You are ready to continue this super-epic journey. The Old Bastard™ will pay!'],
-    quests: ['Find a clean chamber pot', 'Forage for snacks', , 'Ask {guy} if there will a post-credit scene when this is over.'] },
+    quests: ['Find a clean chamber pot', 'Forage for snacks', 'Ask {guy} if there will a post-credit scene when this is over.'] },
 
   { key: 'retirement', title: 'The Retirement Plan',
     setup: 'You could buy a tavern and retire. Earn enough gold to seriously consider it.',
@@ -253,7 +253,7 @@ K.Stories = [
       '*Highlander Theme Music*',
       '{nemesis} loses their head. The bridge is guarded. The dental plan is mediocre.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement', , 'Ask {guy} for {kingdom} to meet with the {race} rep.', 'Call out the {klass} who crossed the picket line.'] },
+    quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement', 'Ask {guy} for {kingdom} to meet with the {race} rep.', 'Call out the {klass} who crossed the picket line.'] },
 
   { key: 'dungeon', title: 'The Dungeon Crawl',
     setup: '{guy} has drawn you a map to the Dungeon of {kingdom}. Several squares are labeled "probably fine".',

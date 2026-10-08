@@ -130,12 +130,17 @@ function CodexEmpty() {
   return { monsters: {}, spells: {}, events: {}, achievements: {}, totals: {}, best: {}, flags: {} };
 }
 
+// The text this page last stored (or found sealed and untouched): no need
+// to check its seal again on every flush
+var _codexChecked = null;
+
 storage.loadCodex = function (callback) {
   this.getItem("codex", function (value) {
     var book = null;
     try { book = JSON.parse(value || "null"); } catch (e) { book = null; }
     if (!book || typeof book != "object") { callback(CodexEmpty()); return; }
-    var ok = SealOk(book);
+    var ok = value === _codexChecked || SealOk(book);
+    if (ok) _codexChecked = value;
     var fresh = CodexEmpty();
     for (var part in fresh) if (!book[part] || typeof book[part] != "object") book[part] = fresh[part];
     if (!ok) book.edited = true;   // for good: the seal now covers this
@@ -147,7 +152,9 @@ storage.loadCodex = function (callback) {
 storage.storeCodex = function (book, callback) {
   var copy = Object.assign({}, book);
   delete copy.seal;
-  this.setItem("codex", JSON.stringify(Seal(copy)), callback);
+  var text = JSON.stringify(Seal(copy));
+  _codexChecked = text;
+  this.setItem("codex", text, callback);
 };
 
 // Add one set of changes to a book (both have CodexEmpty's shape)

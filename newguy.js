@@ -132,11 +132,10 @@ function NewGuyFormLoad() {
     //if (MainForm.GetHostName != '')
       //  caption = caption + ' [' + MainForm.GetHostName + ']';
 
-    $("#Name").focus();
-    $("#Name").select();
+    $("#Name").trigger("focus").trigger("select");
   }
 
-  if (window.location.href.indexOf("?sold") > 0)
+  if (UrlFlag("sold"))
     sold();  // TODO: cheesy
 }
 
@@ -199,7 +198,12 @@ function sold() {
   };
 
   if (document) {
-    newguy.Traits.Name = $("#Name").val();
+    newguy.Traits.Name = String($("#Name").val() || "").trim();
+    if (!newguy.Traits.Name) {
+      alert("Your hero needs a name. Even a bad one.");
+      $("#Name").trigger("focus");
+      return;
+    }
     newguy.Traits.Race = $("input:radio[name=Race]:checked").val();
     newguy.Traits.Class = $("input:radio[name=Class]:checked").val();
   }
@@ -272,11 +276,23 @@ function sold() {
 
 // ---- Seeds and mutators (from Challenge Modes) --------------------------------
 
+// The page's query string. Flags (?embed&plus&hardcore) are looked up by
+// name: a substring test also matched them inside a Custom Run seed, so a
+// seed like "surplus" made a New Game+ hero and "hardcore-ish" a Hardcore one.
+function UrlParams() {
+  var search = "";
+  try { search = String(window.location.search || ""); } catch (e) {}
+  if (typeof URLSearchParams != "function")   // (sim.js has no URL to read)
+    return { get: function () { return null; }, has: function () { return false; } };
+  return new URLSearchParams(search);
+}
+
 function UrlParam(name) {
-  try {
-    var m = String(window.location.search || "").match(new RegExp("[?&]" + name + "=([^&]*)"));
-    return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
-  } catch (e) { return ""; }
+  return UrlParams().get(name) || "";
+}
+
+function UrlFlag(name) {
+  return UrlParams().has(name);
 }
 
 // newguy.html?seed=...: every roll of the run follows from it
@@ -307,13 +323,13 @@ function ShowRunOptions() {
 // (newguy.html?plus, or the main menu's New Game+). A plain New Game shows
 // what is honored, but gives no bonus.
 function NewGamePlus() {
-  try { return String(window.location.search || "").indexOf("plus") >= 0; } catch (e) { return false; }
+  return UrlFlag("plus");
 }
 
 // Hardcore (newguy.html?hardcore, from the main menu's Challenge Modes):
 // one life, with the Hall's legacy
 function Hardcore() {
-  try { return String(window.location.search || "").indexOf("hardcore") >= 0; } catch (e) { return false; }
+  return UrlFlag("hardcore");
 }
 
 var hall = null, honored = { races: {}, klasses: {} };
@@ -377,16 +393,28 @@ function SuggestPairing() {
 // New Game window instead.
 function Embedded() {
   try {
-    return String(window.location.search || "").indexOf("embed") >= 0 &&
-           !!window.parent && window.parent !== window;
+    return UrlFlag("embed") && !!window.parent && window.parent !== window;
   } catch (e) {
     return false;   // no page (sim.js), or a parent we can't see
   }
 }
 
 function charIsBorn(newguy) {
-  storage.addToRoster(newguy, function () {
-    (Embedded() ? window.top : window).location.href = "main.html#" + EncodeName(newguy.Traits.Name);
+  storage.loadRoster(function (games) {
+    // The roster is keyed by name: a new hero with a taken name would
+    // replace the old one without a word
+    var taken = games[newguy.Traits.Name];
+    if (taken && document &&
+        !confirm("There is already a hero named " + newguy.Traits.Name + " (level " + taken.Traits.Level +
+                 "). Replace them with this one? They will be gone for good.")) {
+      $("#Sold").prop("disabled", false);
+      $("body").css("cursor", "default");
+      $("#Name").trigger("focus").trigger("select");
+      return;
+    }
+    storage.addToRoster(newguy, function () {
+      (Embedded() ? window.top : window).location.href = "main.html#" + EncodeName(newguy.Traits.Name);
+    });
   });
 }
 
