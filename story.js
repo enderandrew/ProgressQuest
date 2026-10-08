@@ -528,7 +528,7 @@ K.RaceStories = {
       'It is the first time anyone has been rude in {kingdom}. The trees gasp.',
       'You trade them an old {boring} and a double-double for the bag. Sorry is restored.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Hold a door open for a stranger for twenty minutes', 'Apologize to a moose for standing near it', 'Find out what {guy} is “aboot”', 'Tap a maple tree for emergency syrup'] },
+    quests: ['Hold a door open for a stranger for twenty minutes', 'Apologize to a moose for standing near it', 'Find out what {guy} is “aboot”', 'Tap a maple tree for emergency syrup', 'Buy the group some Timbits'] },
 
   "Double-Wookiee": { key: 'race-wookiee', title: 'Twice the Fur',
     setup: 'You are two Wookiees in one very large coat, and both of you want to fly the ship. Settle it before you crash.',
@@ -539,7 +539,7 @@ K.RaceStories = {
       'You agree to take turns: the left half flies on odd days, the right half on even ones.',
       'Today is a leap day. You crash anyway. Only the ship is hurt.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Brush both of your coats', 'Win a game of space chess without pulling anyone’s arms off', 'Find a co-pilot who speaks Wookiee, twice', 'Get a medal at the ceremony this time'] },
+    quests: ['Brush both of your coats', 'Win a game of Dejarik without pulling anyone’s arms off', 'Find a co-pilot who speaks Wookiee, twice', 'Get a medal at the ceremony this time'] },
 
   "Double-sided Bad Dragon": { key: 'race-baddragon', title: 'The Hoard Inspection',
     setup: 'Every dragon needs a hoard, and yours is embarrassing. Build a respectable one before the other dragons of {kingdom} come over.',
@@ -550,7 +550,7 @@ K.RaceStories = {
       '*fight*',
       'You add {nemesis}’s hoard to yours. It is still mostly coupons.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Polish your hoard', 'Hide the weirder parts of your hoard before guests arrive', 'Steal an old {boring} from a sleeping dragon', 'Look dignified from both sides at once'] },
+    quests: ['Lubricate your hoard', 'Hide the weirder parts of your hoard before guests arrive', 'Steal an old {boring} from a sleeping dragon', 'Look dignified from both sides at once'] },
 
   "Enchanted Talking Chamberpot": { key: 'race-chamberpot', title: 'Flush With Ambition',
     setup: 'You were enchanted to talk, and you have overheard things. Royal things. Lean on the court of {kingdom} to back your quest.',
@@ -587,7 +587,7 @@ K.RaceStories = {
     setup: 'You went fully goblin mode last weekend and woke up in {kingdom} holding the {item}. Retrace your steps.',
     ending: [
       'You follow a trail of empty goblets across {kingdom}.',
-      'Everyone you meet says you owe them money, a goat, or an apology.',
+      'Everyone you meet says you owe them money, a goat, and an apology.',
       '{guy} shows you a tapestry of last night. You are on the chandelier in every panel.',
       'It turns out the {item} belongs to {nemesis}, who would like it back.',
       '*fight*',
@@ -614,7 +614,7 @@ K.RaceStories = {
       'Second breakfast is saved! Also elevenses, luncheon, afternoon tea, dinner and supper.',
       'You eat all of them. After a nap, you are ready to go on.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Raid a farmer for mushrooms', 'Pack snacks for the road', 'Count your meals, twice', 'Find out who took second breakfast'] },
+    quests: ['Raid a farm for mushrooms', 'Pack snacks for the road', 'Count your meals, twice', 'Find out who took second breakfast'] },
 
   "I No Longer Care Bear": { key: 'race-carebear', title: 'The Caring Meeting',
     setup: 'Your belly badge has faded to a gray “meh”. The other bears want you at the Caring Meeting. You do not care.',
@@ -634,12 +634,12 @@ K.RaceStories = {
       'It powers the whole kingdom. Lights come on. Somebody makes toast.',
       'You have gone nowhere. You are fine with this. Hamsters always are.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Stuff your cheeks with supplies', 'Go for the eyes of {nemesis}', 'Find a bigger exercise ball', 'Ask {guy} for sunflower seeds'] },
+    quests: ['Stuff your cheeks with supplies', 'Go for the eyes of {nemesis}', 'Find a bigger exercise ball', 'Ask {guy} for sunflower seeds', 'Send Minsc a postcard'] },
 
   "My Little Pygmy": { key: 'race-pygmy', title: 'Friendship Is Mandatory',
     setup: 'The Friendship Council of {kingdom} says you have not made a new friend in months. Make one, by force if necessary.',
     ending: [
-      'You try to befriend {guy}. They run.',
+      'You try to befriend {guy} by hugging them in their sleep. They run.',
       'You try to befriend {nemesis}. They run too, but slower.',
       'You catch up. You have a heartfelt talk. You learn a lesson about friendship.',
       'You write a letter about it to the Princess. She does not reply.',
@@ -649,12 +649,12 @@ K.RaceStories = {
   "Nympho Nymph": { key: 'race-nymph', title: 'The Sacred Spring',
     setup: 'Your sacred spring in {kingdom} has been bought by a bottled water company. Win it back.',
     ending: [
-      'You storm the bottling plant of {guy}.',
+      'It is hard to be wet when someone steals all the water. You storm the bottling plant of {guy}.',
       'They claim your spring water cures everything. It does not. It is water.',
       'You flirt your way past security, which is your answer to most problems.',
       'You make {guy} drink their own product. Mild stomachache. You win.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bat your eyelashes at a guard', 'Read the fine print on the water deed', 'Protest outside the bottling plant', 'Find a new boyfriend, girlfriend or tree'] },
+    quests: ['Bat your eyelashes at a guard', 'Read the fine print on the water deed', 'Protest outside the bottling plant', 'Find a new boyfriend, girlfriend and/or tree'] },
 
   "Odorous Oompa Loompa": { key: 'race-oompa', title: 'The Golden Tickets',
     setup: 'The candy factory where you work has hidden five golden tickets. Find them before the brats of {kingdom} do.',
@@ -665,12 +665,12 @@ K.RaceStories = {
       '*fight*',
       'The child swells up like a blueberry. You sing a song about it. You can’t help it.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Practice a cautionary song', 'Bathe, at least once', 'Taste-test the chocolate river', 'Unwrap a candy bar looking for gold'] },
+    quests: ['Practice a cautionary song', 'Bathe, at least once', 'Strain the remnants of kids from chocolate river', 'Unwrap a candy bar looking for gold'] },
 
   "Only Somewhat Racist Dwarf": { key: 'race-dwarf', title: 'Sensitivity Training',
     setup: 'Your clan elders have sent you to sensitivity training in {kingdom}. The goal is to be less racist. Ideally, not at all.',
     ending: [
-      'You sit in a circle with an elf, an orc and {guy}. It is awkward.',
+      'You sit in a circle with an elf, an orc, a {race-one} and {guy}. It is awkward.',
       'The instructor asks you to share. You say something about elves and regret it at once.',
       'You learn that elves are people too. Tall, annoying people, but people.',
       'You graduate. Your certificate says “Improving”. You frame it in gold.',
@@ -685,7 +685,7 @@ K.RaceStories = {
       'They give you a pixie cut. It is ironic. It is the only cut they know.',
       'You leave a sarcastic review. Somehow, that is also ironic.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Find a hat to hide your haircut', 'Ask {guy} for a second opinion', 'Glitter-bomb the barber shop', 'Grow your hair out, slowly'] },
+    quests: ['Find a hat to hide your haircut', 'Ask {guy} for a second opinion', 'Glitter-bomb the barber shop', 'Grow your hair out, slowly', 'Sing Karoake with Alanis'] },
 
   "Poultrygeist": { key: 'race-poultrygeist', title: 'Unfinished Business',
     setup: 'You are the restless spirit of a chicken. You cannot move on until you find out why you crossed the road.',
@@ -696,7 +696,7 @@ K.RaceStories = {
       'That’s it? That’s why? You rattle your chains, angrily.',
       'You decide not to cross over just yet. There’s an Old Bastard™ to haunt.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Rattle your chains at a farmer', 'Find your old coop', 'Ask the road why', 'Lay a spectral egg'] },
+    quests: ['Rattle your chains at a farmer', 'Find your old coop', 'Ask the road why', 'Lay a spectral egg', 'Give a terrifying cluck'] },
 
   "Reverse-Centaur": { key: 'race-centaur', title: 'Best in Show',
     setup: 'The horse show of {kingdom} won’t accept you as a horse, and the talent show won’t accept you as a person. Win both.',
@@ -716,7 +716,7 @@ K.RaceStories = {
       '*fight*',
       'Ratings hit an all-time high. You are renewed for another season.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Practice your dramatic leap', 'Swim in a straight line for once', 'Bite a boat for the cameras', 'Ask {guy} for a better contract'] },
+    quests: ['Practice your dramatic leap', 'Swim in a straight line for once', 'Bite a boat for the cameras', 'Ask {guy} for a better contract', 'Deny all responsibility for the Sharknado'] },
 
   "Stupid Sexy Elf": { key: 'race-elf', title: 'The Pageant',
     setup: 'You are the sexiest elf in {kingdom}, and the stupidest. Enter the elf pageant and win on one of those.',
@@ -733,10 +733,10 @@ K.RaceStories = {
     ending: [
       'You message {guy}: YOU WILL BE UPGRADED. No reply.',
       'You try again: YOU WILL BE UPGRADED. WINK.',
-      'You go to the robot ball alone. You dance with a toaster.',
+      'You go to the robot ball alone. You dance with a toaster. You feel something pop up.',
       'It is the best night of your life. DELETE. DELETE. DELETE.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Polish your chrome', 'Update your dating profile', 'Upgrade a pickup line', 'Drink some oil'] },
+    quests: ['Polish your chrome', 'Update your dating profile', 'Upgrade a pickup line', 'Lubricate with oil'] },
 
   "Travelocity Gnome": { key: 'race-gnome', title: 'Too Good to Be True',
     setup: 'You have found a travel deal to {kingdom} that is too good to be true. Go anyway.',
@@ -758,7 +758,7 @@ K.ClassStories = {
       'You sing it. You are not allowed to tell anyone the words.',
       'You are promoted, and given a parking space and a stone tablet.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Learn the secret handshake', 'Cut a stone, ceremonially', 'Keep the lodge’s secrets from {guy}', 'Pay your lodge dues'] },
+    quests: ['Learn the secret handshake', 'Cut a stone, ceremonially', 'Keep the lodge’s secrets specifically from {guy}', 'Pay your lodge dues'] },
 
   "Barbarian Pretzel": { key: 'class-pretzel', title: 'The Twist',
     setup: 'Your barbarian clan prizes strength, and you are made of dough. Prove you are the toughest snack in {kingdom}.',
@@ -804,7 +804,7 @@ K.ClassStories = {
     setup: 'The apothecary of {kingdom} has been out of healing potions for weeks. You have a prescription pad and flexible ethics.',
     ending: [
       'You open a potion stand in {kingdom}.',
-      'Insurance covers none of it.',
+      'Insurance covers none of it. Except maybe the edibles.',
       'You heal {guy}, then send them the bill. Now they need healing again.',
       'The healers’ guild fines you. You bill them for a consultation.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
@@ -823,18 +823,18 @@ K.ClassStories = {
   "Electric Monk": { key: 'class-monk', title: 'True Believer',
     setup: 'You are an Electric Monk: you believe things so other people don’t have to. Right now you believe the Old Bastard™ is in {kingdom}.',
     ending: [
-      'You arrive in {kingdom}, believing deeply.',
+      'You arrive in {kingdom}, believing deeply in the significance of {boring}.',
       'You also believe the sky is pink and that {guy} is your best friend.',
       'Your belief circuits overload. You start believing in yourself.',
       'That is a malfunction. You reboot, and believe in the Old Bastard™ again.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Believe something unlikely', 'Charge your belief cells', 'Ride your horse to {kingdom}', 'Doubt nothing'] },
+    quests: ['Believe something unlikely', 'Charge your belief cells', 'Ride your horse to {kingdom}', 'Doubt nothing', 'Make sure your robe game is on point'] },
 
   "Erotical Illusionist": { key: 'class-illusionist', title: 'The Grand Illusion',
     setup: 'Your magic show in {kingdom} is famous for being steamy, mostly because of the fog machine. Pull off the greatest trick ever.',
     ending: [
       'You announce that you will make the Old Bastard™ disappear.',
-      'The audience gasps. The curtain falls. The curtain rises.',
+      'The audience gasps. The curtain falls. The curtain rises. Other things rise as well.',
       'The Old Bastard™ is gone! He was never there. It is all very sensual.',
       'You still have to find the real one. Classic misdirection.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
@@ -848,38 +848,38 @@ K.ClassStories = {
       'Guards faint. Paintings peel. {nemesis} falls.',
       'The guild lets you in, on the condition that you work outdoors.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Eat a dangerous amount of beans', 'Practice in an open field', 'Blame it on {guy}', 'Hold it in through an important meeting'] },
+    quests: ['Eat a dangerous amount of beans', 'Practice in an open field', 'Blame it on {guy}', 'Hold it in through an important meeting', 'Audtion for Sgt Poopers Lonely Farts Club Band'] },
 
   "Grimdark Double-Hell Slayer": { key: 'class-slayer', title: 'Hell, Again',
     setup: 'You have slain everything in one hell. Now there is a second one, and it is grimmer and darker.',
     ending: [
       'You descend into the second hell. It is mostly the same, in a darker font.',
-      'The demons here are edgier. They have tattoos.',
-      '{nemesis} rises from a lake of fire to face you.',
+      'The demons here are edgier. They have tattoos and elbow piercings. Their parents would not understand.',
+      '{nemesis} rises from a lake of fire to face you as My Chemical Romance plays in the background.',
       '*fight*',
       'You win. The scenery stays grim. Your eyeliner stays perfect.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Sharpen your edgiest blade', 'Brood in the rain', 'Find a darker shade of black', 'Write a sad poem about hell'] },
+    quests: ['Sharpen your edgiest blade', 'Brood in the rain', 'Find a shade of black so dark you cannot share it with Anish Kapoor', 'Write a sad poem about hell'] },
 
   "Hamburglar": { key: 'class-hamburglar', title: 'The Heist',
-    setup: 'Rumor says the royal kitchen of {kingdom} keeps the Ultimate Burger. Steal it.',
+    setup: 'Rumor says the royal kitchen of {kingdom} keeps the Ultimate Burger. It may or may be named Mayor McCheese. Steal and eat him.',
     ending: [
       'You sneak into the royal kitchen in your stripes and mask.',
-      'The Ultimate Burger sits on a pedestal, guarded by {nemesis}.',
+      'The Ultimate Burger is in his Mayor office, guarded by {nemesis}.',
       '*fight*',
-      'You escape with the burger and eat it in one bite. Crime pays, at least in calories.',
+      'You escape with the burger and eat him in one bite. Crime pays, at least in calories. They can elect a new mayor.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Case the royal kitchen', 'Find a mask that fits', 'Steal a burger, for practice', 'Lose {guy} in a drive-thru'] },
 
-  "Internal Combustion Felon": { key: 'class-felon', title: 'The Getaway',
-    setup: 'You are wanted in {kingdom} for driving a horseless carriage far over the speed limit. Outrun the law.',
+  "Dark Starry Knight": { key: 'class-starry', title: 'The Antihero',
+    setup: 'No one in {kingdom} can appreciate the pain in your moral ambiguity, or your Post-Impressionism',
     ending: [
-      'The Sheriff of {kingdom} gives chase on horseback.',
-      'You floor it. Smoke everywhere. Horses everywhere.',
-      'You run out of gas just past the border.',
-      'You push the carriage the rest of the way. It still counts.',
-      'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Siphon some fuel', 'Swap the plates on your carriage', 'Outrun {guy}', 'Fix a flat wheel'] },
+      'The Sheriff of {kingdom} tells you to do morally questionable things. You are a Dark Knight.',
+      'You have done and seen things in your past that people do not understand. An ear may have been involved.',
+      'Though the kingdom of {kingdom} does like the color composition of your oil canvas.',
+      'Will you come around to do the right thing in the end? Like a dandelion-star in a dark night?',
+      'Or you can focus on vengeance on that Old Bastard™ from your vision.'],
+    quests: ['Stare out an asylum window', 'Balance your dark palette with just a little light', 'Paint {nemesis} in a corner', 'Listen for that Old Bastard™ with your one ear'] },
 
   "Paperback Fighter": { key: 'class-paperback', title: 'The Sequel',
     setup: 'You are the hero of a cheap paperback, and the author has been stuck on chapter twelve for years. Write your way out.',
@@ -915,12 +915,12 @@ K.ClassStories = {
     setup: 'Your transformation sequence now takes forty minutes, and the monsters have stopped waiting for it. Speed it up.',
     ending: [
       'You face {nemesis} and begin your transformation.',
-      'Sparkles. Ribbons. More sparkles. A pose.',
+      'Sparkles. Ribbons. More sparkles. A magical pose in the shape of a rune.',
       '{nemesis} has gone home. You go fight them at their house.',
       '*fight*',
       'In the name of the rune, you win. Your outfit is perfect.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Practice your transformation pose', 'Buy more ribbons', 'Find your talking cat', 'Learn a shorter catchphrase'] },
+    quests: ['Practice your transformation pose', 'Buy more ribbons', 'Find your talking cat', 'Learn a shorter catchphrase', 'Impress Tuxedo Mask'] },
 
   "Shovel Knight": { key: 'class-shovel', title: 'The Dig',
     setup: 'Legend says the Old Bastard™’s treasure is buried somewhere under {kingdom}. You know what to do.',
@@ -937,11 +937,11 @@ K.ClassStories = {
     ending: [
       'You set off with a stack of hot pizzas.',
       'You cast Haste. You cast Keep Warm. You cast Haste again.',
-      '{nemesis} tries to steal a slice.',
+      '{nemesis} and The Noid both try to steal a slice.',
       '*fight*',
       'You arrive in twenty-nine minutes. The wizard tips poorly. Classic wizard.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Toss some dough', 'Cast Extra Cheese', 'Find the address in {kingdom}', 'Deliver a pizza to {guy}'] },
+    quests: ['Toss some dough', 'Cast Extra Cheese', 'Find the address in {kingdom}', 'Deliver a pizza to {guy}', 'Stuff some crusts'] },
 
   "Stranger Ranger": { key: 'class-ranger', title: 'The Other Side',
     setup: 'A portal has opened in the woods outside {kingdom}, and everything on the other side is upside-down. Close it.',

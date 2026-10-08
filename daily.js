@@ -111,16 +111,18 @@ function MakeDaily(date) {
     spells.push([spell, ["I", "II", "III", "IV", "V"][R(1 + Math.floor(L / 8))]]);   // L <= 32
   }
 
+  // (drawn last, so the rest of the day's hero is as it was before alignments)
+  var alignment = K.Alignments[R(K.Alignments.length)] + " " + K.AlignmentFlaws[R(K.AlignmentFlaws.length)];
   var goalText = DailyGoalText(plan.goal);
   var twist = plan.mutators.map(function (k) {
     return K.Mutators.filter(function (m) { return m.key == k; })[0];
   }).filter(Boolean);
   var now = Date.now();
-  var carry = Math.max(5, Math.round((10 + stats.STR) * twist.reduce(function (p, m) { return p * (m.carryMult || 1); }, 1)));
+  var carry = Math.max(5, Math.round(CarryFor(stats.STR) * twist.reduce(function (p, m) { return p * (m.carryMult || 1); }, 1)));
   var hp = Math.max(1, Math.round(stats["HP Max"] * twist.reduce(function (p, m) { return p * (m.hpMult || 1); }, 1)));
 
   var sheet = {
-    Traits: { Name: name, Race: plan.race, Class: plan.klass, Level: L },
+    Traits: { Name: name, Race: plan.race, Class: plan.klass, Alignment: alignment, Level: L },
     dna: gameSeed, seed: gameSeed,
     birthday: "" + new Date(now), birthstamp: now,
     date: "" + new Date(now), stamp: now,

@@ -342,6 +342,15 @@ at the top of the file, and story placeholders ({guy}, {kingdom},
 {nemesis}...) work in the lines. K.EventChance and K.EventCooldown set
 how often they happen (about one every 10 minutes of play by default).
 
+Every race and every class also has one event of its own (the 48 at the
+end of events.js, with race: or klass: set), which only happens to heroes
+of that race or class: a Demi-Canadian gets stuck in an apology loop, a
+Shovel Knight digs up loot by the road, an Only Somewhat Racist Dwarf
+gets a chance to say hello to an elf like a normal person. They are
+weighted 4 (twice the usual), so a hero sees each a few times in the
+first 20 levels. The Codex Journal marks them "... heroes only", and
+seeing every event now takes heroes of every race and class.
+
 A typo in the main scripts are easily caught because they break the whole
 game right away. Events only trigger once in a while, so I added an 
 additional check for syntax errors there.

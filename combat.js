@@ -205,8 +205,19 @@ K.Loot = {
   // Premium stock for the wealthy: up to this many levels better
   PremiumMax: 5,
   // Quest and act rewards: your level + RewardMin + random(RewardSpread)
-  RewardMin: 1, RewardSpread: 3
+  RewardMin: 1, RewardSpread: 3,
+  // Carrying capacity is 10 + STR cubits, but no more than CarryCap: STR
+  // grows exponentially and loot doesn't, so without a cap a level 45 hero
+  // went to market once in a blue moon (and so saw no town or road events
+  // and earned no gold). And with anything to sell, a hero heads to market
+  // at least every MarketHours of play.
+  CarryCap: 40, MarketHours: 1
 };
+
+// Carrying capacity for a STR (before mutators)
+function CarryFor(str) {
+  return Math.min(K.Loot.CarryCap, 10 + str);
+}
 
 // What a typical character's core stat is at a given level (fitted to
 // simulated characters: linear early, then driven up by quest rewards).

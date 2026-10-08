@@ -99,7 +99,7 @@ function checkEffect(name, fx) {
   return fx;
 }
 
-const keys = {};
+const keys = {}, racial = {};
 let withChoices = 0;
 events.forEach((e, n) => {
   const name = e && e.key ? `event "${e.key}"` : `event #${n + 1}`;
@@ -113,6 +113,11 @@ events.forEach((e, n) => {
   else where.forEach((w) => { if (WHERE.indexOf(w) < 0) error(`${name}: unknown where "${w}" (known: ${WHERE.join(", ")})`); });
   if ("weight" in e && !(e.weight >= 0)) error(`${name}: weight should be a number`);
   if (e.minLevel && e.maxLevel && e.minLevel > e.maxLevel) error(`${name}: minLevel is above maxLevel`);
+  const raceNames = (K.Races || []).map((x) => x.split("|")[0]), klassNames = (K.Klasses || []).map((x) => x.split("|")[0]);
+  if (e.race && raceNames.indexOf(e.race) < 0) error(`${name}: race "${e.race}" isn't in K.Races (check the spelling)`);
+  if (e.klass && klassNames.indexOf(e.klass) < 0) error(`${name}: klass "${e.klass}" isn't in K.Klasses (check the spelling)`);
+  if (e.race) racial[e.race] = (racial[e.race] || 0) + 1;
+  if (e.klass) racial["class:" + e.klass] = (racial["class:" + e.klass] || 0) + 1;
 
   const used = checkLines(name, e.lines || [], "lines");
   if (!e.lines || !e.lines.length) warn(`${name}: no lines`);
@@ -140,6 +145,9 @@ events.forEach((e, n) => {
   if (used.indexOf("gold") >= 0 && !anyGold) warn(`${name} says {gold} but no effect gives gold`);
   if (used.indexOf("loot") >= 0 && !anyItem) warn(`${name} says {loot} but no effect gives an item`);
 });
+
+(K.Races || []).forEach((r) => { r = r.split("|")[0]; if (!racial[r]) warn(`the ${r} race has no event of its own`); });
+(K.Klasses || []).forEach((c) => { c = c.split("|")[0]; if (!racial["class:" + c]) warn(`the ${c} class has no event of its own`); });
 
 // 3. The Act stories (story.js): every race and class has one, and each
 // story is complete

@@ -10,6 +10,9 @@
 //             'field'  after winning a fight
 //   weight  how likely it is compared to other events (default 1)
 //   minLevel / maxLevel   optional level range
+//   race / klass          optional: only for heroes of that race or class
+//                         (exactly as in K.Races / K.Klasses). Every race
+//                         and class has one event of its own, at the end.
 //   lines   what happens, one task per line (each takes 3 seconds)
 //   effect  what it does to you, applied after the last line (optional):
 //             gold:    gold found (or, if negative, lost from your purse),
@@ -832,7 +835,7 @@ K.Events = [
       { label: 'Speak to the bearded hermit in the cellar',
         lines: ['An old hermit steps out from a hidden alcove and mutters: “IT\'S DANGEROUS TO GO ALONE! TAKE THIS.”',
                 'He hands you an wrapped parcel containing {loot}'],
-        effect: { item: 'special' } } ] }
+        effect: { item: 'special' } } ] },
 
   { key: 'visitor', where: ['field', 'road'],
     lines: ['You are traveling alone at night in the lonely fields of {kingdom}',
@@ -841,7 +844,7 @@ K.Events = [
     ask: 'How do you react to this visitor?',
     choices: [
       { label: 'Offer it a present',
-        lines: ['You offering up a {boring} and set it before the Visitor.',
+        lines: ['You offer up a {boring} and set it before the Visitor.',
                 'It regards it fondly and gives you a gift in return.'],
         effect: { item: 'special' } },
       { label: 'Seduce the alien',
@@ -850,6 +853,320 @@ K.Events = [
         effect: { heal: true, stat: 'CHA' } },
       { label: 'Kill and loot it like everything else',
         lines: ['The alien kicks your ass without breaking a sweat and then probes you for your insolence.',
-                'You somewhat enjoy the probing and develop a new tolernace for pain'],
-        effect: { wounded: 2, stat: 'CON' } } ] }
+                'You somewhat enjoy the probing and develop a new tolerance for pain'],
+        effect: { wounded: 2, stat: 'CON' } } ] },
+  // ---- One event for each race (race: ...) and each class (klass: ...) ----
+  // They only happen to heroes of that race or class.
+
+  { key: 'r-troll', race: '4chan Troll', where: ['rest'], weight: 4,
+    lines: ['You sit down to rest and unroll a scroll titled “Reply Guy Weekly”',
+            'Somebody in {kingdom} is wrong on the scroll',
+            'You spend your whole rest arguing with them. You win, technically'],
+    effect: { stat: 'INT' } },
+
+  { key: 'r-awarewolf', race: 'Aware-Wolf', where: ['rest'], weight: 4,
+    lines: ['The full moon rises while you rest',
+            'You transform, fully aware, and politely ask everyone to stand back',
+            'You spend the night chasing a {boring}. You will remember every second of it'],
+    effect: { stat: 'STR' } },
+
+  { key: 'r-canadian', race: 'Demi-Canadian', where: ['town'], weight: 4,
+    lines: ['A stranger in {kingdom} bumps into you',
+            'You both apologize. Then you apologize for apologizing',
+            'This goes on for an hour. Neither of you can stop',
+            'Eventually they hand you {gold} gold just to end it'],
+    effect: { gold: 2 } },
+
+  { key: 'r-wookiee', race: 'Double-Wookiee', where: ['road'], weight: 4,
+    lines: ['Both halves of you smell something off the road',
+            'The left half wants to go left. The right half wants to go right',
+            'You split the difference and walk straight into a ditch',
+            'In the ditch you find {loot}'],
+    effect: { item: 'special' } },
+
+  { key: 'r-baddragon', race: 'Double-sided Bad Dragon', where: ['field'], weight: 4,
+    lines: ['After the fight you spot something shiny and phallic on the ground',
+            'Both of your sides want it for the hoard',
+            'You flip a coin. It lands on its edge',
+            'You keep {loot}. Hoarding is about compromise'],
+    effect: { item: 'boring' } },
+
+  { key: 'r-chamberpot', race: 'Enchanted Talking Chamberpot', where: ['town'], weight: 4,
+    lines: ['A noble in {kingdom} picks you up, mistaking you for a hat',
+            'You decide to say nothing all afternoon',
+            'You learn three state secrets and where {gold} gold is hidden'],
+    effect: { gold: 3 } },
+
+  { key: 'r-fanfic', race: 'Erotic Sonic Fan-Fic Abomination', where: ['rest'], weight: 4,
+    lines: ['While you rest, a new chapter about you goes up',
+            'It is nine thousand words long, and you do not run fast in any of them',
+            'You read the reviews. Somehow, they fill you with confidence'],
+    effect: { stat: 'CHA' } },
+
+  { key: 'r-lich', race: 'Filthy Stinkin Lich', where: ['rest'], weight: 4,
+    lines: ['You rest in a crypt. It smells like home',
+            'A fellow lich drops by to compare phylacteries. Theirs is a mason jar',
+            'You swap necromancy tips over a nice cup of embalming fluid'],
+    effect: { spell: true } },
+
+  { key: 'r-satyr', race: 'Goblin-Mode Satyr', where: ['town'], weight: 4,
+    lines: ['A tavern in {kingdom} is having a bottomless brunch'],
+    ask: 'Do you go full goblin mode?',
+    choices: [
+      { label: 'Go full goblin mode',
+        lines: ['You wake up three days later on a roof', 'Up there with you is {loot}. Nobody knows how either of you got there'],
+        effect: { item: 'special', wounded: 2 } },
+      { label: 'Order a sensible salad',
+        lines: ['You eat a salad. Nobody recognizes you', 'You feel well rested, and a little sad'],
+        effect: { heal: true } } ] },
+
+  { key: 'r-treant', race: 'High Treant', where: ['rest'], weight: 4,
+    lines: ['You put down roots for a quick rest',
+            'When you wake up, a family of squirrels has moved into your hair',
+            'They pay their rent in acorns, which you sell for {gold} gold'],
+    effect: { gold: 1 } },
+
+  { key: 'r-hobbit', race: 'Hungry Hungry Hobbit', where: ['road'], weight: 4,
+    lines: ['You smell a pie cooling on a windowsill',
+            'Your feet carry you there without consulting you',
+            'You leave a thank-you note and {gold} gold. It was worth every coin'],
+    effect: { gold: -1, heal: true } },
+
+  { key: 'r-carebear', race: 'I No Longer Care Bear', where: ['field'], weight: 4,
+    lines: ['A child asks you to share some of your caring',
+            'You look at them for a long time',
+            'You shrug. The child shrugs. A bond forms anyway'],
+    effect: { xp: 0.05 } },
+
+  { key: 'r-hamster', race: 'Miniature Giant Space Hamster', where: ['rest'], weight: 4,
+    lines: ['You find an empty exercise wheel at the inn',
+            'You run on it all night. You get nowhere, but your legs look amazing'],
+    effect: { stat: 'DEX' } },
+
+  { key: 'r-pygmy', race: 'My Little Pygmy', where: ['town'], weight: 4,
+    lines: ['A friendship parade marches through {kingdom}',
+            'You are made grand marshal, because you are the smallest',
+            'The crowd throws you {gold} gold and a great deal of glitter'],
+    effect: { gold: 2 } },
+
+  { key: 'r-nymph', race: 'Nympho Nymph', where: ['road'], weight: 4,
+    lines: ['You pass a babbling brook',
+            'It is flirting with you. You flirt back',
+            'The brook gives you its number and a cool, refreshing drink'],
+    effect: { heal: true } },
+
+  { key: 'r-oompa', race: 'Odorous Oompa Loompa', where: ['town'], weight: 4,
+    lines: ['A shopkeeper in {kingdom} gags as you walk in',
+            'They offer you {gold} gold to shop somewhere else',
+            'You take it, and sing a short song about hygiene on your way out'],
+    effect: { gold: 2 } },
+
+  { key: 'r-dwarf', race: 'Only Somewhat Racist Dwarf', where: ['town'], weight: 4,
+    lines: ['An elf sits down next to you at the tavern'],
+    ask: 'What do you say?',
+    choices: [
+      { label: 'Say hello, like a normal person',
+        lines: ['You have a perfectly nice conversation', 'The elf buys you an ale. Growth!'],
+        effect: { stat: 'CHA' } },
+      { label: 'Say the thing your grandfather used to say',
+        lines: ['The whole tavern goes quiet', 'A bouncer throws you out into the street, and the street agrees with the bouncer'],
+        effect: { wounded: 2 } } ] },
+
+  { key: 'r-pixie', race: 'Pixie Ironically with a Pixie-Cut', where: ['rest'], weight: 4,
+    lines: ['You catch your reflection in a puddle',
+            'Your haircut looks great. You hate that it looks great',
+            'You feel ironically confident'],
+    effect: { stat: 'CHA' } },
+
+  { key: 'r-poultrygeist', race: 'Poultrygeist', where: ['road'], weight: 4,
+    lines: ['You come to a road',
+            'You feel an overwhelming urge to cross it',
+            'You cross. You cross back. You cross again',
+            'On the third crossing you find {loot}'],
+    effect: { item: 'special' } },
+
+  { key: 'r-centaur', race: 'Reverse-Centaur', where: ['road'], weight: 4,
+    lines: ['A farmer tries to put a saddle on you',
+            'You kick them, politely, with your human legs',
+            'They apologize for the confusion and give you {gold} gold'],
+    effect: { gold: 2 } },
+
+  { key: 'r-sharkasaurus', race: 'Sharkasaurus', where: ['field'], weight: 4,
+    lines: ['You smell blood in the water. Also, on the ground. You are on land',
+            'You go into a feeding frenzy anyway',
+            'You feel much stronger, and a little embarrassed'],
+    effect: { stat: 'STR' } },
+
+  { key: 'r-elf', race: 'Stupid Sexy Elf', where: ['town'], weight: 4,
+    lines: ['A sculptor in {kingdom} asks you to pose',
+            'You stand perfectly still for six hours. It is the most focused you have ever been',
+            'They pay you {gold} gold. You try to spend it on the statue'],
+    effect: { gold: 2 } },
+
+  { key: 'r-cyberman', race: 'Thirsty Cyberman', where: ['road'], weight: 4,
+    lines: ['You pass a fortune teller’s booth',
+            'You ask if anyone will ever love you. The answer: YES, AFTER AN UPGRADE',
+            'You install a firmware update by the roadside. You feel slightly more lovable'],
+    effect: { stat: 'CHA' } },
+
+  { key: 'r-gnome', race: 'Travelocity Gnome', where: ['road'], weight: 4,
+    lines: ['You check into a roadside inn with a coupon',
+            'The room is a cupboard, with a lovely view of another cupboard',
+            'You still get your reward points: {gold} gold back'],
+    effect: { gold: 1, heal: true } },
+
+  { key: 'c-stonecutter', klass: '99th Degree Stonecutter', where: ['town'], weight: 4,
+    lines: ['A man in {kingdom} gives you a secret handshake',
+            'You give it back, with three extra fingers',
+            'He gets you a reserved parking space and {gold} gold'],
+    effect: { gold: 2 } },
+
+  { key: 'c-pretzel', klass: 'Barbarian Pretzel', where: ['field'], weight: 4,
+    lines: ['Your last opponent tried to untie you',
+            'You were already in a knot. It gave up',
+            'You eat its snacks while it sulks'],
+    effect: { heal: true } },
+
+  { key: 'c-voodoo', klass: 'Big Bad Voodoo Daddy', where: ['rest'], weight: 4,
+    lines: ['You whittle a little doll while you rest',
+            'It looks exactly like {nemesis}',
+            'Somewhere far away, {nemesis} stubs a toe. You feel much better'],
+    effect: { spell: true } },
+
+  { key: 'c-lunatic', klass: 'Blood-Sucking Lunatic', where: ['field'], weight: 4,
+    lines: ['After the fight you notice your opponent was carrying a blood bag',
+            'Well. A bag. With something red in it',
+            'You have a snack. You feel fantastic'],
+    effect: { heal: true } },
+
+  { key: 'c-strangler', klass: 'Boston Cream Strangler', where: ['town'], weight: 4,
+    lines: ['You pass a bakery in {kingdom}',
+            'Before anyone can stop you, you have squeezed a dozen donuts',
+            'The baker makes you pay {gold} gold for the damage. The custard was worth it'],
+    effect: { gold: -1, heal: true } },
+
+  { key: 'c-healer', klass: 'Drug Healer', where: ['town'], weight: 4,
+    lines: ['A shady figure in {kingdom} offers you a sack of unlabeled potions'],
+    ask: 'Well?',
+    choices: [
+      { label: 'Buy them, for medical research',
+        lines: ['You test them on yourself. One of them works', 'You write the recipe down before you forget it'],
+        effect: { gold: -1, spell: true } },
+      { label: 'Report them to the healers’ guild',
+        lines: ['The guild thanks you for your service', 'They pay a reward of {gold} gold'],
+        effect: { gold: 2 } } ] },
+
+  { key: 'c-friar', klass: 'Drunken Forest Friar', where: ['rest'], weight: 4,
+    lines: ['You open a bottle of abbey ale to bless your rest',
+            'Then another, for the saints',
+            'Then a few more, for the less famous saints',
+            'You wake up hung over, but strangely spiritual'],
+    effect: { stat: 'WIS' } },
+
+  { key: 'c-monk', klass: 'Electric Monk', where: ['road'], weight: 4,
+    lines: ['You meet a traveler who doesn’t believe in anything',
+            'You believe things for them for an hour, free of charge',
+            'They feel much better and insist you take {gold} gold'],
+    effect: { gold: 2 } },
+
+  { key: 'c-illusionist', klass: 'Erotical Illusionist', where: ['town'], weight: 4,
+    lines: ['You perform in the town square of {kingdom}',
+            'You make a nobleman’s purse disappear, sensually',
+            'It reappears in your pocket with {gold} gold in it. Even you are not sure how'],
+    effect: { gold: 3 } },
+
+  { key: 'c-flatulist', klass: 'Fatal Flatulist', where: ['field'], weight: 4,
+    lines: ['After the fight, more monsters close in',
+            'You turn around and release a cloud of pure intimidation',
+            'They flee. So do the birds. So does the grass'],
+    effect: { xp: 0.05 } },
+
+  { key: 'c-slayer', klass: 'Grimdark Double-Hell Slayer', where: ['rest'], weight: 4,
+    lines: ['You rest by a fire and stare into the flames',
+            'You think about everything you have lost. It is a lot',
+            'You write it all down in a black notebook. You feel grimmer, and stronger'],
+    effect: { stat: 'CON' } },
+
+  { key: 'c-hamburglar', klass: 'Hamburglar', where: ['town'], weight: 4,
+    lines: ['You walk past a burger stand in {kingdom}',
+            'A moment later, you are walking away from it much faster',
+            'Under the pickles you find {loot}'],
+    effect: { item: 'special' } },
+
+  { key: 'c-starry', klass: 'Dark Starry Knight', where: ['road'], weight: 4,
+    lines: ['You find an old Café Terrace at Night',
+            'You find sunflowers as center pieces on the tables',
+            'Your moral ambiguity leads you to steal and sell them for {gold} gold'],
+    effect: { gold: 3 } },
+
+  { key: 'c-paperback', klass: 'Paperback Fighter', where: ['rest'], weight: 4,
+    lines: ['You read a chapter of your own book while you rest',
+            'There is a training montage in it. You do the training montage',
+            'You can feel your pages getting stronger'],
+    effect: { stat: 'STR' } },
+
+  { key: 'c-paladin', klass: 'Paula Deen Paladin', where: ['rest'], weight: 4,
+    lines: ['You make camp and fry everything in sight',
+            'Butter, bacon, more butter, and a whole stick of blessed butter',
+            'Your arteries pray for you, but you feel invincible'],
+    effect: { heal: true, stat: 'CON' } },
+
+  { key: 'c-pinball', klass: 'Pinball Wizard', where: ['town'], weight: 4,
+    lines: ['There is a pinball machine at the inn in {kingdom}',
+            'You set a new high score, blindfolded',
+            'The owner pays out the jackpot: {gold} gold'],
+    effect: { gold: 2 } },
+
+  { key: 'c-sailor', klass: 'Sailor Rune', where: ['field'], weight: 4,
+    lines: ['As the monster falls, you strike a dramatic pose',
+            'Sparkles appear out of nowhere. They are very good sparkles',
+            'The pose fills you with the power of friendship'],
+    effect: { stat: 'CHA' } },
+
+  { key: 'c-shovel', klass: 'Shovel Knight', where: ['road'], weight: 4,
+    lines: ['You notice a patch of loose dirt by the road',
+            'You dig. Of course you dig',
+            'You find {loot}'],
+    effect: { item: 'special' } },
+
+  { key: 'c-pizza', klass: 'Sorcerer Supreme Pizza', where: ['rest'], weight: 4,
+    lines: ['You conjure a pizza while you rest',
+            'It has pineapple on it. You did not ask for pineapple',
+            'You eat it anyway. Magic is magic'],
+    effect: { heal: true } },
+
+  { key: 'c-ranger', klass: 'Stranger Ranger', where: ['road'], weight: 4,
+    lines: ['The lights in a farmhouse window blink at you',
+            'You read the blinking. It spells out a message',
+            'The message is a coupon. You trade it for {loot}'],
+    effect: { item: 'boring' } },
+
+  { key: 'c-jackass', klass: 'Stubborn Jackass', where: ['road'], weight: 4,
+    lines: ['You stop in the middle of the road. You do not know why',
+            'A cart can’t get past. Its driver begs. You do not move',
+            'Finally they pay you {gold} gold to move. You move'],
+    effect: { gold: 2 } },
+
+  { key: 'c-saiyan', klass: 'Super Show-off Saiyan', where: ['field'], weight: 4,
+    lines: ['You already won that fight, but you power up anyway',
+            'Your hair glows gold. You scream for twenty minutes',
+            'Nobody asked, but you feel incredible'],
+    effect: { xp: 0.05 } },
+
+  { key: 'c-teo', klass: 'Thief Executive Officer', where: ['town'], weight: 4,
+    lines: ['You hold a meeting with your henchmen at a tavern in {kingdom}',
+            'You announce record profits and cut everyone’s pay',
+            'You pocket the savings: {gold} gold'],
+    effect: { gold: 3 } },
+
+  { key: 'c-bard', klass: 'United States Coast Bard', where: ['rest'], weight: 4,
+    lines: ['You start humming a sea shanty while you rest'],
+    ask: 'Do you sing it out loud?',
+    choices: [
+      { label: 'Sing it loud',
+        lines: ['The whole inn joins in', 'They tip you {gold} gold'],
+        effect: { gold: 2 } },
+      { label: 'Keep it to yourself',
+        lines: ['The shanty is stuck in your head for a week', 'At least you rest well'],
+        effect: { heal: true } } ] }
 ];

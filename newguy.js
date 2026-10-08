@@ -39,6 +39,8 @@ function RollEm() {
   // HP and MP start at 3 or more: with combat, a 1 HP hero never wins.
   stats['HP Max'] = 3 + Random(8) + stats.CON.div(6);
   stats['MP Max'] = 3 + Random(8) + stats.INT.div(6);
+  // and an alignment, rolled with them (Unroll brings the old one back)
+  traits.Alignment = RollAlignment();
 
   var color =
     (total >= (63+18)) ? 'red'    :
@@ -50,6 +52,7 @@ function RollEm() {
   if (document) {
     var Total = $("#Total");
     Total.text(total);
+    $("#Alignment").text(traits.Alignment);
     Total.css("background-color", color);
 
     $("#Unroll").prop("disabled", !seedHistory.length);
@@ -166,7 +169,7 @@ function sold() {
     questmonster: "",
     kill: "Loading....",
     ExpBar: { position: 0, max: LevelUpTime(1) },
-    EncumBar: { position: 0, max: stats.STR + 10 },
+    EncumBar: { position: 0, max: CarryFor(stats.STR) },
     PlotBar: { position: 0, max: 26 },
     QuestBar: { position: 0, max: 1 },
     TaskBar: { position: 0, max: 2000 },

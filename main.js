@@ -911,7 +911,8 @@ function MaybeEvent(where, resume) {
   var level = GetI(Traits,'Level');
   var choices = K.Events.filter(function (e) {
     return e.where.indexOf(where) >= 0 &&
-      (!e.minLevel || level >= e.minLevel) && (!e.maxLevel || level <= e.maxLevel);
+      (!e.minLevel || level >= e.minLevel) && (!e.maxLevel || level <= e.maxLevel) &&
+      (!e.race || e.race == Get(Traits,'Race')) && (!e.klass || e.klass == Get(Traits,'Class'));
   });
   if (!choices.length) return;
   var total = 0;
@@ -2816,43 +2817,6 @@ function CheckReplayCode() {
   });
 }
 
-// ---- Replays (see replay.js) -------------------------------------------------
-
-// A hero's game follows from where it started (game.replay.birth), the
-// seeded random numbers, and the player's inputs (game.choiceLog). Every
-// K.Replay.Every tasks a fingerprint of the state goes in game.replay.list,
-// so a replay of the same game can be checked against it as it goes.
-// game.replay.fp identifies the game's code: a replay only means something
-// with the same code the hero was played with.
-function CheckpointHash() {
-  return SealHash(JSON.stringify([game.tasks, GetI(Traits,'Level'), Math.round(ExpBar.Position() * 1000),
-                                  Math.floor(game.elapsed || 0), GetI(Inventory,'Gold'), randseed()]));
-}
-
-function RecordCheckpoint() {
-  var r = game.replay;
-  if (!r || r.frozen || game.tasks % K.Replay.Every) return;
-  r.list.push([game.tasks, CheckpointHash()]);
-}
-
-// A hero who hasn't done anything yet keeps a copy of where they started
-function StartReplay(sheet) {
-  if (sheet.replay || (sheet.tasks || 0) > 0) return;
-  var birth = JSON.parse(JSON.stringify(sheet));
-  delete birth.seal;
-  sheet.replay = { birth: birth, list: [], fp: null, frozen: 0 };
-}
-
-// Under different code, this hero's game can't be replayed any more
-function CheckReplayCode() {
-  if (!game.replay || game.replay.frozen) return;
-  GameFingerprint(function (fp) {
-    if (!fp || !game.replay || game.replay.frozen) return;
-    if (!game.replay.fp) game.replay.fp = fp;
-    else if (game.replay.fp != fp) game.replay.frozen = game.tasks || 1;
-  });
-}
-
 function SaveGame(callback) {
   Log('Saving game: ' + GameSaveName());
   CodexFlush();
@@ -3083,35 +3047,6 @@ function FormKeyDown(e) {
     TaskBar.reposition(TaskBar.Max());
   }
   */
-}
-
-// P, or Game > Pause
-function IsPaused() {
-  return !(clock && clock.running);
-}
-
-function TogglePause() {
-  if (!IsPaused()) {
-    $('#paused').css('display', 'block');
-    StopTimer();
-  } else {
-    $('#paused').css('display', '');
-    StartTimer();
-  }
-}
-
-// W, or View > Pop Out: the game in a window of its own
-function PopOut() {
-  if (window.opener) return;
-  SuspendAutosave();  // we're about to save it anyway
-  SaveGame(() => {
-    let ext = window.open(window.location.href, "Progress Quest Remix",
-      `resizable,width=${$("#main")[0].offsetWidth},height=${$("#main")[0].offsetHeight},popup,location=0`);
-    if(ext && !ext.closed && typeof ext.closed !== 'undefined') {
-      // popup was apparently not blocked
-      window.location.href = "index.html#resume";  // this window can go back to the menu
-    }
-  });
 }
 
 // P, or Game > Pause

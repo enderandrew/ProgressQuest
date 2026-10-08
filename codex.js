@@ -82,8 +82,10 @@ K.Achievements = [
     value: function (c) { return c.totals.wins || 0; }, goal: 10000 },
   { key: "defeats100", icon: "🥊", label: "Professional Punching Bag", help: "Be defeated 100 times with one hero.",
     value: function (c) { return c.best.defeats || 0; }, goal: 100 },
-  { key: "gold1m", icon: "💰", label: "Dragon Hoard", help: "Earn 1,000,000 gold, all heroes together.",
+  { key: "gold1m", icon: "💰", label: "Nest Egg", help: "Earn 1,000,000 gold, all heroes together.",
     value: function (c) { return c.totals.gold || 0; }, goal: 1000000 },
+  { key: "gold10m", icon: "💰", label: "Dragon Hoard", help: "Earn 10,000,000 gold, all heroes together.",
+    value: function (c) { return c.totals.gold || 0; }, goal: 10000000 },
 
   // The Codex
   { key: "beasts100", icon: "📖", label: "Amateur Zoologist", help: "Slay 100 kinds of monster.",
@@ -620,6 +622,8 @@ function CodexJournalPane(pane, b, keep) {
     head.append($("<b>").text(found ? e.line : "???"));
     head.append($("<span class=dim>").text(" · " + where +
       (ev.minLevel ? " · from level " + ev.minLevel : "") +
+      (ev.race ? " · " + ev.race + " heroes only" : "") +
+      (ev.klass ? " · " + ev.klass + " heroes only" : "") +
       (found ? " · " + e.n.toLocaleString() + (e.n == 1 ? " time" : " times") + " · first: " + CodexWhen(e) : "")));
     card.append(head);
     if (ev.choices && ev.choices.length) {
