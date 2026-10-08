@@ -542,10 +542,7 @@ function Die(fight) {
   CloseEventPopup();
   Narrate(obit.headline + ". " + obit.cause + ". " + (obit.lastWords ? "Last words: " + obit.lastWords : ""));
   storage.addFallen(obit, function () {
-    storage.loadRoster(function (games) {
-      delete games[Get(Traits,'Name')];
-      storage.storeRoster(games, function () { ShowDeath(obit); });
-    });
+    storage.deleteHero(HeroId(game), function () { ShowDeath(obit); });
   });
 }
 
@@ -746,9 +743,12 @@ function Brand(reason, later) {
 
 function ShowBrand() {
   if (!document) return;
-  var c = game.cheater;
+  var c = game.cheater, u = !c && game.unverified;
   $("#CheaterBrand").text(c ? "Branded a cheater: " + c.reason + ". This hero can keep playing, " +
-                          "but won't count for New Game+." : "").toggle(!!c);
+                              "but won't count for New Game+." :
+                          u ? "Unverified: " + u + ". This hero plays as normal, but won't count for " +
+                              "the Hall of Legends or New Game+." : "")
+    .toggle(!!(c || u)).toggleClass("unverified", !!u);
   $("#main").toggleClass("branded", !!c);
 }
 
@@ -801,7 +801,8 @@ function MakeLegend() {
     mutators: game.mutators || [],
     runSeed: game.runSeed || '',
     daily: game.daily ? game.daily.date : null,
-    cheater: game.cheater ? game.cheater.reason : null
+    cheater: game.cheater ? game.cheater.reason : null,
+    unverified: game.unverified || null
   };
 }
 
@@ -811,10 +812,6 @@ function AskRetire() {
   $("#RetireName").text(Get(Traits,'Name'));
   $("#RetireRace").text(Get(Traits,'Race'));
   $("#RetireClass").text(Get(Traits,'Class'));
-  $("#RetireBackup")
-    .attr("href", "data:text/plain;charset=utf-8," +
-          encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(game))))))
-    .attr("download", Get(Traits,'Name') + ".pqw");
   $("#FinaleDialog")[0].close();
   if (!dlg.open) dlg.showModal();
 }
@@ -827,13 +824,9 @@ function Retire() {
   StopTimer();
   game.retired = true;   // and nothing else saves them either (SaveGame)
   var legend = MakeLegend();
-  var name = Get(Traits,'Name');
   storage.addLegend(legend, function () {
-    storage.loadRoster(function (games) {
-      delete games[name];
-      storage.storeRoster(games, function () {
-        window.location.href = "index.html#hall/" + legend.id;
-      });
+    storage.deleteHero(HeroId(game), function () {
+      window.location.href = "index.html#hall/" + legend.id;
     });
   });
 }
@@ -1005,16 +998,13 @@ function SetTactic(name, key) {
 }
 
 // Every choice and tactics change goes in game.choiceLog, so the hero's
-// whole game can be replayed from its birth (replay.js). The log is kept
-// whole while the hero can still be replayed (up to K.Replay.MaxInputs).
+// game can be replayed (replay.js). Past K.Replay.MaxInputs, the next task
+// starts a new stretch of replay (AnchorReplay), and the older ones go.
 function LogInput(entry) {
   var log = game.choiceLog = game.choiceLog || [];
   log.push(entry);
-  var keep = game.replay && !game.replay.frozen ? K.Replay.MaxInputs : 500;
-  if (log.length > keep) {
-    log.splice(0, log.length - keep);
-    if (game.replay && !game.replay.frozen) game.replay.frozen = game.tasks;   // too long to replay now
-  }
+  if (log.length > K.Replay.MaxInputs && game.replay && !_anchorWanted)
+    _anchorWanted = { why: 'inputs', fp: game.replay.fp };
 }
 
 // The Tactics link says what is set, if anything is not Normal
@@ -2669,6 +2659,7 @@ function Timer1Timer() {
     CheckDaily();
     CodexHero();
     RecordCheckpoint();
+    if (_anchorWanted) AnchorReplay();
   } else {
     var elapsed = timeGetTime() - clock.lasttick;
     if (elapsed > 100) elapsed = 100;
@@ -2780,16 +2771,20 @@ function FormCreate() {
     // Save whenever the page is hidden or closed. 'unload' is being removed
     // from browsers and is unreliable on mobile; pagehide and
     // visibilitychange are the supported replacements.
-    $(window).on("pagehide.pqsave", function () { SaveGame(); });
+    $(window).on("pagehide.pqsave", function () { SaveGame(null, true); });
     $(document).on("visibilitychange.pqsave", function () {
-      if (document.visibilityState === "hidden") SaveGame();
+      if (document.visibilityState === "hidden") SaveGame(null, true);
+    });
+    // The backup offered before retiring: made now, from a fresh save
+    $("#RetireBackup").on("click", function (e) {
+      e.preventDefault();
+      SaveGame(function (text) { DownloadHero(game, text); });
     });
 
     if (iOS) $("body").addClass("iOS");
   }
 
-  var name = DecodeName(window.location.href.split('#')[1]);
-  storage.loadSheet(name, LoadGame);
+  storage.findHero(DecodeName(window.location.href.split('#')[1]), LoadGame);
 
   if (window.opener) {
     // Opened as a popup, so go bare style
@@ -2887,6 +2882,12 @@ function CodexHero() {
 // so a replay of the same game can be checked against it as it goes.
 // game.replay.fp identifies the game's code: a replay only means something
 // with the same code the hero was played with.
+//
+// When the game is updated (or the inputs pile up), the replay starts a new
+// stretch from that moment: game.replay.birth becomes a copy of the hero as
+// they are, and game.replay.since says when and why. A replay checks the
+// latest stretch. (It used to stop for good instead, game.replay.frozen,
+// and a save that said so wasn't checked at all.)
 function CheckpointHash() {
   return SealHash(JSON.stringify([game.tasks, GetI(Traits,'Level'), Math.round(ExpBar.Position() * 1000),
                                   Math.floor(game.elapsed || 0), GetI(Inventory,'Gold'), randseed()]));
@@ -2894,8 +2895,29 @@ function CheckpointHash() {
 
 function RecordCheckpoint() {
   var r = game.replay;
-  if (!r || r.frozen || game.tasks % K.Replay.Every) return;
+  if (!r || !r.list || game.tasks % K.Replay.Every) return;
   r.list.push([game.tasks, CheckpointHash()]);
+}
+
+// Why the next task should start a new stretch: { why, fp }
+var _anchorWanted = null;
+
+// Start a new stretch of replay from here. Called between tasks, as the next
+// one starts, so a replay can pick up exactly where this leaves off.
+function AnchorReplay() {
+  var want = _anchorWanted;
+  _anchorWanted = null;
+  if (!want || game.dead) return;
+  var birth = JSON.parse(JSON.stringify(game));
+  delete birth.seal;
+  delete birth.replay;
+  birth.choiceLog = [];
+  birth.seed = randseed();   // the dice, as they are now
+  game.replay = { birth: birth, list: [], fp: want.fp || null,
+                  since: { t: game.tasks, level: GetI(Traits,'Level'), why: want.why } };
+  // older inputs belong to the stretch that just ended
+  game.choiceLog = (game.choiceLog || []).filter(function (e) { return e.t >= game.tasks; });
+  Log('Replay starts again (' + want.why + ')');
 }
 
 // A hero who hasn't done anything yet keeps a copy of where they started
@@ -2903,23 +2925,32 @@ function StartReplay(sheet) {
   if (sheet.replay || (sheet.tasks || 0) > 0) return;
   var birth = JSON.parse(JSON.stringify(sheet));
   delete birth.seal;
-  sheet.replay = { birth: birth, list: [], fp: null, frozen: 0 };
+  sheet.replay = { birth: birth, list: [], fp: null };
 }
 
-// Under different code, this hero's game can't be replayed any more
+// Under different code, the replay starts a new stretch. So does a hero
+// from before replays (or whose replay was frozen), from now on.
 function CheckReplayCode() {
-  if (!game.replay || game.replay.frozen) return;
   GameFingerprint(function (fp) {
-    if (!fp || !game.replay || game.replay.frozen) return;
-    if (!game.replay.fp) game.replay.fp = fp;
-    else if (game.replay.fp != fp) game.replay.frozen = game.tasks || 1;
+    if (!fp || !game || !game.Traits || game.dead) return;
+    var r = game.replay;
+    if (!r) {
+      // (a hero born since replays always has one: see the import scan)
+      if ((game.birthVersion || 0) < K.Replay.Since) _anchorWanted = { why: 'start', fp: fp };
+    } else if (!r.fp) {
+      r.fp = fp;
+    } else if (r.fp != fp) {
+      _anchorWanted = { why: 'update', fp: fp };
+    }
   });
 }
 
-function SaveGame(callback) {
+// callback(the JSON saved). urgent: the page is going away (see saveHero)
+function SaveGame(callback, urgent) {
   // A Hardcore hero who died, or one who retired, has left the roster: a
-  // save now (S, Q, the File menu...) would put them back in it
-  if (game.dead || game.retired) { if (callback) callback(); return; }
+  // save now (S, Q, the File menu...) would put them back in it. (And a page
+  // whose hero didn't load has nothing to save.)
+  if (!game || !game.Traits || game.dead || game.retired) { if (callback) callback(); return; }
   Log('Saving game: ' + GameSaveName());
   CodexFlush();
   HotOrNot();
@@ -2927,7 +2958,7 @@ function SaveGame(callback) {
   game.stamp = +new Date();
   game.seed = randseed();
   if (game.mode == 'hardcore') game.saveGen = (game.saveGen || 0) + 1;   // see the Hardcore ledger
-  storage.addToRoster(game, callback);
+  storage.saveHero(game, callback, urgent);
 }
 
 function LoadGame(sheet) {
@@ -2946,6 +2977,8 @@ function LoadGame(sheet) {
     return;
   }
   if (sealState == "bad") Brand("its save was edited outside the game", true);
+  else if (!game.unverified && UnverifiedReason(game, sealState))
+    game.unverified = UnverifiedReason(game, sealState);   // sealed in from the next save
   StartReplay(game);
   if (document) CheckReplayCode();
 
@@ -2993,10 +3026,7 @@ function LoadGame(sheet) {
     if (verdict == 'dead') {
       SuspendAutosave();
       alert(Get(Traits,'Name') + " died in Hardcore. Hardcore heroes stay dead.");
-      storage.loadRoster(function (games) {
-        delete games[Get(Traits,'Name')];
-        storage.storeRoster(games, function () { window.location.href = "index.html#hall/fallen"; });
-      });
+      storage.deleteHero(HeroId(game), function () { window.location.href = "index.html#hall/fallen"; });
       return;
     }
     if (verdict == 'older') Brand("an older copy of this Hardcore hero was put back (a rewind)", true);

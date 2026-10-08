@@ -163,7 +163,7 @@ function run(opts) {
     load(ctx, opts.dir, "daily.js");
     ctx.__date = opts.daily;
     g("seed = new Alea(__seed); var __d = MakeDaily(__date);" +
-      "storage.addToRoster(__d, function () {}); window.location.href = 'main.html#' + EncodeName(__d.Traits.Name);");
+      "storage.saveHero(__d, function () {}); window.location.href = 'main.html#' + EncodeName(__d.lifeId);");
   } else
   g("seed = new Alea(__seed); RollEm(); GenClick();" +
     "fill(null, K.Races, 'Race'); fill(null, K.Klasses, 'Class');");

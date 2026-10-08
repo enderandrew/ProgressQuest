@@ -49,6 +49,7 @@ function ShowSheet(p) {
   });
   if (p.dead) notes.push("☠ Dead: " + p.dead);
   if (p.ch) notes.push("⚠ Branded a cheater: " + p.ch);
+  else if (p.uv) notes.push("Unverified: doesn't count for the Hall of Legends");
   $("#SheetNotes").text(notes.join(" · "));
 
   SheetRows("#SheetEquips", K.Equips.map(function (e, i) { return [e, p.eq[i]]; }));

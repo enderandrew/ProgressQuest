@@ -102,8 +102,9 @@ function SaveAndGo(url) {
   SaveGame(function () { window.location.href = url; });
 }
 
+// (the backup is exactly what was just saved and sealed)
 function ExportHero() {
-  SaveGame(function () { DownloadHero(game); });
+  SaveGame(function (text) { DownloadHero(game, text); });
 }
 
 function ImportHero() {
@@ -114,17 +115,17 @@ function ImportHero() {
 
 // After an import from the game: play the new hero now?
 function ImportedHero(sheet) {
-  var name = sheet.Traits.Name, current = name == Get(Traits, 'Name');
+  var name = sheet.Traits.Name, id = HeroId(sheet), current = id == HeroId(game);
   if (current) {   // it replaced the hero on screen: don't save over it
     SuspendAutosave();
-    window.location.href = "main.html#" + EncodeName(name);
+    window.location.href = "main.html#" + EncodeName(id);
     window.location.reload();
     return;
   }
   WinBox({ title: "Import Hero", icon: "question",
            text: name + " is in your roster now. Play them? (" + Get(Traits, 'Name') + " is saved.)",
            buttons: [{ label: "Play", value: "play", primary: true }, { label: "Later", value: null }],
-           onClose: function (v) { if (v == "play") SaveAndGo("main.html#" + EncodeName(name)); } });
+           onClose: function (v) { if (v == "play") SaveAndGo("main.html#" + EncodeName(id)); } });
 }
 
 function CopySheet() {

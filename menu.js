@@ -103,19 +103,15 @@ function ShowDailyCard() {
   $("#dailyNext").text("Next challenge in " + Math.floor(left / 60) + "h " + Math.floor(left % 60) + "m");
 
   storage.loadDailies(function (book) {
-    storage.loadRoster(function (games) {
+    storage.listHeroes(function (heroes) {
       var today = book[date];
-      var hero = null;
-      Object.keys(games).forEach(function (k) {
-        var g = games[k];
-        if (g.daily && g.daily.date == date) hero = g;
-      });
+      var hero = heroes.filter(function (h) { return h.daily && h.daily.date == date; })[0] || null;
       // Settled entries in the book win over what the hero's save says
       var status = today ? today.status : "";
       if (hero && hero.daily.status) status = hero.daily.status;
       $("#dailyStart").toggle(!today).prop("disabled", false);
       $("#dailyResume").toggle(!!(today && hero && !hero.dead))
-        .attr("href", hero ? "main.html#" + EncodeName(hero.Traits.Name) : "#")
+        .attr("href", hero ? "main.html#" + EncodeName(hero.id) : "#")
         .text(status && status != "started" ? "Visit today's hero" : "Resume today's hero");
       if (today && !hero) $("#dailyNext").text("Today's try: " + DailyStatusText(today) + ". " + $("#dailyNext").text());
       else if (today && status && status != "started")
@@ -144,17 +140,20 @@ function StartDaily() {
   $("#dailyStart").prop("disabled", true);
   storage.loadDailies(function (book) {
     if (book[date]) { ShowDailyCard(); return; }
-    storage.loadRoster(function (games) {
+    storage.listHeroes(function (heroes) {
       var hero = MakeDaily(date);
+      // (two heroes can share a name now, but it's clearer if they don't)
+      var taken = {};
+      heroes.forEach(function (h) { taken[h.name] = true; });
       var name = hero.Traits.Name, base = name, n = 2;
-      while (games[name]) name = base + " " + toRomanLite(n++);
+      while (taken[name]) name = base + " " + toRomanLite(n++);
       hero.Traits.Name = name;
-      storage.addToRoster(hero, function () {
+      storage.saveHero(hero, function () {
         storage.noteDaily(date, {
           date: date, name: name, race: hero.Traits.Race, klass: hero.Traits.Class,
           label: hero.daily.label, status: "started", startedAt: hero.daily.startedAt
         }, function () {
-          window.location.href = "main.html#" + EncodeName(name);
+          window.location.href = "main.html#" + EncodeName(HeroId(hero));
         });
       });
     });
@@ -207,19 +206,19 @@ function ShowLegendCount(legends) {
 // ---- Resume: saved characters ----------------------------------------------
 
 function LoadRoster() {
-  if (!HasLocalStorage() && !window.openDatabase) {
+  if (!HasLocalStorage() && !window.openDatabase && typeof indexedDB == "undefined") {
     $("#roster").html('<div class="empty"><b>Hrumph:</b> this browser will not let us save anything. ' +
       'You can still play fast and loose: your hero lives only as long as the game stays open.</div>');
     return;
   }
-  storage.loadRoster(ShowRoster);
+  storage.listHeroes(ShowRoster);
 }
 
-function ShowRoster(games) {
+// heroes: HeroSummary of each (config.js), newest first. Each hero's save is
+// read only when it's wanted (Back up, Share).
+function ShowRoster(heroes) {
   var list = $("#roster").empty();
   var lit = DecodeName((window.location.hash.split("=")[1]) || "");
-  var heroes = Object.keys(games).map(function (k) { return games[k]; })
-    .sort(function (a, b) { return (b.stamp || 0) - (a.stamp || 0); });
 
   $("#resumeCount").text(heroes.length ? heroes.length : "");
 
@@ -231,32 +230,37 @@ function ShowRoster(games) {
   }
 
   $.each(heroes, function (i, c) {
-    var name = c.Traits.Name;
+    var name = c.name;
     var row = $(document.getElementById("rosterRow").content.cloneNode(true)).children().first();
     row.find(".name").text(name);
-    row.find(".what").text("the " + c.Traits.Race);
-    row.find(".where").text("Level " + c.Traits.Level + " " +
-                            (c.Traits.Alignment ? c.Traits.Alignment + " " : "") + c.Traits.Class +
+    row.find(".what").text("the " + c.race);
+    row.find(".where").text("Level " + c.level + " " +
+                            (c.alignment ? c.alignment + " " : "") + c.klass +
                             (c.bestplot ? " · " + c.bestplot : "") +
-                            (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
+                            (c.won ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
                             (c.mode == "plus" ? " \u00b7 New Game+" : "") +
                             (c.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
                             RunTags(c.daily && c.daily.date, c.mutators, c.runSeed) +
-                            (c.cheater || SaveSealState(c) == "bad" ? " \u00b7 \u26a0 branded a cheater" : ""));
-    var href = "main.html#" + EncodeName(name);
+                            (c.cheater ? " \u00b7 \u26a0 branded a cheater" :
+                             c.unverified ? " \u00b7 unverified" : ""))
+      .attr("title", c.unverified && !c.cheater ? "Unverified: " + c.unverified +
+                     ". Plays as normal, but won't count for the Hall of Legends or New Game+." : null);
+    var href = "main.html#" + EncodeName(c.id);
     row.find(".play").attr("href", href);
     row.on("dblclick", function () { window.location.href = href; })
        .on("keydown", function (e) { if (e.key === "Enter" && e.target === this) window.location.href = href; });
-    row.find(".save").attr("href", HeroFileHref(c)).attr("download", name + ".pqw");
-    row.find(".share").on("click", function () { ShareHero(c); });
+    var withHero = function (fn) {
+      storage.loadHero(c.id, function (sheet) {
+        if (sheet) fn(sheet); else alert(name + " couldn't be read.");
+      });
+    };
+    row.find(".save").on("click", function () { withHero(function (sheet) { DownloadHero(sheet); }); });
+    row.find(".share").on("click", function () { withHero(ShareHero); });
     row.find(".del").on("click", function () {
       if (!confirm("Terminate " + Pick(["faithful", "noble", "loyal", "brave"]) + " " + name + "?")) return;
-      storage.loadRoster(function (all) {
-        delete all[name];
-        storage.storeRoster(all, LoadRoster);
-      });
+      storage.deleteHero(c.id, LoadRoster);
     });
-    if (name === lit) row.addClass("lit");
+    if (c.id === lit || name === lit) row.addClass("lit");
     list.append(row);
   });
 }
@@ -397,7 +401,8 @@ function ShowHall(legends) {
       row.addClass("void");
       row.find(".where").append($("<span class='voided'>").text(
         " \u00b7 \u26a0 " + (l.cheater ? "branded a cheater (" + l.cheater + ")" :
-                               !SealOk(l) ? "this entry was edited" : "started at level " + l.startLevel) +
+                               !SealOk(l) ? "this entry was edited" :
+                               l.unverified ? "unverified (" + l.unverified + ")" : "started at level " + l.startLevel) +
         "; doesn't count for New Game+"));
     }
     row.find(".del").on("click", function () {
@@ -410,10 +415,6 @@ function ShowHall(legends) {
   });
   var lit = list.find(".lit")[0];
   if (lit) lit.scrollIntoView({ block: "nearest" });
-
-  $("#hallBackup")
-    .attr("href", "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(legends, null, 1)))
-    .attr("download", "hall-of-legends.json");
 }
 
 // The finale level lives in combat.js (K.Boss), which the menu doesn't load
@@ -486,17 +487,26 @@ $(function () {
   $("#codexFilter").on("change", function () { ShowCodex(); });
   $("#codexRestore").on("change", function () { if (this.files[0]) RestoreCodex(this.files[0]); this.value = ""; });
   $("#customStart").on("click", StartCustom);
+  // Backups are made when asked for, from what's stored then
+  $("#hallBackup").on("click", function (e) {
+    e.preventDefault();
+    storage.loadLegends(function (legends) {
+      DownloadText(JSON.stringify(legends, null, 1), "hall-of-legends.json", "application/json");
+    });
+  });
+  $("#codexBackup").on("click", function (e) {
+    e.preventDefault();
+    DownloadText(CodexBackupText(), "codex.json", "application/json");
+  });
 
   EnableDropImport();
   TickClock();
   setInterval(TickClock, 15000);
 
   // Show how many heroes are waiting, then open any window the URL asks for
-  if (HasLocalStorage() || window.openDatabase)
-    storage.loadRoster(function (games) {
-      var n = Object.keys(games).length;
-      $("#resumeCount").text(n ? n : "");
-    });
+  storage.listHeroes(function (heroes) {
+    $("#resumeCount").text(heroes.length ? heroes.length : "");
+  });
   if (HasLocalStorage() || window.openDatabase)
     storage.loadLegends(ShowLegendCount);
   $(".finaleLevel").text(FinaleLevel());

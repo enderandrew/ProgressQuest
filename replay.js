@@ -9,6 +9,10 @@
 // or play with a modified copy of the game, and the replay comes out
 // different.
 //
+// When the game is updated, the replay starts a new stretch (AnchorReplay
+// in main.js): the "birth" is then the hero as they were at that moment
+// (game.replay.since), and that stretch is what gets replayed.
+//
 // Used three ways:
 //   - in the browser, as a Web Worker (importing a hero; transfer.js)
 //   - by sim.js:  node sim.js --replay hero.pqw
@@ -29,9 +33,10 @@ function ReplayHero(save, opts) {
   opts = opts || {};
   var r = save.replay;
   if (!r || !r.birth) return { status: "unable", detail: "it was created before replays (or by an older version)" };
-  if (r.frozen) return { status: "unable", detail: "it was played with an older version of the game" };
-  if (!r.list || !r.list.length) return { status: "unable", detail: "it hasn't played long enough to have a checkpoint" };
-  var list = r.list;
+  // (only older versions froze a replay, when the game was updated)
+  if (r.frozen && (save.saveVersion || 0) < 14) return { status: "unable", detail: "it was played with an older version of the game" };
+  if ((save.tasks || 0) <= (r.birth.tasks || 0)) return { status: "unable", detail: "it hasn't played since its replay began" };
+  var list = r.list || [];
   var until = Math.min(opts.until || Infinity, save.tasks || 0);
   var want = {};
   list.forEach(function (c) { want[c[0]] = c[1]; });
@@ -43,15 +48,15 @@ function ReplayHero(save, opts) {
     else if (e.event && e.by == "you") picks[e.t] = e;
   });
 
-  // Start the hero over in an empty browser-in-a-box
+  // Start the hero over in a browser-in-a-box (heroes kept in memory: see
+  // WithHeroes in config.js)
   var birth = JSON.parse(JSON.stringify(r.birth));
-  var name = birth.Traits.Name;
   ReplayReset();
-  storage.storeRoster({}, function () {});
-  storage.addToRoster(birth, function () {});
-  window.location.href = "main.html#" + EncodeName(name);
+  var id = HeroId(birth);
+  storage.saveHero(birth, function () {});
+  window.location.href = "main.html#" + EncodeName(id);
   FormCreate();
-  if (!game || game.Traits.Name != name) return { status: "unable", detail: "the replay couldn't load the hero" };
+  if (!game || game.lifeId != id) return { status: "unable", detail: "the replay couldn't load the hero" };
 
   var started = Date.now(), steps = 0, checked = 0;
   while (game.tasks < until) {

@@ -503,7 +503,6 @@ function CodexTabCounts() {
 
 function ShowCodex(tab) {
   if (tab) codexTab = tab;
-  CodexBackupLink();
   var counts = CodexTabCounts();
   $("#dlgCodex [data-tab]").each(function () {
     var t = $(this).data("tab");
@@ -658,12 +657,12 @@ function CodexBadge() {
 
 // ---- Backup and restore ------------------------------------------------------
 
-function CodexBackupLink() {
+// The Codex as a backup file's text (made when Back up is clicked: it used
+// to be rebuilt into a link on every redraw, even every keystroke in Search)
+function CodexBackupText() {
   var copy = Object.assign({}, Codex.book || CodexEmpty());
   delete copy.seal;
-  $("#codexBackup")
-    .attr("href", "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(Seal(copy))))
-    .attr("download", "codex.json");
+  return JSON.stringify(Seal(copy));
 }
 
 // Only a Codex the game wrote (sealed and untouched) comes back

@@ -148,7 +148,7 @@ function MakeDaily(date) {
     buffs: [], recentEvent: null, finale: null,
     mode: plan.hardcore ? "hardcore" : "normal",
     legacy: null,
-    lifeId: plan.hardcore ? "daily-" + date + "-" + now.toString(36) : undefined,
+    lifeId: "daily-" + date + "-" + now.toString(36),
     saveGen: 0,
     runSeed: "daily-" + date,
     mutators: plan.mutators,

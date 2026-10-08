@@ -185,7 +185,7 @@ function sold() {
     tactics: { fights: "normal", resting: "normal", spells: "normal" },
     choiceLog: [],
     mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : "normal",
-    lifeId: Hardcore() ? Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e9).toString(36) : undefined,
+    lifeId: NewLifeId(),   // who they are in storage, and to the Hardcore ledger
     saveGen: 0,
     legacy: (NewGamePlus() || Hardcore()) && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } : null,
     queue: [
@@ -399,22 +399,10 @@ function Embedded() {
   }
 }
 
+// (Heroes are stored by life ID, so a name already in the roster is fine)
 function charIsBorn(newguy) {
-  storage.loadRoster(function (games) {
-    // The roster is keyed by name: a new hero with a taken name would
-    // replace the old one without a word
-    var taken = games[newguy.Traits.Name];
-    if (taken && document &&
-        !confirm("There is already a hero named " + newguy.Traits.Name + " (level " + taken.Traits.Level +
-                 "). Replace them with this one? They will be gone for good.")) {
-      $("#Sold").prop("disabled", false);
-      $("body").css("cursor", "default");
-      $("#Name").trigger("focus").trigger("select");
-      return;
-    }
-    storage.addToRoster(newguy, function () {
-      (Embedded() ? window.top : window).location.href = "main.html#" + EncodeName(newguy.Traits.Name);
-    });
+  storage.saveHero(newguy, function () {
+    (Embedded() ? window.top : window).location.href = "main.html#" + EncodeName(newguy.lifeId);
   });
 }
 

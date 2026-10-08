@@ -441,6 +441,9 @@ div.profile#DailyLine:empty { display: none; }
   text-align: center;
 }
 
+/* Unverified (see UnverifiedReason): no cheating found, but nothing to vouch for them */
+#CheaterBrand.unverified { background: #806000; font-weight: normal; }
+
 /* Choices in events (pop-up and Last Event box) */
 .event-choice { margin: 6px 0; padding: 6px 8px; background: #fff8d6; border: 1px solid #c9a227; }
 .event-choice .ask { font-weight: bold; margin-bottom: 4px; }

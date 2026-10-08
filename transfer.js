@@ -15,21 +15,31 @@ function b64_decode(value) {
 }
 
 function b64_stringify(value) {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(value))));
+  return b64_text(JSON.stringify(value));
 }
 
-// A .pqw backup of a hero, as a link's href
-function HeroFileHref(sheet) {
-  return "data:text/plain;name=" + encodeURIComponent(sheet.Traits.Name) + ".pqw," + b64_stringify(sheet);
+function b64_text(text) {
+  return btoa(unescape(encodeURIComponent(text)));
 }
 
-function DownloadHero(sheet) {
+// Hand the player a file, made when they ask for it (not built ahead of
+// time into a link for every hero on the list)
+function DownloadText(text, fileName, type) {
+  var url = URL.createObjectURL(new Blob([text], { type: type || "text/plain" }));
   var a = document.createElement("a");
-  a.href = HeroFileHref(sheet);
-  a.download = sheet.Traits.Name + ".pqw";
+  a.href = url;
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+}
+
+// A .pqw backup of a hero. text: the JSON exactly as it was saved and
+// sealed (SaveGame's callback), for the hero being played, who may have
+// moved on since; a hero from storage is saved as it is.
+function DownloadHero(sheet, text) {
+  DownloadText(b64_text(text || JSON.stringify(sheet)), sheet.Traits.Name + ".pqw", "text/plain");
 }
 
 // ---- The rules a save must follow ---------------------------------------------
@@ -169,10 +179,11 @@ function ImportHeroFiles(files, after) {
       }
       ScanHero(sheet, file.name, function (ok) {
         if (!ok) { next(); return; }
-        storage.loadRoster(function (games) {
-          if (games[sheet.Traits.Name] &&
-              !confirm("A character named " + sheet.Traits.Name + " already exists. Overwrite it?")) { next(); return; }
-          storage.addToRoster(sheet, function () {
+        // The same hero (life ID) is replaced; another of the same name isn't
+        storage.loadHero(HeroId(sheet), function (have) {
+          if (have && !confirm(have.Traits.Name + " (level " + have.Traits.Level + ") is already in your roster. " +
+                               "Replace them with this backup (level " + sheet.Traits.Level + ")?")) { next(); return; }
+          storage.saveHero(sheet, function () {
             if (after) after(sheet);
             next();
           });
@@ -224,7 +235,7 @@ function ScanHero(sheet, fileName, done) {
     return li;
   };
 
-  var problems = [], fatal = null, partial = null;
+  var problems = [], fatal = null, partial = null, unverified = null;
   var steps = [];
   var step = function (fn) { steps.push(fn); };
   var run = function () {
@@ -240,8 +251,11 @@ function ScanHero(sheet, fileName, done) {
   step(function (next) {
     var li = line("Seal"), state = SaveSealState(sheet);
     if (state == "ok") li.set("✔", "untouched since the game saved it", "ok");
-    else if (state == "old") li.set("–", "from before saves were sealed", "skip");
-    else {
+    else if (state == "old") {
+      // No seal could mean it's old, or that someone took it off
+      li.set("?", "not sealed, so there's no telling whether it was edited", "skip");
+      unverified = UnverifiedReason(sheet, state);
+    } else {
       li.set("✘", "edited outside the game", "bad");
       problems.push("it was imported from a backup file that had been edited");
     }
@@ -272,7 +286,10 @@ function ScanHero(sheet, fileName, done) {
       var c = checks.shift();
       if (!c) { next(); return; }
       var li = line(c.label);
-      if (c.skipped) li.set("–", c.note, "skip");
+      if (c.skipped) {
+        li.set("–", c.note, "skip");
+        unverified = unverified || UnverifiedReason(sheet, "ok");
+      }
       else if (c.ok) li.set("✔", c.note, "ok");
       else { li.set("✘", c.reason, "bad"); problems.push(c.reason); }
       setTimeout(each, 90);
@@ -282,8 +299,16 @@ function ScanHero(sheet, fileName, done) {
   step(function (next) {
     if (fatal) { next(); return; }
     var li = line("Replay");
-    if (!sheet.replay || !sheet.replay.birth) { li.set("–", "not possible: created before replays", "skip"); next(); return; }
-    if (sheet.replay.frozen && !(sheet.replay.list || []).length) {
+    if (!sheet.replay || !sheet.replay.birth) {
+      // Every hero born since replays has one, from their first task on
+      if ((sheet.birthVersion || 0) >= K.Replay.Since && (sheet.tasks || 0) > 0) {
+        li.set("✘", "the record the game keeps for replays is missing", "bad");
+        problems.push("the record the game keeps for replays was removed");
+      } else li.set("–", "not possible: created before replays", "skip");
+      next(); return;
+    }
+    // (only older versions froze a replay; a newer save saying so is ignored)
+    if (sheet.replay.frozen && (sheet.saveVersion || 0) < 14) {
       li.set("–", "not possible: played with an older version of the game", "skip"); next(); return;
     }
     GameFingerprint(function (fp) {
@@ -314,10 +339,14 @@ function ScanHero(sheet, fileName, done) {
       meter.style.display = "none";
       var r = m.result;
       partial = null;
+      var since = sheet.replay.since, from = since ? since.t : 0;
+      var stretch = since ? " since level " + since.level + (since.why == "update" ? ", when the game was updated" : "") : "";
       if (r.status == "match")
-        li.set("✔", "the whole game replays exactly (" + r.checked.toLocaleString() + " tasks)", "ok");
+        li.set("✔", (since ? "replays exactly" + stretch : "the whole game replays exactly") +
+               " (" + (r.checked - from).toLocaleString() + " tasks)", "ok");
       else if (r.status == "partial") {
-        li.set("✔", "the first " + r.checked.toLocaleString() + " of " + r.total.toLocaleString() + " tasks replay exactly", "ok");
+        li.set("✔", "the first " + (r.checked - from).toLocaleString() + " of " + (r.total - from).toLocaleString() +
+               " tasks" + stretch + " replay exactly", "ok");
         partial = li;
       } else if (r.status == "mismatch") {
         li.set("✘", r.detail, "bad");
@@ -351,9 +380,20 @@ function ScanHero(sheet, fileName, done) {
         dlg.closeWith("import");
       } });
       buttons.push({ label: "Cancel", value: null, primary: true });
+    } else if (unverified && !sheet.cheater && !sheet.unverified) {
+      // Nothing wrong found, but nothing to vouch for them either
+      verdict.textContent = "No cheating found, but " + sheet.Traits.Name + " can't be verified: " + unverified +
+        ". They can be imported and played as normal, but won't count for the Hall of Legends or New Game+.";
+      verdict.className = "scan-verdict";
+      buttons.push({ label: "Import (unverified)", primary: true, action: function () {
+        sheet.unverified = unverified;
+        dlg.closeWith("import");
+      } });
+      buttons.push({ label: "Cancel", value: null });
     } else {
       verdict.textContent = (sheet.cheater ? "No new problems found (" + sheet.Traits.Name + " was already branded a cheater: " +
-        sheet.cheater.reason + ")." : "No cheating found. " + sheet.Traits.Name + " is clean.");
+        sheet.cheater.reason + ")." : sheet.unverified ? "No cheating found (" + sheet.Traits.Name + " is unverified: " +
+        sheet.unverified + ")." : "No cheating found. " + sheet.Traits.Name + " is clean.");
       verdict.className = "scan-verdict ok";
       buttons.push({ label: "Import", value: "import", primary: true });
       if (partial) buttons.push({ label: "Replay the rest", action: function () {
@@ -392,7 +432,7 @@ function SharePayload(g) {
     leg: L ? (L.races || []).length + (L.klasses || []).length : 0,
     d: g.deaths || 0, w: g.wins || 0, qd: g.questsDone || 0,
     fin: g.finale && g.finale.state == "won" ? g.finale.wonLevel : 0,
-    daily: g.daily ? g.daily.date : "", ch: g.cheater ? g.cheater.reason : "",
+    daily: g.daily ? g.daily.date : "", ch: g.cheater ? g.cheater.reason : "", uv: g.unverified || "",
     dead: g.dead ? (g.dead.cause || "dead") : "",
     at: Date.now()
   };

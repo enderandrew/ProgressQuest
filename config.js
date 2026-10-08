@@ -290,47 +290,317 @@ if (storage instanceof LocalStorage && window.openDatabase) {
   })(storage.getItem);
 }
 
-storage.loadRoster = function (callback) {
-  function gotItem(value) {
-    if (value) {
-      try {
-        value = JSON.parse(value);
-      } catch (err) {
-        // aight
-      }
-    }
-    value = value || {};
-    callback(value);
-    storage.games = value;
-  }
-  this.getItem("roster", gotItem);
+// ---- Heroes ------------------------------------------------------------------
+//
+// Each hero is stored on its own, under its life ID (game.lifeId, given at
+// birth), so two heroes can share a name and a save writes that one hero, not
+// all of them. In a browser they live in IndexedDB, which has room for
+// hundreds of heroes (localStorage has about 5MB for everything). Beside each
+// hero is a short summary (HeroSummary) for the Resume list, so it needn't
+// read every save. Heroes from older versions (all in one "roster" item, by
+// name) move over the first time the heroes are looked at.
+//
+//   storage.listHeroes(cb)               cb([summary, ...]), newest first
+//   storage.loadHero(id, cb)             cb(sheet), or cb(null)
+//   storage.findHero(ref, cb)            by life ID, or by name (old links)
+//   storage.saveHero(sheet, cb, urgent)  seals and stores it, then cb(the JSON
+//                                        stored); urgent: the page is closing
+//   storage.deleteHero(id, cb)
+//
+// Without IndexedDB (sim.js, replays, very old browsers) the same records go
+// in the storage above, as "hero:<id>" and "heroes" (the summaries). There
+// the callbacks run before the call returns, which the simulator relies on.
+
+// A new hero's life ID
+function NewLifeId() {
+  return Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e9).toString(36);
 }
 
-storage.loadSheet = function (name, callback) {
-  return this.loadRoster(function (games) {
-    if (callback)
-      callback(games[name]);
+// A hero's life ID, giving them one (see LifeId) if they have none yet
+function HeroId(sheet) {
+  if (!sheet.lifeId) sheet.lifeId = LifeId(sheet);
+  return sheet.lifeId;
+}
+
+// What the Resume list and the Daily Challenge card show. (Doesn't change
+// the sheet: a sealed save has to stay exactly as it was.)
+function HeroSummary(sheet) {
+  var t = sheet.Traits || {};
+  return {
+    id: sheet.lifeId || LifeId(sheet),
+    name: t.Name || "", race: t.Race || "", klass: t.Class || "",
+    alignment: t.Alignment || "", level: parseInt(t.Level, 10) || 0,
+    stamp: sheet.stamp || 0, bestplot: sheet.bestplot || "", mode: sheet.mode || "normal",
+    won: !!(sheet.finale && sheet.finale.state == "won"),
+    daily: sheet.daily ? { date: sheet.daily.date, status: sheet.daily.status || "",
+                           played: sheet.daily.played || 0 } : null,
+    mutators: sheet.mutators || [], runSeed: sheet.runSeed || "",
+    cheater: sheet.cheater ? sheet.cheater.reason : null,
+    unverified: sheet.unverified || null,
+    dead: !!sheet.dead
+  };
+}
+
+function ParseHero(text) {
+  if (!text) return null;
+  try { return JSON.parse(text); } catch (e) { return null; }
+}
+
+function IsQuotaError(err) {
+  return !!err && (err.name === "QuotaExceededError" || err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+                   String(err).indexOf("QUOTA_EXCEEDED_ERR") != -1);
+}
+
+// A save that didn't make it. Said once a page: the game carries on.
+var _saveTroubleSaid = false;
+function SaveFailed(err) {
+  if (typeof console != "undefined") console.error("Progress Quest couldn't save", err);
+  if (_saveTroubleSaid || typeof alert != "function") return;
+  _saveTroubleSaid = true;
+  alert(IsQuotaError(err) ?
+        "This browser is out of room to save heroes. The game carries on, but won't be saved " +
+        "until there is space again (back up a hero or two and delete them)." :
+        "This browser wouldn't save the game (" + (err && err.name || err) + "). The game carries on, " +
+        "but progress may not be saved.");
+}
+
+// Heroes in key-value storage (localStorage, or the simulator's stand-in)
+function KVHeroStore(kv) {
+  function index(cb) {
+    kv.getItem("heroes", function (v) {
+      var o = null;
+      try { o = JSON.parse(v || "{}"); } catch (e) { o = null; }
+      cb(o && typeof o == "object" ? o : {});
+    });
+  }
+  this.list = function (cb) {
+    index(function (o) { cb(Object.keys(o).map(function (k) { return o[k]; })); });
+  };
+  this.get = function (id, cb) {
+    kv.getItem("hero:" + id, function (v) { cb(v || null); });
+  };
+  this.put = function (id, text, summary, cb) {
+    try {
+      kv.setItem("hero:" + id, text, function () {
+        index(function (o) {
+          o[id] = summary;
+          kv.setItem("heroes", JSON.stringify(o), function () { if (cb) cb(true); });
+        });
+      });
+    } catch (err) {
+      SaveFailed(err);
+      if (cb) cb(false);
+    }
+  };
+  this.remove = function (id, cb) {
+    kv.removeItem("hero:" + id);
+    index(function (o) {
+      delete o[id];
+      kv.setItem("heroes", JSON.stringify(o), function () { if (cb) cb(true); });
+    });
+  };
+}
+
+// Heroes in IndexedDB: "heroes" holds each save as its JSON text (exactly
+// what was sealed), "summaries" the HeroSummary of each, both by life ID
+function IDBHeroStore() {
+  var opening = new Promise(function (resolve, reject) {
+    var req = indexedDB.open("ProgressQuestRemix", 1);
+    req.onupgradeneeded = function () {
+      var db = req.result;
+      if (!db.objectStoreNames.contains("heroes")) db.createObjectStore("heroes");
+      if (!db.objectStoreNames.contains("summaries")) db.createObjectStore("summaries");
+    };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+  });
+  this.ready = opening;
+  // work(tx, setResult) places the requests; done(result, ok) once it's over
+  function run(mode, work, done) {
+    opening.then(function (db) {
+      var tx, result;
+      try { tx = db.transaction(["heroes", "summaries"], mode); }
+      catch (err) { SaveFailed(err); done(undefined, false); return; }
+      tx.oncomplete = function () { done(result, true); };
+      tx.onabort = function () {
+        if (mode == "readwrite") SaveFailed(tx.error);
+        done(undefined, false);
+      };
+      work(tx, function (r) { result = r; });
+      // Commit now rather than when the page gets round to it: this may be
+      // the last thing a closing page does
+      if (mode == "readwrite" && tx.commit) try { tx.commit(); } catch (e) {}
+    });
+  }
+  this.list = function (cb) {
+    run("readonly", function (tx, set) {
+      var req = tx.objectStore("summaries").getAll();
+      req.onsuccess = function () { set(req.result); };
+    }, function (r) { cb(r || []); });
+  };
+  this.get = function (id, cb) {
+    run("readonly", function (tx, set) {
+      var req = tx.objectStore("heroes").get(id);
+      req.onsuccess = function () { set(req.result); };
+    }, function (r) { cb(r || null); });
+  };
+  this.put = function (id, text, summary, cb) {
+    run("readwrite", function (tx) {
+      tx.objectStore("heroes").put(text, id);
+      tx.objectStore("summaries").put(summary, id);
+    }, function (r, ok) { if (cb) cb(ok); });
+  };
+  this.remove = function (id, cb) {
+    run("readwrite", function (tx) {
+      tx.objectStore("heroes").delete(id);
+      tx.objectStore("summaries").delete(id);
+    }, function (r, ok) { if (cb) cb(ok); });
+  };
+}
+
+// fn(store), once the heroes' storage is open and old heroes have moved in
+var _heroStore = null, _heroWaiting = [];
+function WithHeroes(fn) {
+  if (_heroStore) { fn(_heroStore); return; }
+  _heroWaiting.push(fn);
+  if (_heroWaiting.length > 1) return;   // already on its way
+  var ready = function (store) {
+    MoveOldRoster(store, function () {
+      RecoverClosingSave(store, function () {
+        _heroStore = store;
+        var waiting = _heroWaiting;
+        _heroWaiting = [];
+        waiting.forEach(function (f) { f(store); });
+      });
+    });
+  };
+  var kv = function () { ready(new KVHeroStore(storage)); };
+  // The simulator and replays (no page) keep heroes in memory, never in
+  // the player's real storage
+  if (typeof document == "undefined" || !document || typeof indexedDB == "undefined") return kv();
+  var idb;
+  try { idb = new IDBHeroStore(); } catch (e) { return kv(); }
+  idb.ready.then(function () { ready(idb); }, function (err) {
+    if (typeof console != "undefined") console.warn("No IndexedDB here; heroes go in localStorage", err);
+    kv();
   });
 }
 
-storage.storeRoster = function (roster, callback) {
-  this.games = roster;
-  try {
-    this.setItem("roster", JSON.stringify(roster), callback);
-  } catch (err) {
-    if (err.name === "QuotaExceededError" ||
-        err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
-        err.toString().indexOf("QUOTA_EXCEEDED_ERR") != -1) {
-      alert("This browser lacks storage capacity to save this game. This game can continue but cannot be saved. (Mobile Safari, I'll wager?)");
-      this.storeRoster = function (roster, callback) {
-        setTimeout(callback, 0);
+// Heroes saved by older versions, all in one "roster" item keyed by name,
+// move to their own records, exactly as they were (seal and all). The old
+// item is removed only once every one of them is safely across.
+function MoveOldRoster(store, done) {
+  storage.getItem("rosterMoved", function (moved) {
+    if (moved) return done();
+    storage.getItem("roster", function (value) {
+      var games = ParseHero(value);
+      var list = games && typeof games == "object" ?
+        Object.keys(games).map(function (k) { return games[k]; }).filter(function (g) { return g && g.Traits; }) : [];
+      var finish = function () {
+        try { storage.setItem("rosterMoved", "1"); storage.removeItem("roster"); } catch (e) {}
+        done();
       };
-      setTimeout(callback, 0);
-    } else {
-      throw err;
-    }
-  }
+      if (!list.length) return finish();
+      var left = list.length, ok = true;
+      list.forEach(function (sheet) {
+        var summary = HeroSummary(sheet);
+        store.put(summary.id, JSON.stringify(sheet), summary, function (wrote) {
+          ok = ok && wrote !== false;
+          if (--left) return;
+          if (ok) finish(); else done();   // try again next time
+        });
+      });
+    });
+  });
 }
+
+// A page closing can't wait for IndexedDB, so its last save (saveHero's
+// urgent) is also written to localStorage, which can't be interrupted. If
+// IndexedDB didn't finish, that copy is the newer one: it goes in now.
+function ClosingSave() {
+  try {
+    var who = (window.localStorage.getItem("pq.closingFor") || "").split(" ");
+    return { id: who[0], stamp: +who[1] || 0, text: window.localStorage.getItem("pq.closing") };
+  } catch (e) { return null; }
+}
+
+function ClearClosingSave(id, stamp) {
+  var c = ClosingSave();
+  if (!c || c.id !== id || (stamp !== undefined && c.stamp > stamp)) return;
+  try {
+    window.localStorage.removeItem("pq.closing");
+    window.localStorage.removeItem("pq.closingFor");
+  } catch (e) {}
+}
+
+function RecoverClosingSave(store, done) {
+  var c = store instanceof IDBHeroStore ? ClosingSave() : null;
+  var sheet = c && ParseHero(c.text);
+  if (!sheet || HeroSummary(sheet).id !== c.id) return done();
+  store.get(c.id, function (storedText) {
+    var stored = ParseHero(storedText);
+    var finish = function () { ClearClosingSave(c.id); done(); };
+    // Not there any more (it died, retired or was deleted): it stays gone
+    if (!stored || (stored.stamp || 0) >= (sheet.stamp || 0)) return finish();
+    store.put(c.id, c.text, HeroSummary(sheet), finish);
+  });
+}
+
+storage.listHeroes = function (callback) {
+  WithHeroes(function (store) {
+    store.list(function (list) {
+      callback(list.filter(Boolean).sort(function (a, b) { return (b.stamp || 0) - (a.stamp || 0); }));
+    });
+  });
+};
+
+storage.loadHero = function (id, callback) {
+  WithHeroes(function (store) {
+    store.get(id, function (text) { callback(ParseHero(text)); });
+  });
+};
+
+// main.html#<life ID>; links and bookmarks from before life IDs have the
+// name (the newest hero of that name)
+storage.findHero = function (ref, callback) {
+  var self = this;
+  if (!ref) { callback(null); return; }
+  this.loadHero(ref, function (sheet) {
+    if (sheet) { callback(sheet); return; }
+    self.listHeroes(function (list) {
+      var hit = list.filter(function (h) { return h.name === ref; })[0];
+      if (hit) self.loadHero(hit.id, callback); else callback(null);
+    });
+  });
+};
+
+storage.saveHero = function (sheet, callback, urgent) {
+  var id = HeroId(sheet);
+  Seal(sheet);
+  if (sheet.mode == "hardcore") this.noteHardcore(sheet);
+  // The text is fixed now: the game may move on while this is written
+  var text = JSON.stringify(sheet), summary = HeroSummary(sheet), stamp = sheet.stamp;
+  WithHeroes(function (store) {
+    var closing = urgent && store instanceof IDBHeroStore;
+    if (closing) {
+      try {
+        window.localStorage.setItem("pq.closing", text);
+        window.localStorage.setItem("pq.closingFor", id + " " + (stamp || 0));
+      } catch (e) { closing = false; }
+    }
+    store.put(id, text, summary, function (ok) {
+      if (closing && ok) ClearClosingSave(id, stamp);
+      if (callback) callback(text);
+    });
+  });
+};
+
+storage.deleteHero = function (id, callback) {
+  ClearClosingSave(id);   // or a dead or retired hero would be brought back
+  WithHeroes(function (store) {
+    store.remove(id, function () { if (callback) callback(); });
+  });
+};
 
 // The Hall of Legends: retired heroes, shared by every character in this
 // browser (see MakeLegend in main.js for what is kept).
@@ -403,10 +673,26 @@ function SaveSealState(sheet) {
 }
 
 // Does this legend count (for the Hall's honors and New Game+)? Not if it
-// was edited, or the hero was branded a cheater, or didn't start at level 1
-// (a Daily Challenge hero skipped the climb).
+// was edited, or the hero was branded a cheater or couldn't be verified
+// (UnverifiedReason), or didn't start at level 1 (a Daily Challenge hero
+// skipped the climb).
 function LegendCounts(l) {
-  return SealOk(l) && !l.cheater && !(l.startLevel > 1);
+  return SealOk(l) && !l.cheater && !l.unverified && !(l.startLevel > 1);
+}
+
+// Why the game can't vouch for a hero, or null if it can. Such a hero plays
+// as normal, but (game.unverified, sealed into the save from then on) won't
+// count for the Hall or New Game+. sealState: SaveSealState(sheet), taken
+// before the save was migrated.
+//   - a save with no seal: it could have been edited. (Removing the seal and
+//     claiming to be from before seals used to pass as a harmless old save.)
+//   - a hero born before the full checks (AuditSheet skips them), so a hero
+//     who got in that way and was sealed since doesn't count either
+function UnverifiedReason(sheet, sealState) {
+  if (sheet.unverified) return sheet.unverified;
+  if (sealState == "old") return "its save was never sealed, so it may have been edited";
+  if ((sheet.birthVersion || 0) < 9) return "it was created before the game checked for cheating";
+  return null;
 }
 
 storage.loadLegends = function (callback) {
@@ -535,15 +821,6 @@ storage.noteDaily = function (date, entry, callback) {
   });
 };
 
-storage.addToRoster = function (newguy, callback) {
-  Seal(newguy);
-  if (newguy.mode == "hardcore") this.noteHardcore(newguy);
-  this.loadRoster(function (games) {
-    games[newguy.Traits.Name] = newguy;
-    storage.storeRoster(games, callback);
-  });
-}
-
 Number.prototype.div = function (divisor) {
   var dividend = this / divisor;
   return (dividend < 0 ? Math.ceil : Math.floor)(dividend);
@@ -562,9 +839,9 @@ let RevString = '&rev=6';
 // rev=5 is pq6.3 presumably the lazarus port or other unofficial release
 // rev=6 is this here, pq-web multiplayer enabled
 
-// Character names travel in the URL hash (main.html#Name). New links use
-// encodeURIComponent; old links and bookmarks used escape(), so decoding
-// falls back to unescape() for those.
+// Heroes travel in the URL hash: main.html#<life ID> (older links have the
+// name; see storage.findHero). New links use encodeURIComponent; old links
+// and bookmarks used escape(), so decoding falls back to unescape() for those.
 function EncodeName(name) {
   return encodeURIComponent(name);
 }
@@ -580,7 +857,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 13;
+var SaveVersion = 14;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -694,6 +971,14 @@ var SaveMigrations = [
       if (K.Renamed[sheet.Traits.Race]) sheet.Traits.Race = K.Renamed[sheet.Traits.Race];
       if (K.Renamed[sheet.Traits.Class]) sheet.Traits.Class = K.Renamed[sheet.Traits.Class];
     }
+  },
+  // 13 -> 14: every hero is stored by a life ID (storage.saveHero), and a
+  // replay no longer stops for good when the game is updated
+  // (game.replay.frozen): it starts a new stretch instead (AnchorReplay in
+  // main.js), which a frozen one does now
+  function (sheet) {
+    if (!sheet.lifeId) sheet.lifeId = LifeId(sheet);
+    if (sheet.replay && sheet.replay.frozen) delete sheet.replay;
   }
 ];
 
@@ -725,7 +1010,8 @@ K.Guard = {
 // Replays (see replay.js and game.replay in main.js)
 K.Replay = {
   Every: 500,           // tasks between checkpoints
-  MaxInputs: 5000,      // choices and tactics changes kept for a replay
+  MaxInputs: 5000,      // choices and tactics changes in one stretch of replay
+  Since: 14,            // heroes born from this save version on always have one
   Files: ["config.js", "story.js", "events.js", "combat.js", "main.js"]   // the code that decides a game
 };
 
