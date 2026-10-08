@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="https://enderandrew.com/ProgressQuest/favicon-32x32.png">
+<link rel="shortcut icon" href="https://enderandrew.com/ProgressQuest/favicon.ico">
+<link rel="stylesheet" href="progros.css" type="text/css">
+<link rel="stylesheet" href="main.css" type="text/css">
+<link rel="stylesheet" href="win95.css" type="text/css">
+<title>Character Sheet - Progress Quest Remix</title>
+<meta name="description" content="A Progress Quest Remix character sheet, shared by its owner.">
+</head>
+<!-- A shared character sheet: sheet.html#<code>, made by File > Share
+     Character Sheet (transfer.js). Read-only: it isn't a save. -->
+<body class="sheet-view">
+
+<br>
+<div class="vbox window" id="main">
+
+<div id="titlebar">
+  <img src="swords.gif" alt="">
+  <span id="title">Progress Quest Remix - Character Sheet</span>
+</div>
+<div id="MenuRow" class="sheet-toolbar">
+  <a class="w95-button" href="index.html">Play Progress Quest Remix</a>
+  <a class="w95-button" href="index.html#new">Roll Your Own Hero</a>
+  <span id="SheetSeal"></span>
+</div>
+
+<div id="SheetError" class="sheet-error" hidden>
+  <p><b>This character sheet can't be read.</b></p>
+  <p>The link may have been cut short when it was copied, or this browser is too old to unpack it.</p>
+</div>
+
+<div class="hbox" id="SheetBody" hidden>
+  <div class="vbox">
+    <span class="label head">Character Sheet</span>
+    <table class="listbox sheet-table" id="SheetTraits">
+      <thead><tr><th>Trait</th><th>Value</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <table class="listbox sheet-table" id="SheetStats">
+      <thead><tr><th>Stat</th><th>Value</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="label">Experience</div>
+    <div class="progress-container" id="SheetXP"><div class="bar"></div></div>
+    <span class="label head">Record</span>
+    <table class="listbox sheet-table" id="SheetRecord"><tbody></tbody></table>
+    <div id="SheetNotes" class="profile"></div>
+  </div>
+
+  <div class="vbox">
+    <span class="label head">Equipment</span>
+    <table class="listbox sheet-table" id="SheetEquips"><tbody></tbody></table>
+    <span class="label head">Spell Book</span>
+    <table class="listbox sheet-table" id="SheetSpells">
+      <thead><tr><th>Spell</th><th>Level</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="vbox">
+    <span class="label head">Inventory</span>
+    <table class="listbox sheet-table" id="SheetInventory">
+      <thead><tr><th>Item</th><th>Qty</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <span class="label head">Plot Development</span>
+    <div class="listbox sheet-box" id="SheetPlot"></div>
+    <span class="label head">Quest</span>
+    <div class="listbox sheet-box" id="SheetQuest"></div>
+  </div>
+</div>
+
+<div class="sheet-foot" id="SheetFoot"></div>
+</div>
+
+<script src="jquery-4.0.0.min.js"></script>
+<script src="config.js"></script>
+<script src="combat.js"></script>
+<script src="transfer.js"></script>
+<script src="sheet.js"></script>
+</body>
+</html>

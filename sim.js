@@ -17,6 +17,8 @@
 //   --class CLASS   class, e.g. "Barbarian Pretzel"           (default random)
 //   --daily DATE    play that day's Daily Challenge hero, e.g. 2026-10-07
 //                   (stops when the challenge is done or lost)
+//   --replay FILE   replay a saved hero (a .pqw backup) from its birth and
+//                   check it plays out the same (see replay.js)
 //   --quiet         print only the final summary
 //   --json FILE     write the final character sheet as JSON to FILE
 //   --dir DIR       load the game scripts from DIR            (default: here)
@@ -45,6 +47,7 @@ function parseArgs(argv) {
       case "--race":   opts.race = next(); break;
       case "--class":  opts.klass = next(); break;
       case "--daily":  opts.daily = next(); break;
+      case "--replay": opts.replay = next(); break;
       case "--quiet":  opts.quiet = true; break;
       case "--json":   opts.json = next(); break;
       case "--dir":    opts.dir = path.resolve(next()); break;
@@ -236,8 +239,34 @@ function run(opts) {
   return s;
 }
 
-if (require.main === module) {
-  run(parseArgs(process.argv.slice(2)));
+// Replay a saved hero (a .pqw backup or its JSON) and check it
+function replay(file, dir) {
+  const ctx = makeSandbox();
+  for (const f of ["config.js", "story.js", "events.js", "combat.js", "codex.js", "main.js", "replay.js"])
+    load(ctx, dir, f);
+  let text = fs.readFileSync(file, "utf8").trim(), save;
+  try { save = JSON.parse(text); }
+  catch (e) { save = JSON.parse(Buffer.from(text.replace(/\s/g, ""), "base64").toString("utf8")); }
+  const fp = ctx.SealHash(ctx.K.Replay.Files.map(f =>
+    fs.readFileSync(path.join(dir, f), "utf8").replace(/\r\n/g, "\n")).join("\u0000"));
+  const r = save.replay || {};
+  console.log(`${save.Traits.Name}: level ${save.Traits.Level}, ${save.tasks} tasks, ` +
+              `${(r.list || []).length} checkpoints, ${(save.choiceLog || []).length} inputs`);
+  if (r.fp && r.fp !== fp)
+    console.log("Warning: this hero was played with different game code; the replay won't match.");
+  let last = 0;
+  const result = ctx.ReplayHero(save, { onProgress: (done, total) => {
+    if (done - last >= 5000) { last = done; process.stdout.write(`  ${done} / ${total} tasks\r`); }
+  } });
+  console.log(" ".repeat(40));
+  console.log(JSON.stringify(result));
+  return result;
 }
 
-module.exports = { run };
+if (require.main === module) {
+  const opts = parseArgs(process.argv.slice(2));
+  if (opts.replay) process.exit(replay(opts.replay, opts.dir).status == "mismatch" ? 1 : 0);
+  run(opts);
+}
+
+module.exports = { run, replay };

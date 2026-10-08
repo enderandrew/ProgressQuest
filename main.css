@@ -289,7 +289,7 @@ tr { height: auto; min-height: 15px; }
   text-overflow: ellipsis;
 }
 #FightLine.defeat { color: #b33; font-weight: bold; }
-#LogToggle, #NarrateToggle, #EventPopupToggle, #RetireLink, #TacticsLink { color: #008; cursor: pointer; text-decoration: underline; white-space: nowrap; }
+#LogToggle, #NarrateToggle, #EventPopupToggle, #RetireLink, #TacticsLink, #CodexLink, #ShareLink, #ExportLink { color: #008; cursor: pointer; text-decoration: underline; white-space: nowrap; }
 #CombatLog {
   display: none;
   height: 120px;

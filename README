@@ -272,14 +272,25 @@ about and, once it is over, how it ended (handy, since the game idles
 and the cinematic is easy to miss). The Prologue is always the Old Bastard™
 taunting you in your dreams, with a freshly generated Shakespearean insult.
 
+Act I is always your race's story and Act II your class's: 48 of them,
+one for each race and class (K.RaceStories and K.ClassStories in
+story.js, keyed by the exact name). A Hungry Hungry Hobbit starts out
+rescuing second breakfast; a Fatal Flatulist's second act is a silent
+kill for the assassins' guild. From Act III on, stories are picked from
+K.Stories as before. Heroes already past the Prologue keep the stories
+they have. A Daily Challenge hero gets their race's act first too.
+
 Quests come from a much longer list (hunt a monster, placate it,
 unionize it, escort someone, return an overdue library book...), and
 about a third come from the current Act's story ("Listen to an episode
 of {nemesis}'s podcast").
 
-All of it lives in story.js: K.Stories (setup, ending and quests for
-each story), K.Quests, and K.Insults. Placeholders are listed at the
-top of the file. Add a story or a quest by adding an entry.
+All of it lives in story.js: K.Stories, K.RaceStories and
+K.ClassStories (setup, ending and quests for each story), K.Quests, and
+K.Insults. Placeholders are listed at the top of the file. Add a story or
+a quest by adding an entry, then run node check-events.js: it checks
+story.js too (every race and class has a story, at least 3 quests each,
+no unknown placeholders).
 
 
 The desktop
@@ -295,7 +306,7 @@ keeps idling.
   Internet Exploder   the dino runner
   Virus Downloader    download more RAM
   WinCramp            plays (and stops) the Progress Quest theme
-  ZSNES               snes.html
+  ZSNES               SNES Emulator
   pq.exe              No recursing! (a stop screen from guard.js)
 
 They are in desktop.js: each icon is a box in pixels of back.jpg

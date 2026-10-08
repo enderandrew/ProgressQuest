@@ -314,7 +314,6 @@ K.Events = [
       { label: 'Heckle the comedian',
         lines: ['Everyone loves a good joke, but you should not punch down.', 'A {race-one} in the audience appreciates that you spoke up.', 'They give you {gold} gold after the show.'],
         effect: { gold: 1, stat: 'WIS' } } ] },
-    effect: { heal: true } },
 
   { key: 'crossroads', where: ['road'],
     lines: ['You reach a fork in the road',
@@ -834,4 +833,23 @@ K.Events = [
         lines: ['An old hermit steps out from a hidden alcove and mutters: “IT\'S DANGEROUS TO GO ALONE! TAKE THIS.”',
                 'He hands you an wrapped parcel containing {loot}'],
         effect: { item: 'special' } } ] }
+
+  { key: 'visitor', where: ['field', 'road'],
+    lines: ['You are traveling alone at night in the lonely fields of {kingdom}',
+            'There is a bright light above in the night sky that you cannot explain',
+            'An alien visitor descends who looks not entirely unlike a {race-one}'],
+    ask: 'How do you react to this visitor?',
+    choices: [
+      { label: 'Offer it a present',
+        lines: ['You offering up a {boring} and set it before the Visitor.',
+                'It regards it fondly and gives you a gift in return.'],
+        effect: { item: 'special' } },
+      { label: 'Seduce the alien',
+        lines: ['You interface in ways you did not know were possible.',
+                'Do not question it. It just feels so right.'],
+        effect: { heal: true, stat: 'CHA' } },
+      { label: 'Kill and loot it like everything else',
+        lines: ['The alien kicks your ass without breaking a sweat and then probes you for your insolence.',
+                'You somewhat enjoy the probing and develop a new tolernace for pain'],
+        effect: { wounded: 2, stat: 'CON' } } ] }
 ];

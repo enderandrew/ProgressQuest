@@ -1,0 +1,244 @@
+/* Windows 95 widgets: the game's menu bar (menubar.js), message boxes,
+   the anti-cheat scanner and the Share window (transfer.js), and the
+   shared character sheet (sheet.html). */
+
+:root {
+  --w95-face: #c0c0c0;
+  --w95-light: #ffffff;
+  --w95-shadow: #808080;
+  --w95-dark: #000000;
+  --w95-select: #000080;
+}
+
+/* ---- The menu bar ----------------------------------------------------------------- */
+
+#MenuRow {
+  display: flex;
+  align-items: center;
+  background: var(--w95-face);
+  border-bottom: 1px solid var(--w95-shadow);
+  box-shadow: 0 1px 0 var(--w95-light);
+  margin-bottom: 3px;
+  font: 9pt Tahoma, "MS Sans Serif", Helvetica, sans-serif;
+  text-align: left;
+  position: relative;
+  z-index: 30;
+}
+#MenuBar { display: flex; flex-wrap: wrap; list-style: none; margin: 0; padding: 1px 2px; }
+#MenuBar li { list-style: none; }
+#MenuBar > li.menu { position: relative; }
+.menu-top {
+  font: inherit;
+  color: #000;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px 7px;
+  margin: 0;
+  cursor: default;
+}
+.menu-top:hover { border-color: var(--w95-light) var(--w95-shadow) var(--w95-shadow) var(--w95-light); }
+#MenuBar > li.open > .menu-top {
+  border-color: var(--w95-shadow) var(--w95-light) var(--w95-light) var(--w95-shadow);
+  padding: 3px 6px 1px 8px;
+}
+.menu-top:focus-visible { outline: 1px dotted #000; outline-offset: -3px; }
+#MenuStatus { margin-left: auto; padding: 0 8px; color: #000; opacity: 0; transition: opacity 0.3s; }
+#MenuStatus.show { opacity: 1; }
+
+.menu-pop {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  min-width: 190px;
+  margin: 0;
+  padding: 2px;
+  background: var(--w95-face);
+  border: 1px solid;
+  border-color: var(--w95-face) var(--w95-dark) var(--w95-dark) var(--w95-face);
+  box-shadow: inset 1px 1px 0 var(--w95-light), inset -1px -1px 0 var(--w95-shadow), 2px 2px 4px rgba(0, 0, 0, 0.25);
+  z-index: 40;
+  white-space: nowrap;
+}
+#MenuBar > li.open > .menu-pop { display: block; }
+.menu-pop > li {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 3px 6px 3px 0;
+  color: #000;
+  cursor: default;
+  outline: none;
+}
+.menu-pop > li.active, .menu-pop > li.sub-open { background: var(--w95-select); color: #fff; }
+.menu-pop > li.disabled { color: var(--w95-shadow); text-shadow: 1px 1px 0 var(--w95-light); }
+.menu-pop > li.disabled.active { color: var(--w95-shadow); text-shadow: none; }
+.menu-check { width: 20px; text-align: center; flex: none; }
+.menu-pop > li.checked > .menu-check::before { content: "\2714"; font-size: 8pt; }
+.menu-label { flex: 1; }
+.menu-key { padding-left: 24px; }
+.menu-sep { height: 0; margin: 3px 1px; padding: 0; border-top: 1px solid var(--w95-shadow); border-bottom: 1px solid var(--w95-light); }
+.menu-pop .menu-pop { left: 100%; top: -3px; }
+.menu-pop > li.sub-open > .menu-pop { display: block; }
+
+body.no-icons #desktop { display: none; }
+
+/* ---- Message boxes (WinBox) ---------------------------------------------------- */
+
+dialog.win95 {
+  padding: 0;
+  width: min(420px, calc(100vw - 24px));
+  background: var(--w95-face);
+  color: #000;
+  border: 2px solid;
+  border-color: var(--w95-light) var(--w95-dark) var(--w95-dark) var(--w95-light);
+  box-shadow: inset -1px -1px 0 var(--w95-shadow), 3px 3px 10px rgba(0, 0, 0, 0.3);
+  font: 9pt Tahoma, "MS Sans Serif", Helvetica, sans-serif;
+  text-align: left;
+}
+dialog.win95.wide { width: min(560px, calc(100vw - 24px)); }
+dialog.win95::backdrop { background: rgba(0, 0, 40, 0.3); }
+.win95-title {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #fff;
+  font-weight: bold;
+  padding: 2px 3px 2px 6px;
+  margin: 2px;
+}
+.win95-title span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.win95-x {
+  width: 18px;
+  height: 16px;
+  padding: 0;
+  font: bold 11px/12px Tahoma, sans-serif;
+  background: var(--w95-face);
+  color: #000;
+  border: 1px solid;
+  border-color: var(--w95-light) var(--w95-dark) var(--w95-dark) var(--w95-light);
+}
+.win95-body { display: flex; gap: 14px; padding: 12px 14px 4px; }
+.win95-content { flex: 1; min-width: 0; }
+.win95-content p { margin: 0 0 8px; line-height: 1.4; }
+.win95-content p.dim { color: #444; font-size: 8pt; }
+.win95-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: bold 20px Georgia, serif;
+  color: #fff;
+  background: #1c4fd8;
+  box-shadow: 1px 1px 0 #000;
+}
+.win95-icon.warn { border-radius: 2px; background: #f4d000; color: #000; clip-path: polygon(50% 0, 100% 100%, 0 100%); padding-top: 8px; box-sizing: border-box; box-shadow: none; }
+.win95-icon.error { background: #d00; font-family: Tahoma, sans-serif; }
+.win95-icon.question { background: #1c4fd8; }
+.win95-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; padding: 8px 12px 12px; }
+.win95-buttons button, .w95-button {
+  font: inherit;
+  min-width: 75px;
+  padding: 3px 10px;
+  background: var(--w95-face);
+  color: #000;
+  border: 1px solid;
+  border-color: var(--w95-light) var(--w95-dark) var(--w95-dark) var(--w95-light);
+  box-shadow: inset -1px -1px 0 var(--w95-shadow);
+  text-decoration: none;
+  cursor: default;
+}
+.win95-buttons button.primary { outline: 1px solid #000; outline-offset: 0; }
+.win95-buttons button:active, .w95-button:active {
+  border-color: var(--w95-dark) var(--w95-light) var(--w95-light) var(--w95-dark);
+  box-shadow: inset 1px 1px 0 var(--w95-shadow);
+}
+.win95-buttons button:focus-visible { outline: 1px dotted #000; outline-offset: -4px; }
+
+/* ---- The anti-cheat scanner -------------------------------------------------- */
+
+.scan-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 4px 6px;
+  background: #fff;
+  border: 1px solid;
+  border-color: var(--w95-shadow) var(--w95-light) var(--w95-light) var(--w95-shadow);
+  max-height: 45vh;
+  overflow: auto;
+}
+.scan-list li { padding: 1px 0; }
+.scan-mark { display: inline-block; width: 16px; text-align: center; font-weight: bold; }
+.scan-list li.ok .scan-mark { color: #070; }
+.scan-list li.bad .scan-mark, .scan-list li.bad .scan-note { color: #b00; }
+.scan-list li.skip .scan-mark { color: #777; }
+.scan-list li.busy .scan-note { color: #000080; }
+.scan-note { color: #333; }
+.scan-meter {
+  position: relative;
+  height: 16px;
+  margin-bottom: 8px;
+  background: #fff;
+  border: 1px solid;
+  border-color: var(--w95-shadow) var(--w95-light) var(--w95-light) var(--w95-shadow);
+}
+.scan-meter div {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #000080 0 9px, transparent 9px 11px);
+}
+.scan-meter span { position: absolute; inset: 0; text-align: center; font-size: 8pt; line-height: 16px; mix-blend-mode: difference; color: #fff; }
+.scan-verdict { font-weight: bold; }
+.scan-verdict.bad { color: #b00; }
+.scan-verdict.ok { color: #070; }
+
+/* ---- Share, and the Tip of the Day ----------------------------------------------- */
+
+.share-url {
+  width: 100%;
+  box-sizing: border-box;
+  height: auto;
+  font: 8pt "Courier New", monospace;
+  padding: 3px;
+  border: 1px solid;
+  border-color: var(--w95-shadow) var(--w95-light) var(--w95-light) var(--w95-shadow);
+}
+.share-status { color: #070; min-height: 1.2em; margin-top: 6px !important; }
+.tip-head { font: bold 13pt Georgia, serif; }
+.tip-text { min-height: 3.2em; background: #ffffe1; border: 1px solid var(--w95-shadow); padding: 6px; }
+
+@media (max-width: 600px) {
+  .menu-key { display: none; }
+  .menu-pop { min-width: 160px; }
+}
+
+/* ---- A shared character sheet (sheet.html) ---------------------------------------- */
+
+.sheet-view #main > .hbox { margin-bottom: 4px; }
+.sheet-toolbar { gap: 6px; padding: 3px 4px; flex-wrap: wrap; }
+.sheet-toolbar .w95-button { display: inline-block; min-width: 0; }
+#SheetSeal { margin-left: auto; padding: 0 6px; font-weight: bold; }
+#SheetSeal.ok { color: #070; }
+#SheetSeal.bad { color: #b00; }
+.sheet-table { width: 100%; box-sizing: border-box; margin-bottom: 4px; }
+.sheet-table td { white-space: normal; overflow-wrap: anywhere; }
+.sheet-table td:first-child { width: 40%; }
+#SheetSpells td:first-child, #SheetInventory td:first-child { width: auto; }
+#SheetSpells td:last-child, #SheetInventory td:last-child { width: 3.5em; }
+#SheetSpells td span { font-size: 7pt; }
+.sheet-box { padding: 3px 5px; min-height: 2em; line-height: 1.4; }
+#SheetNotes { height: auto; min-height: 1.2em; line-height: 1.5; }
+.sheet-foot { color: #444; padding: 2px 4px 4px; text-align: left; }
+.sheet-error { background: #fff; border: 1px solid #000; margin: 8px; padding: 10px; text-align: left; }
+.sheet-error p { margin: 0 0 6px; font-size: 9pt; }
+.tag-damage { color: #b33; } .tag-heal { color: #393; } .tag-buff { color: #36b; }
+.tag-debuff { color: #a5a; } .tag-cc { color: #b80; }
+.sheet-view .vbox > table { display: table; }
+.sheet-view [hidden] { display: none !important; }
+#SheetEquips td:first-child { width: 80px; }
+@media (max-width: 600px) {
+  .menu-pop .menu-pop { left: 16px; top: 100%; }
+}

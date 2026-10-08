@@ -97,7 +97,7 @@
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
 	<b>Q: <i>How is this different from the original Progress Quest?</i></b><br/><br/>
-	<b>A:</b> This game progresses faster, has more content, an actual combat simulation, random events, an ending, and a new game+.
+	<b>A: </b>This game progresses faster, has more content, an actual combat simulation, random events, an ending,  new game+, daily challenges, mutators, achievements, etc. The design is also intentionally very different. In the original, you could idle for years and years to level up very slowly and there was no ending. In this game, progress is MUCH faster to allow you to play multiple times. You can even beat the game by defeating Old Bastard™ at level 50. It does not have a server backend for persistent online characters, realms, etc. I may add a server back-end later.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -109,7 +109,7 @@
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
 	<b>Q: <i>Wait, there's combat now? I thought the whole point was that there wasn't any gameplay.</i></b><br/><br/>
-	<b>A:</b> There still isn't any gameplay. There is now combat, which you watch instead of the progress bar. Your character fights every monster on its own, using every stat it has, and you continue to do nothing. We consider this a faithful adaptation.
+	<b>A: </b>There still mostly isn't any gameplay. There is now combat, which you watch instead of the progress bar. Your character fights every monster on its own, using every stat it has, and you continue to do nothing. So it is somewhat like your real life.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -120,8 +120,8 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>What do my stats actually do?</i></b><br/><br/>
-	<b>A:</b> STR is melee damage. DEX is hitting, dodging, acting first and running away. CON softens blows and speeds up healing. INT is spell damage. WIS decides whether a spell works and protects you from monster magic. CHA makes beaten monsters give up, gets better prices and better haggling. HP Max and MP Max are, against all odds, your maximum HP and MP.
+	<b>Q: <i>What do you mean mostly?</i></b><br/><br/>
+	<b>A: </b>You can now select tactics that impact the combat simulation. Every once in a while there are random events that allow choice if you're there and paying attention. But the game will idle and play itself even if you aren't there. Do yuur choices matter? Do any of your choices matter? I'm not telling.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -132,8 +132,8 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>What are the stars next to some of my stats?</i></b><br/><br/>
-	<b>A:</b> Your race and class each have a primary attribute (filled star) and a secondary one (open star). These go up a little faster than the rest. If your race and class share an attribute, congratulations, or condolences, depending on which one it is.
+	<b>Q: <i>What do my stats actually do?</i></b><br/><br/>
+	<b>A: </b>STR is melee damage. DEX is hitting, dodging, acting first and running away. CON softens blows and speeds up healing. INT is spell damage. WIS decides whether a spell works and protects you from monster magic. CHA makes beaten monsters give up, gets better prices and better haggling. HP Max and MP Max are, against all odds, your maximum HP and MP.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -144,8 +144,8 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>Why does my character keep stopping to catch its breath?</i></b><br/><br/>
-	<b>A:</b> Hit points now carry over from one fight to the next. When they get low, your character rests. Characters who know a healing spell rest faster, and tell you about it.
+	<b>Q: <i>What are the stars next to some of my stats?</i></b><br/><br/>
+	<b>A: </b>Your race and class each have a primary attribute (filled star) and a secondary one (open star). These go up a little faster than the rest. If your race and class share an attribute, congratulations, or condolences, depending on which one it is.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -156,8 +156,8 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>My character died! Is it gone?</i></b><br/><br/>
-	<b>A:</b> No. Death in the realm is more of a setback. The monster takes some of the gold and loot you were carrying, a stranger drags you back to town, and a temple patches you up for a tithe of 10% of your banked gold. Your equipment and the rest of your bank are safe. You will be Wounded for a couple of fights and will pick easier fights for a while, which is more than most of us manage after a setback.
+	<b>Q: <i>Why does my character keep stopping to catch its breath?</i></b><br/><br/>
+	<b>A: </b>Mayby you need to do some cardio. Hit points now carry over from one fight to the next. When they get low, your character rests. Characters who know a healing spell rest faster, and tell you about it in much the same way that a vegan will be sure to tell you they are vegan.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -168,8 +168,8 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>How do I protect my gold?</i></b><br/><br/>
-	<b>A:</b> Sell your loot at market. Anything you are still carrying when you fall in battle is fair game for the monster. Anything in the bank is safe from monsters, though not from clerics.
+	<b>Q: <i>My character died! Is it gone?</i></b><br/><br/>
+	<b>A: </b>For the most part, no. Death in the realm is more of a setback. The monster takes some of the gold and loot you were carrying, a stranger drags you back to town, and a temple patches you up for a tithe of 10% of your banked gold. Your equipment and the rest of your bank are safe. You will be Wounded for a couple of fights and will pick easier fights for a while, which is more than most of us manage after a setback. However, if you play on Hardcore mode, there is perma-death.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -180,20 +180,80 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>Can I see the fight?</i></b><br/><br/>
-	<b>A:</b> Press C on the game screen to open the combat log, which plays the fight out blow by blow as the task bar fills. The line under the task bar always shows how the last fight ended.
+	<b>Q: <i>Perma-death sounds scary.</i></b><br/><br/>
+	<b>A: </b>That isn't a question. Maybe grammar isn't your strong-suit. Perma-death and Hardcore Mode are something you probably don't need to worry about until you've beaten the game multiple times in New Game+.
 	</div>
 	<tr height=3em><td>
 	</table>
-
+	
 	<a name=combat8>
 	<p align=center>
 	<table width=75%>
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>What is New Game+</i></b><br/><br/>
+	<b>A: </b>A premium tier we charge you extra for. Not really. It is designed for after you have beaten the game at least once. You carry over a permanent attribute bonus from the Races and Classes you beat the game with. Beat the game with all 24 Races and Classes and you might be ready for that Hardcore Mode and Perma-Death.
+	</div>
+	<tr height=3em><td>
+	</table>
+	
+	<a name=combat9>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>Won't that take ages?</i></b><br/><br/>
+	<b>A: </b>The original game was designed for you to idle for years. This is designed both with short-term and long-term play in mind. I somewhat believe in you. You can maybe do it.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat10>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>How do I protect my gold?</i></b><br/><br/>
+	<b>A: </b>Sell your loot at market. Anything you are still carrying when you fall in battle is fair game for the monster. Anything in the bank is safe from monsters, though not from clerics.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat11>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>Can I see the fight simulation?</i></b><br/><br/>
+	<b>A: </b>Press C on the game screen to open the combat log, which plays the fight out blow by blow as the task bar fills. The line under the task bar always shows how the last fight ended.
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=combat12>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
 	<b>Q: <i>What does the spell tag in my spell book mean?</i></b><br/><br/>
-	<b>A:</b> Every spell is one of five kinds: dmg (hurts the monster), heal (hurts the monster less, by making you better), buff (makes you better), debuff (makes the monster worse), or cc (makes the monster stand there). Hover over a spell for details.
+	<b>A: </b>Every spell is one of five kinds: dmg (hurts the monster), heal (hurts the monster less, by making you better), buff (makes you better), debuff (makes the monster worse), or cc (makes the monster stand there). Hover over a spell for details.
+	</div>
+	<tr height=3em><td>
+	</table>
+	
+	<a name=combat13>
+	<p align=center>
+	<table width=75%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>How does my alignment impact the combat simulation?</i></b><br/><br/>
+	<b>A: </b>It doesn't. It is just there for roleplay reasons. Feel free to roleplay your character being Chaotic Gassy.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -204,8 +264,8 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>Where is the Hall of Fame! The original game had a Hall of Fame! What gives?</i></b><br/><br/>
-	<b>A:</b>When I'm further along in this fork I may add a server backend with persistent online characters. But for now, play the original game if you want a persistent server with online characters.
+	<b>Q: <i>What is Codex?</i></b><br/><br/>
+	<b>A: </b>Codex is Felicia Day's character in The Guild. Oh, you mean the feature in the game. It shows you things you've discovered. It is really quite self-explanatory.
 	</div>
 	<tr height=3em><td>
 	</table>
@@ -216,23 +276,48 @@
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>What is with all the puns and lame jokes? Do you think you are funny?</i></b><br/><br/>
-	<b>A:</b>People tend to laugh when they look at me.
+	<b>Q: <i>Where is the Hall of Fame! The original game had a Hall of Fame! What gives?</i></b><br/><br/>
+	<b>A: </b>When I'm further along in this fork I may add a server backend with persistent online characters. But for now, play the original game if you want a persistent server with online characters.
 	</div>
 	<tr height=3em><td>
 	</table>
-	
+
 	<a name=3>
 	<p align=center>
 	<table width=80%>
 	<tr height=3em><td>
 	<tr><td>
 	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
-	<b>Q: <i>How do I make friends as an adult? I feel so disconnected.</i></b><br/><br/>
-	<b>A:</b>Find a group of people with a shared interest. Or stalk people from a distance and rifle through their trash to get to know them. That sure worked for me!
+	<b>Q: <i>What is with all the puns and lame jokes? Do you think you are funny?</i></b><br/><br/>
+	<b>A: </b>People tend to laugh when they look at me.
 	</div>
 	<tr height=3em><td>
 	</table>
+	
+	<a name=4>
+	<p align=center>
+	<table width=80%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>How do I make friends as an adult? I feel so disconnected.</i></b><br/><br/>
+	<b>A: </b>Find a group of people with a shared interest. Or stalk people from a distance and rifle through their trash to get to know them. That sure worked for me!
+	</div>
+	<tr height=3em><td>
+	</table>
+
+	<a name=5>
+	<p align=center>
+	<table width=80%>
+	<tr height=3em><td>
+	<tr><td>
+	<div style='padding: 1em; background-color: #f5f5ff; border: solid 1 #707090'>
+	<b>Q: <i>Did people submit questions or is T. J. talking to himself?</i></b><br/><br/>
+	<b>A: </b>You should see me lose an argument to myself.
+	</div>
+	<tr height=3em><td>
+	</table>
+
 
 
 	<p>

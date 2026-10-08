@@ -2,13 +2,7 @@
 // Modes. Depends on config.js (storage, EncodeName, DecodeName, Pick), and
 // on story.js, combat.js and daily.js for the Daily Challenge.
 
-function b64_decode(value) {
-  return JSON.parse(decodeURIComponent(escape(atob(value))));
-}
-
-function b64_stringify(value) {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(value))));
-}
+// (b64_decode and b64_stringify are in transfer.js)
 
 // ---- Windows --------------------------------------------------------------
 
@@ -241,7 +235,8 @@ function ShowRoster(games) {
     var row = $(document.getElementById("rosterRow").content.cloneNode(true)).children().first();
     row.find(".name").text(name);
     row.find(".what").text("the " + c.Traits.Race);
-    row.find(".where").text("Level " + c.Traits.Level + " " + c.Traits.Class +
+    row.find(".where").text("Level " + c.Traits.Level + " " +
+                            (c.Traits.Alignment ? c.Traits.Alignment + " " : "") + c.Traits.Class +
                             (c.bestplot ? " · " + c.bestplot : "") +
                             (c.finale && c.finale.state == "won" ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
                             (c.mode == "plus" ? " \u00b7 New Game+" : "") +
@@ -252,9 +247,8 @@ function ShowRoster(games) {
     row.find(".play").attr("href", href);
     row.on("dblclick", function () { window.location.href = href; })
        .on("keydown", function (e) { if (e.key === "Enter" && e.target === this) window.location.href = href; });
-    row.find(".save")
-      .attr("href", "data:text/plain;name=" + encodeURIComponent(name) + ".pqw," + b64_stringify(c))
-      .attr("download", name + ".pqw");
+    row.find(".save").attr("href", HeroFileHref(c)).attr("download", name + ".pqw");
+    row.find(".share").on("click", function () { ShareHero(c); });
     row.find(".del").on("click", function () {
       if (!confirm("Terminate " + Pick(["faithful", "noble", "loyal", "brave"]) + " " + name + "?")) return;
       storage.loadRoster(function (all) {
@@ -267,52 +261,11 @@ function ShowRoster(games) {
   });
 }
 
-// Import .pqw backups, from the file picker or dropped on the page
+// Import .pqw backups (from the file picker or dropped on the page),
+// through the anti-cheat scan (transfer.js)
 function ImportSaves(files) {
-  $.each(files, function (i, file) {
-    file.text().then(function (sheet) {
-      try {
-        sheet = b64_decode(sheet.replace(/\s/g, ""));
-        if (!sheet || !sheet.Traits || !sheet.Traits.Name)
-          throw new Error("No character in file");
-      } catch (err) {
-        alert(file.name + " doesn't look like a Progress Quest save.");
-        return;
-      }
-      // Hardcore heroes stay dead: no bringing one back from a backup
-      var fallenNow = null;
-      storage.loadFallen(function (f) { fallenNow = f; });
-      var verdict = null;
-      storage.loadLedger(function (entries, trusted) { verdict = LedgerVerdict(sheet, entries, trusted); });
-      if (IsFallen(sheet, fallenNow) || verdict == "dead") {
-        alert(sheet.Traits.Name + " died in Hardcore and is in the Hall of the Fallen. Hardcore heroes stay dead.");
-        return;
-      }
-      if (verdict == "older") {
-        alert(file.name + " is an older copy of " + sheet.Traits.Name + " than the one this browser last saved. " +
-              "Hardcore heroes can't go back in time.");
-        return;
-      }
-      if (verdict == "tampered") {
-        alert("This browser's Hardcore ledger was edited, so Hardcore backups can't be imported here.");
-        return;
-      }
-      // An edited backup (or one with its seal removed) imports branded
-      if (SaveSealState(sheet) == "bad" && !sheet.cheater) {
-        sheet.cheater = { reason: "it was imported from a backup file that had been edited",
-                          at: new Date().toISOString(), level: parseInt(sheet.Traits.Level, 10) || 0 };
-        alert(file.name + " was edited outside the game. " + sheet.Traits.Name +
-              " has been branded a cheater.");
-      }
-      storage.loadRoster(function (games) {
-        if (!games[sheet.Traits.Name] ||
-            confirm("A character named " + sheet.Traits.Name + " already exists. Overwrite it?")) {
-          storage.addToRoster(sheet, function () {
-            if (!$("#dlgResume")[0].open) OpenWindow("dlgResume"); else LoadRoster();
-          });
-        }
-      });
-    });
+  ImportHeroFiles(files, function (sheet) {
+    if (!$("#dlgResume")[0].open) OpenWindow("dlgResume"); else LoadRoster();
   });
 }
 
@@ -428,7 +381,8 @@ function ShowHall(legends) {
     row.find(".name").text(l.name);
     row.find(".what").text("the " + l.race);
     var when = l.retired ? new Date(l.retired).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) : "";
-    row.find(".where").text("Level " + l.level + " " + l.klass + (l.mode == "plus" ? " \u00b7 New Game+" : "") +
+    row.find(".where").text("Level " + l.level + " " + (l.alignment ? l.alignment + " " : "") + l.klass +
+                            (l.mode == "plus" ? " \u00b7 New Game+" : "") +
                             (l.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
                             RunTags(l.daily, l.mutators, l.runSeed) +
                             (when ? " \u00b7 retired " + when : ""));

@@ -327,6 +327,7 @@ function Dequeue() {
     } else if ((game.task == 'market') || (game.task == 'sell')) {
       if (game.task == 'market') {
         RestoreHealth();  // a night at the inn
+        game.lastMarket = game.elapsed || 0;
         BankPurse();
         game.shopped = false;
         MaybeEvent('town', 'market');
@@ -380,7 +381,7 @@ function Dequeue() {
       } else {
         throw 'bah!' + a;
       }
-    } else if (EncumBar.done()) {
+    } else if (EncumBar.done() || MarketDue()) {
       Task('Heading to market to sell viscera-covered loot',4 * 1000);
       game.task = 'market';
     } else if ((Pos('kill|',old) <= 0) && (old != 'heading') && (old != 'rest')) {
@@ -725,15 +726,7 @@ function ShowFinaleDialog() {
 //   produce: levels faster than the XP allows, stats, HP/MP or gear far
 //   beyond the level. The limits are several times what simulated heroes
 //   (with a full New Game+ legacy) ever reach.
-K.Guard = {
-  CheckEvery: 50,       // tasks between checks
-  SpeedSlack: 1.1,      // game time may run this much faster than the clock...
-  SpeedGrace: 600,      // ...plus this many seconds (a task already under way)
-  LevelPace: 0.2,       // game time >= this share of the XP time for the level
-  StatMax: 4,           // a core stat <= 18 + this many times typical for the level
-  PoolMax: 3,           // HP/MP Max <= this many times typical, + 100
-  GearAbove: 20         // gear power <= level + this
-};
+// (K.Guard, the limits, is in config.js)
 
 var _guardSession = null;   // real time and game time when this page started
 
@@ -767,36 +760,10 @@ function CheckForCheating() {
   if (played > real * G.SpeedSlack + G.SpeedGrace)
     return Brand("the game ran faster than the clock");
 
-  // The Old Bastard(TM) can only have been beaten at the finale level
-  var f = game.finale;
-  if (f && f.state == 'won' && ((f.wonLevel || 0) < K.Boss.Level || GetI(Traits,'Level') < K.Boss.Level))
-    return Brand("they claim to have beaten the Old Bastard\u2122 before level " + K.Boss.Level);
-
-  if ((game.birthVersion || 0) < 9) return;   // older heroes: only the above
-
-  // ...or since the hero was born
-  if (game.birthstamp && elapsed > (now - game.birthstamp) / 1000 * G.SpeedSlack + G.SpeedGrace)
-    return Brand("more time was played than has passed since they were born");
-
-  var level = GetI(Traits,'Level');
-  if (level >= 5) {
-    var xpTime = 0;
-    for (var l = game.startLevel || 1; l < level; ++l) xpTime += LevelUpTime(l);   // (a Daily hero starts higher)
-    if (elapsed < xpTime * G.LevelPace)
-      return Brand("they reached level " + level + " faster than is possible");
-  }
-  var E = ExpectedStat(level), P = ExpectedPool(level);
-  for (var i = 0; i < K.PrimeStats.length; ++i) {
-    var stat = K.PrimeStats[i];
-    if (GetI(Stats, stat) > 18 + G.StatMax * E + 20)
-      return Brand("their " + stat + " is impossibly high for level " + level);
-  }
-  if (GetI(Stats,'HP Max') > G.PoolMax * P + 100 || GetI(Stats,'MP Max') > G.PoolMax * P + 100)
-    return Brand("their HP or MP is impossibly high for level " + level);
-  for (var s = 0; s < K.Equips.length; ++s) {
-    if (SlotPower(K.Equips[s]) > level + G.GearAbove)
-      return Brand("their " + K.Equips[s] + " is far too good for level " + level);
-  }
+  // The rest looks only at the save itself (transfer.js, which also checks
+  // imported heroes with it)
+  var failed = AuditSheet(game).filter(function (c) { return !c.ok; })[0];
+  if (failed) return Brand(failed.reason);
 }
 
 // ---- Retiring to the Hall of Legends ----------------------------------------
@@ -812,6 +779,7 @@ function MakeLegend() {
     name: Get(Traits,'Name'),
     race: Get(Traits,'Race'),
     klass: Get(Traits,'Class'),
+    alignment: Get(Traits,'Alignment') || '',
     level: GetI(Traits,'Level'),
     stats: stats,
     retired: new Date().toISOString(),
@@ -1026,9 +994,22 @@ function SetTactic(name, key) {
   game.tactics = game.tactics || {};
   if (game.tactics[name] == key) return;
   game.tactics[name] = key;
-  game.choiceLog = (game.choiceLog || []).concat([{ t: game.tasks, tactic: name, value: key }]).slice(-500);
+  LogInput({ t: game.tasks, tactic: name, value: key });
   Log('Tactics: ' + K.Tactics[name].label + ' ' + Tactic(name).label);
   ShowTactics();
+}
+
+// Every choice and tactics change goes in game.choiceLog, so the hero's
+// whole game can be replayed from its birth (replay.js). The log is kept
+// whole while the hero can still be replayed (up to K.Replay.MaxInputs).
+function LogInput(entry) {
+  var log = game.choiceLog = game.choiceLog || [];
+  log.push(entry);
+  var keep = game.replay && !game.replay.frozen ? K.Replay.MaxInputs : 500;
+  if (log.length > keep) {
+    log.splice(0, log.length - keep);
+    if (game.replay && !game.replay.frozen) game.replay.frozen = game.tasks;   // too long to replay now
+  }
 }
 
 // The Tactics link says what is set, if anything is not Normal
@@ -1133,7 +1114,9 @@ function ResolveChoice() {
   ev.chosen = mine ? ev.picked : fate;
   ev.by = mine ? 'you' : 'fate';
   ev.pending = false;
-  game.choiceLog = (game.choiceLog || []).concat([{ t: game.tasks, event: ev.key, pick: ev.chosen, by: ev.by }]).slice(-500);
+  // (a pick of yours ended the deciding task early: ms is how long it took)
+  LogInput(mine ? { t: game.tasks, event: ev.key, pick: ev.chosen, by: ev.by, ms: TaskBar.Max() }
+                : { t: game.tasks, event: ev.key, pick: ev.chosen, by: ev.by });
   CodexChoice(ev.key, ev.chosen, ev.by);
   var o = ev.choices[ev.chosen];
   var lines = o.lines && o.lines.length ? o.lines : ['You decide: ' + o.label];
@@ -1307,7 +1290,14 @@ function MutatorProduct(prop) {
 }
 
 function CarryMax() {
-  return Max(5, Math.round((10 + GetI(Stats,'STR')) * MutatorProduct('carryMult')));
+  return Max(5, Math.round(CarryFor(GetI(Stats,'STR')) * MutatorProduct('carryMult')));
+}
+
+// Time for a trip to market even if the pack isn't full? (K.Loot.MarketHours)
+function MarketDue() {
+  if (game.lastMarket === undefined) game.lastMarket = game.elapsed || 0;
+  return game.Inventory.length > 1 &&
+         (game.elapsed || 0) - game.lastMarket >= K.Loot.MarketHours * 3600;
 }
 
 // A stat as it counts right now: buffs and the New Game+ legacy included
@@ -2579,6 +2569,7 @@ function Timer1Timer() {
     if (game.tasks % K.Guard.CheckEvery == 0) CheckForCheating();
     CheckDaily();
     CodexHero();
+    RecordCheckpoint();
   } else {
     var elapsed = timeGetTime() - clock.lasttick;
     if (elapsed > 100) elapsed = 100;
@@ -2788,6 +2779,80 @@ function CodexHero() {
   if (document && game.tasks % 10 == 0) CheckAchievements();
 }
 
+// ---- Replays (see replay.js) -------------------------------------------------
+
+// A hero's game follows from where it started (game.replay.birth), the
+// seeded random numbers, and the player's inputs (game.choiceLog). Every
+// K.Replay.Every tasks a fingerprint of the state goes in game.replay.list,
+// so a replay of the same game can be checked against it as it goes.
+// game.replay.fp identifies the game's code: a replay only means something
+// with the same code the hero was played with.
+function CheckpointHash() {
+  return SealHash(JSON.stringify([game.tasks, GetI(Traits,'Level'), Math.round(ExpBar.Position() * 1000),
+                                  Math.floor(game.elapsed || 0), GetI(Inventory,'Gold'), randseed()]));
+}
+
+function RecordCheckpoint() {
+  var r = game.replay;
+  if (!r || r.frozen || game.tasks % K.Replay.Every) return;
+  r.list.push([game.tasks, CheckpointHash()]);
+}
+
+// A hero who hasn't done anything yet keeps a copy of where they started
+function StartReplay(sheet) {
+  if (sheet.replay || (sheet.tasks || 0) > 0) return;
+  var birth = JSON.parse(JSON.stringify(sheet));
+  delete birth.seal;
+  sheet.replay = { birth: birth, list: [], fp: null, frozen: 0 };
+}
+
+// Under different code, this hero's game can't be replayed any more
+function CheckReplayCode() {
+  if (!game.replay || game.replay.frozen) return;
+  GameFingerprint(function (fp) {
+    if (!fp || !game.replay || game.replay.frozen) return;
+    if (!game.replay.fp) game.replay.fp = fp;
+    else if (game.replay.fp != fp) game.replay.frozen = game.tasks || 1;
+  });
+}
+
+// ---- Replays (see replay.js) -------------------------------------------------
+
+// A hero's game follows from where it started (game.replay.birth), the
+// seeded random numbers, and the player's inputs (game.choiceLog). Every
+// K.Replay.Every tasks a fingerprint of the state goes in game.replay.list,
+// so a replay of the same game can be checked against it as it goes.
+// game.replay.fp identifies the game's code: a replay only means something
+// with the same code the hero was played with.
+function CheckpointHash() {
+  return SealHash(JSON.stringify([game.tasks, GetI(Traits,'Level'), Math.round(ExpBar.Position() * 1000),
+                                  Math.floor(game.elapsed || 0), GetI(Inventory,'Gold'), randseed()]));
+}
+
+function RecordCheckpoint() {
+  var r = game.replay;
+  if (!r || r.frozen || game.tasks % K.Replay.Every) return;
+  r.list.push([game.tasks, CheckpointHash()]);
+}
+
+// A hero who hasn't done anything yet keeps a copy of where they started
+function StartReplay(sheet) {
+  if (sheet.replay || (sheet.tasks || 0) > 0) return;
+  var birth = JSON.parse(JSON.stringify(sheet));
+  delete birth.seal;
+  sheet.replay = { birth: birth, list: [], fp: null, frozen: 0 };
+}
+
+// Under different code, this hero's game can't be replayed any more
+function CheckReplayCode() {
+  if (!game.replay || game.replay.frozen) return;
+  GameFingerprint(function (fp) {
+    if (!fp || !game.replay || game.replay.frozen) return;
+    if (!game.replay.fp) game.replay.fp = fp;
+    else if (game.replay.fp != fp) game.replay.frozen = game.tasks || 1;
+  });
+}
+
 function SaveGame(callback) {
   Log('Saving game: ' + GameSaveName());
   CodexFlush();
@@ -2815,6 +2880,8 @@ function LoadGame(sheet) {
     return;
   }
   if (sealState == "bad") Brand("its save was edited outside the game", true);
+  StartReplay(game);
+  if (document) CheckReplayCode();
 
   if (document) {
     var title = "Progress Quest Remix - " + GameSaveName();
@@ -2832,6 +2899,8 @@ function LoadGame(sheet) {
     CodexHero();
   });
   $.each(AllBars.concat(AllLists), function (i, e) { e.load(game); });
+  // Heroes from before the carrying cap (K.Loot.CarryCap) shrink their pack
+  if (EncumBar.Max() != CarryMax()) EncumBar.reset(CarryMax(), EncumBar.Position());
   ShowStory();
   ShowProfile();
   ShowPurse();
@@ -2993,13 +3062,7 @@ function FormKeyDown(e) {
   }
 
   if (e.key === 'p') {
-    if (clock && clock.running) {
-      $('#paused').css('display', 'block');
-      StopTimer();
-    } else {
-      $('#paused').css('display', '');
-      StartTimer();
-    }
+    TogglePause();
   }
 
   if (e.key === 'q') {
@@ -3012,16 +3075,7 @@ function FormKeyDown(e) {
   }
 
   if (e.key === 'w') {
-    if (window.opener) return;
-    SuspendAutosave();  // we're about to save it anyway
-    SaveGame(() => {
-      let ext = window.open(window.location.href, "Progress Quest Remix",
-        `resizable,width=${$("#main")[0].offsetWidth},height=${$("#main")[0].offsetHeight},popup,location=0`);
-      if(ext && !ext.closed && typeof ext.closed !== 'undefined') {
-        // popup was apparently not blocked
-        window.location.href = "index.html#resume";  // this window can go back to the menu
-      }
-    });
+    PopOut();
   }
 
   /*
@@ -3029,6 +3083,64 @@ function FormKeyDown(e) {
     TaskBar.reposition(TaskBar.Max());
   }
   */
+}
+
+// P, or Game > Pause
+function IsPaused() {
+  return !(clock && clock.running);
+}
+
+function TogglePause() {
+  if (!IsPaused()) {
+    $('#paused').css('display', 'block');
+    StopTimer();
+  } else {
+    $('#paused').css('display', '');
+    StartTimer();
+  }
+}
+
+// W, or View > Pop Out: the game in a window of its own
+function PopOut() {
+  if (window.opener) return;
+  SuspendAutosave();  // we're about to save it anyway
+  SaveGame(() => {
+    let ext = window.open(window.location.href, "Progress Quest Remix",
+      `resizable,width=${$("#main")[0].offsetWidth},height=${$("#main")[0].offsetHeight},popup,location=0`);
+    if(ext && !ext.closed && typeof ext.closed !== 'undefined') {
+      // popup was apparently not blocked
+      window.location.href = "index.html#resume";  // this window can go back to the menu
+    }
+  });
+}
+
+// P, or Game > Pause
+function IsPaused() {
+  return !(clock && clock.running);
+}
+
+function TogglePause() {
+  if (!IsPaused()) {
+    $('#paused').css('display', 'block');
+    StopTimer();
+  } else {
+    $('#paused').css('display', '');
+    StartTimer();
+  }
+}
+
+// W, or View > Pop Out: the game in a window of its own
+function PopOut() {
+  if (window.opener) return;
+  SuspendAutosave();  // we're about to save it anyway
+  SaveGame(() => {
+    let ext = window.open(window.location.href, "Progress Quest Remix",
+      `resizable,width=${$("#main")[0].offsetWidth},height=${$("#main")[0].offsetHeight},popup,location=0`);
+    if(ext && !ext.closed && typeof ext.closed !== 'undefined') {
+      // popup was apparently not blocked
+      window.location.href = "index.html#resume";  // this window can go back to the menu
+    }
+  });
 }
 
 function Navigate(url) {

@@ -253,7 +253,7 @@ K.Stories = [
       '*Highlander Theme Music*',
       '{nemesis} loses their head. The bridge is guarded. The dental plan is mediocre.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
-    quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement', , 'Ask {guy} for {kingdom} to meet with the {race} rep.', 'Call out the {class} who crossed the picket line.'] },
+    quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement', , 'Ask {guy} for {kingdom} to meet with the {race} rep.', 'Call out the {klass} who crossed the picket line.'] },
 
   { key: 'dungeon', title: 'The Dungeon Crawl',
     setup: '{guy} has drawn you a map to the Dungeon of {kingdom}. Several squares are labeled "probably fine".',
@@ -487,6 +487,516 @@ function StoryText(text, vars) {
   });
 }
 
+// ---- Acts I and II: your race, then your class ---------------------------------
+//
+// Act I is always your race's story (K.RaceStories) and Act II your
+// class's (K.ClassStories), keyed by the exact name in K.Races and
+// K.Klasses. From Act III on, stories come from K.Stories as before. Same
+// format as K.Stories; check-events.js checks that every race and class
+// has one.
+
+K.RaceStories = {
+  "4chan Troll": { key: 'race-troll', title: 'Lurk Moar',
+    setup: 'A new moderator, {guy}, has taken over your home board and is enforcing “rules”. Troll your way back to glorious anonymity.',
+    ending: [
+      'You return to the Board, where nobody knows your name. That is the point.',
+      '{guy} has been deleting posts and asking everyone to be nice.',
+      'You post something so cursed that the server catches fire.',
+      'In the silence, you realize you miss human contact. You log off. You touch grass.',
+      'The grass is fine. You give it 3/10, would not touch again.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Bait {guy} into an argument about {boring}s', 'Start a rumor that the Old Bastard™ uses light mode', 'Lurk moar', 'Get banned and come back under a different name'] },
+
+  "Aware-Wolf": { key: 'race-awarewolf', title: 'The Morning After',
+    setup: 'Unlike ordinary werewolves, you remember everything you do under the full moon. Last night you did a lot. Go apologize to {kingdom}.',
+    ending: [
+      'You go door to door in {kingdom}, apologizing.',
+      'You ate {guy}’s prize hens. You are aware of this. You are aware of everything.',
+      'You offer to pay for the hens. {guy} asks you to pay for the gardens, too.',
+      'You are aware you did not do the gardens. That was {nemesis}.',
+      '*fight*',
+      'The town forgives you, mostly. You remain extremely aware.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Apologize to the hens of {kingdom}', 'Check the moon phase calendar', 'Buy a muzzle that says “I am working on myself”', 'Journal about what you did last night'] },
+
+  "Demi-Canadian": { key: 'race-canadian', title: 'The Apology Shortage',
+    setup: '{kingdom} has run out of apologies. Without them, people are just bumping into each other and walking away. Find more.',
+    ending: [
+      'You search the frozen north for a fresh vein of apologies.',
+      'Deep in a maple grove you find {guy}, hoarding every one of them in a hockey bag.',
+      'You ask nicely if they would share. They say sorry, no.',
+      'It is the first time anyone has been rude in {kingdom}. The trees gasp.',
+      'You trade them an old {boring} and a double-double for the bag. Sorry is restored.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Hold a door open for a stranger for twenty minutes', 'Apologize to a moose for standing near it', 'Find out what {guy} is “aboot”', 'Tap a maple tree for emergency syrup'] },
+
+  "Double-Wookiee": { key: 'race-wookiee', title: 'Twice the Fur',
+    setup: 'You are two Wookiees in one very large coat, and both of you want to fly the ship. Settle it before you crash.',
+    ending: [
+      'You find a junk-heap starship for sale in {kingdom} and argue over the controls.',
+      'Both halves of you roar. Nobody, including you, understands either of you.',
+      '{guy} offers to translate. They charge per Wookiee.',
+      'You agree to take turns: the left half flies on odd days, the right half on even ones.',
+      'Today is a leap day. You crash anyway. Only the ship is hurt.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Brush both of your coats', 'Win a game of space chess without pulling anyone’s arms off', 'Find a co-pilot who speaks Wookiee, twice', 'Get a medal at the ceremony this time'] },
+
+  "Double-sided Bad Dragon": { key: 'race-baddragon', title: 'The Hoard Inspection',
+    setup: 'Every dragon needs a hoard, and yours is embarrassing. Build a respectable one before the other dragons of {kingdom} come over.',
+    ending: [
+      'You survey your hoard: mostly coupons, an old {boring}, and things you would rather not explain.',
+      'The dragons of {kingdom} arrive for the annual hoard inspection.',
+      '{nemesis} sniggers at your collection, from both sides.',
+      '*fight*',
+      'You add {nemesis}’s hoard to yours. It is still mostly coupons.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Polish your hoard', 'Hide the weirder parts of your hoard before guests arrive', 'Steal an old {boring} from a sleeping dragon', 'Look dignified from both sides at once'] },
+
+  "Enchanted Talking Chamberpot": { key: 'race-chamberpot', title: 'Flush With Ambition',
+    setup: 'You were enchanted to talk, and you have overheard things. Royal things. Lean on the court of {kingdom} to back your quest.',
+    ending: [
+      'You arrive at court and announce that you have heard everything.',
+      'The court goes pale. {guy} offers you gold for your silence.',
+      'You take the gold. You are a chamberpot. Taking things is what you do.',
+      'Nobody will ever use you again. You count this as a win.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Practice your eavesdropping', 'Polish your rim for the royal audience', 'Remind {guy} what you saw on Tuesday', 'Find a lid that fits your dignity'] },
+
+  "Erotic Sonic Fan-Fic Abomination": { key: 'race-fanfic', title: 'The Author',
+    setup: 'You were written into existence by an anonymous author at three in the morning. Find them and ask them why.',
+    ending: [
+      'You track the author through four hundred chapters and twelve thousand reviews.',
+      'You find {guy} typing furiously by candlelight in {kingdom}.',
+      '“Why did you make me?” you ask. They say: “I was going through a phase.”',
+      'They promise to stop writing you. They lie. Chapter 401 drops tonight.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Read the reviews of your own chapters, then wish you hadn’t', 'Stay out of the comments section', 'Ask the author for a sequel without you in it', 'Report yourself for violating the terms of service'] },
+
+  "Filthy Stinkin Lich": { key: 'race-lich', title: 'The Lost Phylactery',
+    setup: 'Your soul is kept in a phylactery, and you have misplaced it. You think it might have gone in the laundry.',
+    ending: [
+      'You search the laundromats of {kingdom} for the jar that holds your soul.',
+      'The smell of fresh laundry burns your undead flesh.',
+      'You find your phylactery in a lost-and-found bin, next to an old {boring}.',
+      '{guy}, the attendant, wants a storage fee. You pay in curses.',
+      'Your soul is safe again, and smells faintly of lavender. You hate it.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Look for your soul in the dirty laundry', 'Avoid all soap', 'Ask the necromancers’ guild about their lost and found', 'Air out your burial shroud'] },
+
+  "Goblin-Mode Satyr": { key: 'race-satyr', title: 'The Bender',
+    setup: 'You went fully goblin mode last weekend and woke up in {kingdom} holding the {item}. Retrace your steps.',
+    ending: [
+      'You follow a trail of empty goblets across {kingdom}.',
+      'Everyone you meet says you owe them money, a goat, or an apology.',
+      '{guy} shows you a tapestry of last night. You are on the chandelier in every panel.',
+      'It turns out the {item} belongs to {nemesis}, who would like it back.',
+      '*fight*',
+      'You keep the {item}. You do not keep your dignity.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Find your other sandal', 'Apologize to the goat', 'Pay your tab at the tavern in {kingdom}', 'Remember any of last night'] },
+
+  "High Treant": { key: 'race-treant', title: 'The Very Long Moot',
+    setup: 'The treants of {kingdom} have called a moot, which will take nine years. Speed it up before the Old Bastard™ dies of old age.',
+    ending: [
+      'The moot begins. The first treant says “Hello.” It takes three days.',
+      'You suggest a faster way. Everyone stares at you for a season.',
+      'You are very relaxed about all of this. Extremely relaxed. Possibly too relaxed.',
+      'The treants vote to help you. You missed it. You were watching a leaf.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Photosynthesize for a while', 'Snack on some fertilizer', 'Listen to a treant finish a sentence', 'Remember why you walked into this grove'] },
+
+  "Hungry Hungry Hobbit": { key: 'race-hobbit', title: 'Second Breakfast',
+    setup: 'A dark power has stolen second breakfast from the Shire. Without it, elevenses is in danger too.',
+    ending: [
+      'You cross the Shire on an empty stomach. Morale is terrible.',
+      'You find {nemesis} sitting on a mountain of stolen sausages.',
+      '*fight*',
+      'Second breakfast is saved! Also elevenses, luncheon, afternoon tea, dinner and supper.',
+      'You eat all of them. After a nap, you are ready to go on.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Raid a farmer for mushrooms', 'Pack snacks for the road', 'Count your meals, twice', 'Find out who took second breakfast'] },
+
+  "I No Longer Care Bear": { key: 'race-carebear', title: 'The Caring Meeting',
+    setup: 'Your belly badge has faded to a gray “meh”. The other bears want you at the Caring Meeting. You do not care.',
+    ending: [
+      'The bears gather on a cloud over {kingdom}. You go, but only for the snacks.',
+      'They form the Stare. You form the Couldn’t-Care-Less Stare.',
+      'Their rainbow beam meets yours and simply gives up.',
+      'The meeting ends early. Everyone agrees you are kind of right.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Not care about something important', 'Skip the group hug', 'Shrug at {guy}', 'Find out where your feelings went'] },
+
+  "Miniature Giant Space Hamster": { key: 'race-hamster', title: 'The Wheel of Infinity',
+    setup: 'Somewhere in {kingdom} is the legendary Wheel of Infinity. Find it, and run.',
+    ending: [
+      'You find the Wheel of Infinity in the ruins of {kingdom}.',
+      'You run. You run for days. The wheel turns.',
+      'It powers the whole kingdom. Lights come on. Somebody makes toast.',
+      'You have gone nowhere. You are fine with this. Hamsters always are.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Stuff your cheeks with supplies', 'Go for the eyes of {nemesis}', 'Find a bigger exercise ball', 'Ask {guy} for sunflower seeds'] },
+
+  "My Little Pygmy": { key: 'race-pygmy', title: 'Friendship Is Mandatory',
+    setup: 'The Friendship Council of {kingdom} says you have not made a new friend in months. Make one, by force if necessary.',
+    ending: [
+      'You try to befriend {guy}. They run.',
+      'You try to befriend {nemesis}. They run too, but slower.',
+      'You catch up. You have a heartfelt talk. You learn a lesson about friendship.',
+      'You write a letter about it to the Princess. She does not reply.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Learn a lesson about friendship', 'Braid your mane', 'Write a friendship letter to {guy}', 'Find out which element of harmony you are'] },
+
+  "Nympho Nymph": { key: 'race-nymph', title: 'The Sacred Spring',
+    setup: 'Your sacred spring in {kingdom} has been bought by a bottled water company. Win it back.',
+    ending: [
+      'You storm the bottling plant of {guy}.',
+      'They claim your spring water cures everything. It does not. It is water.',
+      'You flirt your way past security, which is your answer to most problems.',
+      'You make {guy} drink their own product. Mild stomachache. You win.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Bat your eyelashes at a guard', 'Read the fine print on the water deed', 'Protest outside the bottling plant', 'Find a new boyfriend, girlfriend or tree'] },
+
+  "Odorous Oompa Loompa": { key: 'race-oompa', title: 'The Golden Tickets',
+    setup: 'The candy factory where you work has hidden five golden tickets. Find them before the brats of {kingdom} do.',
+    ending: [
+      'You search every candy bar in {kingdom}.',
+      'You find four golden tickets and one very sticky {boring}.',
+      'The fifth ticket belongs to {nemesis}, a spoiled child of enormous power.',
+      '*fight*',
+      'The child swells up like a blueberry. You sing a song about it. You can’t help it.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Practice a cautionary song', 'Bathe, at least once', 'Taste-test the chocolate river', 'Unwrap a candy bar looking for gold'] },
+
+  "Only Somewhat Racist Dwarf": { key: 'race-dwarf', title: 'Sensitivity Training',
+    setup: 'Your clan elders have sent you to sensitivity training in {kingdom}. The goal is to be less racist. Ideally, not at all.',
+    ending: [
+      'You sit in a circle with an elf, an orc and {guy}. It is awkward.',
+      'The instructor asks you to share. You say something about elves and regret it at once.',
+      'You learn that elves are people too. Tall, annoying people, but people.',
+      'You graduate. Your certificate says “Improving”. You frame it in gold.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Apologize to an elf', 'Read a pamphlet titled “A Beard Is Not a Personality”', 'Learn to pronounce {guy}’s name correctly', 'Unlearn something your grandfather told you'] },
+
+  "Pixie Ironically with a Pixie-Cut": { key: 'race-pixie', title: 'A Bad Hair Day',
+    setup: 'Everyone keeps telling you your haircut is very on-brand. Find a new style in {kingdom}.',
+    ending: [
+      'You visit the finest salon in {kingdom}.',
+      '{guy} the stylist asks what you want. You say “something unexpected”.',
+      'They give you a pixie cut. It is ironic. It is the only cut they know.',
+      'You leave a sarcastic review. Somehow, that is also ironic.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Find a hat to hide your haircut', 'Ask {guy} for a second opinion', 'Glitter-bomb the barber shop', 'Grow your hair out, slowly'] },
+
+  "Poultrygeist": { key: 'race-poultrygeist', title: 'Unfinished Business',
+    setup: 'You are the restless spirit of a chicken. You cannot move on until you find out why you crossed the road.',
+    ending: [
+      'You haunt the road where it all began.',
+      'You find {guy}, who was on the other side of the road that day.',
+      'They tell you there was a sale on feed.',
+      'That’s it? That’s why? You rattle your chains, angrily.',
+      'You decide not to cross over just yet. There’s an Old Bastard™ to haunt.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Rattle your chains at a farmer', 'Find your old coop', 'Ask the road why', 'Lay a spectral egg'] },
+
+  "Reverse-Centaur": { key: 'race-centaur', title: 'Best in Show',
+    setup: 'The horse show of {kingdom} won’t accept you as a horse, and the talent show won’t accept you as a person. Win both.',
+    ending: [
+      'You enter the dressage event. Your human legs prance beautifully.',
+      'The judges are confused. {guy} files a protest.',
+      'You enter the talent show and neigh the national anthem.',
+      'You win both blue ribbons and eat one of them.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Find pants that fit', 'Practice your neighing', 'Get your hooves done. Your hands. Whatever', 'Convince {guy} you are a horse'] },
+
+  "Sharkasaurus": { key: 'race-sharkasaurus', title: 'Shark Week',
+    setup: 'It is Shark Week in {kingdom}, and as the only shark-dinosaur around, you are expected to put on a show.',
+    ending: [
+      'The crowds gather on the shore. You leap from the sea in dramatic slow motion.',
+      'You land on {nemesis}. It counts as a show and an attack.',
+      '*fight*',
+      'Ratings hit an all-time high. You are renewed for another season.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Practice your dramatic leap', 'Swim in a straight line for once', 'Bite a boat for the cameras', 'Ask {guy} for a better contract'] },
+
+  "Stupid Sexy Elf": { key: 'race-elf', title: 'The Pageant',
+    setup: 'You are the sexiest elf in {kingdom}, and the stupidest. Enter the elf pageant and win on one of those.',
+    ending: [
+      'The evening wear round goes great.',
+      'The talent round goes great. You juggle, badly, but sexily.',
+      'In the question round, {guy} asks you to name the capital of {kingdom}. You say “Yes.”',
+      'You win anyway. Nobody was listening.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Practice your smolder', 'Learn one fact', 'Wear a sash that says “Miss {kingdom}”', 'Find the arrow you shot into the air'] },
+
+  "Thirsty Cyberman": { key: 'race-cyberman', title: 'The Robot Ball',
+    setup: 'You have orders to upgrade everyone in {kingdom}, but you would rather be liked. Find a date for the robot ball.',
+    ending: [
+      'You message {guy}: YOU WILL BE UPGRADED. No reply.',
+      'You try again: YOU WILL BE UPGRADED. WINK.',
+      'You go to the robot ball alone. You dance with a toaster.',
+      'It is the best night of your life. DELETE. DELETE. DELETE.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Polish your chrome', 'Update your dating profile', 'Upgrade a pickup line', 'Drink some oil'] },
+
+  "Travelocity Gnome": { key: 'race-gnome', title: 'Too Good to Be True',
+    setup: 'You have found a travel deal to {kingdom} that is too good to be true. Go anyway.',
+    ending: [
+      'You arrive in {kingdom}. The resort is a tent.',
+      'The all-inclusive buffet is a single {boring}.',
+      '{guy}, your tour guide, takes your passport and vanishes.',
+      'You give it five stars anyway. You are a professional.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Pose in front of a famous landmark', 'Find your lost luggage', 'Leave a review of {kingdom}', 'Book a trip with three layovers'] }
+};
+
+K.ClassStories = {
+  "99th Degree Stonecutter": { key: 'class-stonecutter', title: 'The Hundredth Degree',
+    setup: 'The lodge of the Stonecutters has a hundredth degree, and you are one short. Pass the final initiation.',
+    ending: [
+      'You arrive at the lodge in {kingdom}, in the ceremonial robe and the ceremonial paddle.',
+      'The elders reveal the hundredth degree: you must sing the secret song.',
+      'You sing it. You are not allowed to tell anyone the words.',
+      'You are promoted, and given a parking space and a stone tablet.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Learn the secret handshake', 'Cut a stone, ceremonially', 'Keep the lodge’s secrets from {guy}', 'Pay your lodge dues'] },
+
+  "Barbarian Pretzel": { key: 'class-pretzel', title: 'The Twist',
+    setup: 'Your barbarian clan prizes strength, and you are made of dough. Prove you are the toughest snack in {kingdom}.',
+    ending: [
+      'You challenge the clan champion, {nemesis}.',
+      '*fight*',
+      'You twist yourself into a knot they cannot untie. They give up.',
+      'You are salted and named chieftain. Mustard is optional.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Bake yourself harder', 'Add more salt', 'Bend into an intimidating shape', 'Hide from someone holding mustard'] },
+
+  "Big Bad Voodoo Daddy": { key: 'class-voodoo', title: 'The Swing Revival',
+    setup: 'Your voodoo is fading because nobody in {kingdom} swing-dances anymore. Bring back swing.',
+    ending: [
+      'You open a dance hall in {kingdom}.',
+      'The kids are skeptical. Then the horns kick in.',
+      'You hex everyone’s feet. They cannot stop dancing.',
+      'Technically this is a curse, but everyone is having a great time.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Make a little doll of {guy}', 'Learn the jitterbug', 'Find a zoot suit', 'Book a horn section'] },
+
+  "Blood-Sucking Lunatic": { key: 'class-lunatic', title: 'The Blood Drive',
+    setup: 'The blood bank of {kingdom} is running low, and everyone knows why. Pay it back before they ban you.',
+    ending: [
+      'You organize a blood drive. Turnout is suspicious.',
+      'Everyone who shows up already looks pale.',
+      'You promise not to drink anything. You drink something.',
+      '{guy} bans you anyway. You leave a thank-you card, in red ink.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Avoid garlic bread night', 'Donate blood (someone else’s)', 'Check your reflection, just in case', 'Bite {nemesis}, for science'] },
+
+  "Boston Cream Strangler": { key: 'class-strangler', title: 'The Custard Caper',
+    setup: 'Someone has been squeezing the filling out of every donut in {kingdom}. It was you. Clear your name, or at least your fingerprints.',
+    ending: [
+      'Every bakery in {kingdom} is on alert. You are the prime suspect.',
+      'Detective {guy} has your custard-covered fingerprints.',
+      'You confess: you only ever wanted the filling.',
+      'The judge, who also only wants the filling, lets you off with a warning.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Wipe the custard off your hands', 'Lie low at a bagel shop', 'Squeeze a donut for information', 'Get an alibi from {guy}'] },
+
+  "Drug Healer": { key: 'class-healer', title: 'The Apothecary',
+    setup: 'The apothecary of {kingdom} has been out of healing potions for weeks. You have a prescription pad and flexible ethics.',
+    ending: [
+      'You open a potion stand in {kingdom}.',
+      'Insurance covers none of it.',
+      'You heal {guy}, then send them the bill. Now they need healing again.',
+      'The healers’ guild fines you. You bill them for a consultation.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Fill a prescription for {guy}', 'Argue with an insurance clerk', 'Read the side effects aloud, quickly', 'Restock your healing potions'] },
+
+  "Drunken Forest Friar": { key: 'class-friar', title: 'The Lost Recipe',
+    setup: 'Your abbey’s ale has gone sour, and your faith with it. Find the lost recipe of the old forest brewery.',
+    ending: [
+      'You find the ruins of the old brewery deep in the forest.',
+      'The recipe is carved into a barrel, guarded by {nemesis}.',
+      '*fight*',
+      'You brew a fresh batch. Your faith returns, along with your double vision.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Taste-test the abbey ale', 'Say a prayer for the hops', 'Pick wild herbs in the forest', 'Find your way back to the abbey'] },
+
+  "Electric Monk": { key: 'class-monk', title: 'True Believer',
+    setup: 'You are an Electric Monk: you believe things so other people don’t have to. Right now you believe the Old Bastard™ is in {kingdom}.',
+    ending: [
+      'You arrive in {kingdom}, believing deeply.',
+      'You also believe the sky is pink and that {guy} is your best friend.',
+      'Your belief circuits overload. You start believing in yourself.',
+      'That is a malfunction. You reboot, and believe in the Old Bastard™ again.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Believe something unlikely', 'Charge your belief cells', 'Ride your horse to {kingdom}', 'Doubt nothing'] },
+
+  "Erotical Illusionist": { key: 'class-illusionist', title: 'The Grand Illusion',
+    setup: 'Your magic show in {kingdom} is famous for being steamy, mostly because of the fog machine. Pull off the greatest trick ever.',
+    ending: [
+      'You announce that you will make the Old Bastard™ disappear.',
+      'The audience gasps. The curtain falls. The curtain rises.',
+      'The Old Bastard™ is gone! He was never there. It is all very sensual.',
+      'You still have to find the real one. Classic misdirection.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Practice a sultry card trick', 'Buy more fog', 'Saw {guy} in half', 'Hide a rabbit somewhere tasteful'] },
+
+  "Fatal Flatulist": { key: 'class-flatulist', title: 'Silent But Deadly',
+    setup: 'The assassins’ guild of {kingdom} calls your methods “unprofessional”. Prove them wrong with a silent kill.',
+    ending: [
+      'You slip into the palace of {nemesis}.',
+      'You unleash your deadliest technique. It is completely silent.',
+      'Guards faint. Paintings peel. {nemesis} falls.',
+      'The guild lets you in, on the condition that you work outdoors.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Eat a dangerous amount of beans', 'Practice in an open field', 'Blame it on {guy}', 'Hold it in through an important meeting'] },
+
+  "Grimdark Double-Hell Slayer": { key: 'class-slayer', title: 'Hell, Again',
+    setup: 'You have slain everything in one hell. Now there is a second one, and it is grimmer and darker.',
+    ending: [
+      'You descend into the second hell. It is mostly the same, in a darker font.',
+      'The demons here are edgier. They have tattoos.',
+      '{nemesis} rises from a lake of fire to face you.',
+      '*fight*',
+      'You win. The scenery stays grim. Your eyeliner stays perfect.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Sharpen your edgiest blade', 'Brood in the rain', 'Find a darker shade of black', 'Write a sad poem about hell'] },
+
+  "Hamburglar": { key: 'class-hamburglar', title: 'The Heist',
+    setup: 'Rumor says the royal kitchen of {kingdom} keeps the Ultimate Burger. Steal it.',
+    ending: [
+      'You sneak into the royal kitchen in your stripes and mask.',
+      'The Ultimate Burger sits on a pedestal, guarded by {nemesis}.',
+      '*fight*',
+      'You escape with the burger and eat it in one bite. Crime pays, at least in calories.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Case the royal kitchen', 'Find a mask that fits', 'Steal a burger, for practice', 'Lose {guy} in a drive-thru'] },
+
+  "Internal Combustion Felon": { key: 'class-felon', title: 'The Getaway',
+    setup: 'You are wanted in {kingdom} for driving a horseless carriage far over the speed limit. Outrun the law.',
+    ending: [
+      'The Sheriff of {kingdom} gives chase on horseback.',
+      'You floor it. Smoke everywhere. Horses everywhere.',
+      'You run out of gas just past the border.',
+      'You push the carriage the rest of the way. It still counts.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Siphon some fuel', 'Swap the plates on your carriage', 'Outrun {guy}', 'Fix a flat wheel'] },
+
+  "Paperback Fighter": { key: 'class-paperback', title: 'The Sequel',
+    setup: 'You are the hero of a cheap paperback, and the author has been stuck on chapter twelve for years. Write your way out.',
+    ending: [
+      'You find the author, {guy}, staring at a blank page.',
+      'You suggest a dragon. They suggest a love triangle.',
+      'You compromise: a love triangle with a dragon.',
+      'The sequel is a bestseller in {kingdom}. Your shirt is off on the cover.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Get dog-eared', 'Win a fight with a bookmark', 'Read your own reviews', 'Find out how your story ends'] },
+
+  "Paula Deen Paladin": { key: 'class-paladin', title: 'The Butter Crusade',
+    setup: 'Your holy order teaches that butter is sacred. The heathens of {kingdom} cook with margarine. Convert them.',
+    ending: [
+      'You ride into {kingdom} with a cart full of butter.',
+      'The margarine priests, led by {nemesis}, block the road.',
+      '*fight*',
+      'Victory! You deep-fry the victory feast. Everyone converts. Some need a cardiologist.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Bless a stick of butter', 'Fry something that should not be fried', 'Preach to {guy} about butter', 'Find more butter'] },
+
+  "Pinball Wizard": { key: 'class-pinball', title: 'The Tournament',
+    setup: 'The pinball champion of {kingdom} has never lost a game. Play them for the title.',
+    ending: [
+      'You step up to the machine. The crowd goes quiet.',
+      '{nemesis} plays first and lights up every bumper.',
+      'You play by feel alone. Flipper, flipper, nudge, tilt... no, saved it.',
+      'You win by a hair. You are the new champion of {kingdom}.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Practice your flipper timing', 'Find more quarters', 'Nudge a machine without tilting it', 'Challenge {guy} to a game'] },
+
+  "Sailor Rune": { key: 'class-sailor', title: 'The Transformation',
+    setup: 'Your transformation sequence now takes forty minutes, and the monsters have stopped waiting for it. Speed it up.',
+    ending: [
+      'You face {nemesis} and begin your transformation.',
+      'Sparkles. Ribbons. More sparkles. A pose.',
+      '{nemesis} has gone home. You go fight them at their house.',
+      '*fight*',
+      'In the name of the rune, you win. Your outfit is perfect.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Practice your transformation pose', 'Buy more ribbons', 'Find your talking cat', 'Learn a shorter catchphrase'] },
+
+  "Shovel Knight": { key: 'class-shovel', title: 'The Dig',
+    setup: 'Legend says the Old Bastard™’s treasure is buried somewhere under {kingdom}. You know what to do.',
+    ending: [
+      'You dig. And dig. And dig.',
+      'You find an old {boring}, three bones, and {nemesis}, who was down there for some reason.',
+      '*fight*',
+      'The treasure chest holds gold and a note: “Not here. Love, the Old Bastard™.”',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Sharpen your shovel', 'Dig a hole', 'Fill in the hole', 'Bounce on {nemesis}’s head'] },
+
+  "Sorcerer Supreme Pizza": { key: 'class-pizza', title: 'Thirty Minutes or Less',
+    setup: 'A wizard in {kingdom} has ordered pizza. Deliver it in thirty minutes or less, or it’s free and the wizard curses you.',
+    ending: [
+      'You set off with a stack of hot pizzas.',
+      'You cast Haste. You cast Keep Warm. You cast Haste again.',
+      '{nemesis} tries to steal a slice.',
+      '*fight*',
+      'You arrive in twenty-nine minutes. The wizard tips poorly. Classic wizard.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Toss some dough', 'Cast Extra Cheese', 'Find the address in {kingdom}', 'Deliver a pizza to {guy}'] },
+
+  "Stranger Ranger": { key: 'class-ranger', title: 'The Other Side',
+    setup: 'A portal has opened in the woods outside {kingdom}, and everything on the other side is upside-down. Close it.',
+    ending: [
+      'You step through the portal. The trees grow down. The sky is underfoot.',
+      'Your walkie-talkie only plays music from the 80s.',
+      '{nemesis} waits in the dark.',
+      '*fight*',
+      'You close the portal with a well-timed power ballad. Spooky.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Ride your bike to the woods', 'Draw a map of the forest', 'String up holiday lights to talk to {guy}', 'Find out who went missing this week'] },
+
+  "Stubborn Jackass": { key: 'class-jackass', title: 'The Bridge',
+    setup: 'There is a bridge to {kingdom}, and you refuse to cross it. Everyone else refuses to let you go around.',
+    ending: [
+      'You stand at the bridge. You will not cross.',
+      'Your friends push. You do not move.',
+      'Your friends pull. You do not move.',
+      '{guy} offers you a carrot. You cross at once. You did not want to, but: carrot.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Refuse to do something', 'Kick {guy}', 'Stand very, very still', 'Eat a carrot'] },
+
+  "Super Show-off Saiyan": { key: 'class-saiyan', title: 'Power Level',
+    setup: 'Your power level is not over nine thousand. Train in {kingdom} until it is.',
+    ending: [
+      'You train in {kingdom} under ten times normal gravity.',
+      'You scream for an entire episode.',
+      'Your hair turns gold. Everyone is very impressed, mainly you.',
+      'You challenge {nemesis} to try out your new power.',
+      '*fight*',
+      'You win, and keep screaming for a few more episodes, just in case.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Scream for an hour', 'Do a thousand push-ups', 'Show off for {guy}', 'Measure your power level'] },
+
+  "Thief Executive Officer": { key: 'class-teo', title: 'The Quarterly Report',
+    setup: 'Shareholders demand that your thieves’ guild grow by twenty percent this quarter. Steal more, faster.',
+    ending: [
+      'You present the quarterly numbers to the board.',
+      'Revenue is down. Pickpocketing is down. Morale is down.',
+      'You steal from your own shareholders and report it as growth.',
+      'The stock soars. You give yourself a bonus.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Synergize a heist', 'Lay off some henchmen', 'Pick the pocket of {guy}', 'Sit through a meeting that should have been an email'] },
+
+  "United States Coast Bard": { key: 'class-bard', title: 'The Shanty',
+    setup: 'The coast of {kingdom} is under threat, and the only weapon left is a sea shanty. You’ll have to write one.',
+    ending: [
+      'You sail out to face {nemesis}.',
+      'You sing a shanty so catchy that the whole crew joins in.',
+      'Even {nemesis} starts tapping a foot.',
+      'You win without a fight. The shanty is stuck in every port’s head for a month.',
+      'You resume your quest to go after that Old Bastard™ from your vision.'],
+    quests: ['Write a shanty about {guy}', 'Patrol the coast', 'Learn the accordion', 'Rescue a stranded {boring}'] }
+};
+
 // Everything a story might mention, made up fresh for a new Act
 function StoryVars() {
   var level = GetI(Traits,'Level');
@@ -509,12 +1019,17 @@ function StoryVars() {
   };
 }
 
-// Pick the story for a new Act, avoiding the last few used
+// Pick the story for a new Act: your race's for Act I, your class's for
+// Act II, and after that one of K.Stories, avoiding the last few used
 function NewStory(act) {
-  var recent = (game.storyLog || []).slice(-8).map(function (s) { return s.key; });
-  var choices = K.Stories.filter(function (s) { return recent.indexOf(s.key) < 0; });
-  if (!choices.length) choices = K.Stories;
-  var story = Pick(choices);
+  var story = act == 1 ? K.RaceStories[Get(Traits,'Race')] :
+              act == 2 ? K.ClassStories[Get(Traits,'Class')] : null;
+  if (!story) {
+    var recent = (game.storyLog || []).slice(-8).map(function (s) { return s.key; });
+    var choices = K.Stories.filter(function (s) { return recent.indexOf(s.key) < 0; });
+    if (!choices.length) choices = K.Stories;
+    story = Pick(choices);
+  }
   var vars = StoryVars();
   return {
     act: act,
@@ -525,9 +1040,19 @@ function NewStory(act) {
   };
 }
 
+// Every story there is
+function AllStories() {
+  var all = K.Stories.slice();
+  [K.RaceStories, K.ClassStories].forEach(function (book) {
+    for (var name in book) all.push(book[name]);
+  });
+  return all;
+}
+
 function StoryTemplate(key) {
-  for (var i = 0; i < K.Stories.length; ++i)
-    if (K.Stories[i].key === key) return K.Stories[i];
+  var all = AllStories();
+  for (var i = 0; i < all.length; ++i)
+    if (all[i].key === key) return all[i];
   return null;
 }
 

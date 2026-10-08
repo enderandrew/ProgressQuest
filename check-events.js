@@ -1,4 +1,5 @@
-// Check events.js (and the rest of the game scripts) before uploading.
+// Check events.js and story.js (and the rest of the game scripts) before
+// uploading.
 //
 //   node check-events.js
 //
@@ -22,7 +23,7 @@ const error = (msg) => { errors++; console.log("ERROR   " + msg); };
 const warn = (msg) => { warnings++; console.log("warning " + msg); };
 
 // 1. Does every script parse?
-const scripts = ["config.js", "story.js", "combat.js", "events.js", "daily.js", "codex.js",
+const scripts = ["config.js", "story.js", "combat.js", "events.js", "daily.js", "codex.js", "transfer.js", "replay.js", "menubar.js", "sheet.js",
                  "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js"];
 for (const file of scripts) {
   const full = path.join(dir, file);
@@ -140,6 +141,39 @@ events.forEach((e, n) => {
   if (used.indexOf("loot") >= 0 && !anyItem) warn(`${name} says {loot} but no effect gives an item`);
 });
 
+// 3. The Act stories (story.js): every race and class has one, and each
+// story is complete
+const STORY_WORDS = ["nemesis", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
+                     "item", "boring", "race", "race-one", "klass", "insult", "hero"];
+const storyKeys = {};
+let storyCount = 0;
+function checkStory(name, st) {
+  if (!st || typeof st !== "object") { error(`${name}: missing`); return; }
+  storyCount++;
+  if (!st.key) error(`${name}: no key`);
+  else if (storyKeys[st.key]) error(`${name}: key "${st.key}" is also used by ${storyKeys[st.key]}`);
+  storyKeys[st.key] = name;
+  if (!st.title) error(`${name}: no title`);
+  if (!st.setup) error(`${name}: no setup`);
+  if (!Array.isArray(st.ending) || !st.ending.length) error(`${name}: no ending lines`);
+  if (!Array.isArray(st.quests) || st.quests.length < 3) warn(`${name}: fewer than 3 quests`);
+  [st.setup].concat(st.ending || [], st.quests || []).forEach((line) => {
+    if (typeof line !== "string") { error(`${name}: a line isn't text`); return; }
+    if (line.indexOf("|") >= 0) error(`${name}: "${line}" has a "|", which the game uses to separate fields`);
+    (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+      if (STORY_WORDS.indexOf(p.slice(1, -1)) < 0) error(`${name}: unknown placeholder ${p} in "${line}"`);
+    });
+  });
+}
+(K.Stories || []).forEach((st, i) => checkStory(`story "${(st && st.key) || "#" + (i + 1)}"`, st));
+const names = (list) => (list || []).map((x) => x.split("|")[0]);
+names(K.Races).forEach((r) => checkStory(`Act I story for the ${r} race`, (K.RaceStories || {})[r]));
+names(K.Klasses).forEach((c) => checkStory(`Act II story for the ${c} class`, (K.ClassStories || {})[c]));
+Object.keys(K.RaceStories || {}).forEach((r) => { if (names(K.Races).indexOf(r) < 0) warn(`K.RaceStories has "${r}", which isn't a race`); });
+Object.keys(K.ClassStories || {}).forEach((c) => { if (names(K.Klasses).indexOf(c) < 0) warn(`K.ClassStories has "${c}", which isn't a class`); });
+
+console.log(`\n${storyCount} stories (${Object.keys(K.RaceStories || {}).length} races, ` +
+            `${Object.keys(K.ClassStories || {}).length} classes, ${(K.Stories || []).length} others).`);
 console.log(`\n${events.length} events, ${withChoices} with choices` +
             ` (${Math.round(withChoices / Math.max(1, events.length) * 100)}%).` +
             ` ${errors} error(s), ${warnings} warning(s).`);

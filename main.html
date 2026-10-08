@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="progros.css" type="text/css">
 <link rel="stylesheet" href="main.css" type="text/css">
 <link rel="stylesheet" href="codex.css" type="text/css">
+<link rel="stylesheet" href="win95.css" type="text/css">
 <title>Progress Quest Remix</title>
 <meta name="apple-mobile-web-app-capable" content="yes" />
 
@@ -40,6 +41,16 @@
   <span id="title">Progress Quest Remix</span>
   <a id="quit"><img src="closeup.png" alt="Close button"></a>
 </div>
+<div id="MenuRow">
+  <ul id="MenuBar" role="menubar" aria-label="Menu"></ul>
+  <span id="MenuStatus" role="status"></span>
+  <input type="file" id="MenuImport" accept=".pqw,text/plain" multiple hidden>
+</div>
+<div id="MenuRow">
+  <ul id="MenuBar" role="menubar" aria-label="Menu"></ul>
+  <span id="MenuStatus" role="status"></span>
+  <input type="file" id="MenuImport" accept=".pqw,text/plain" multiple hidden>
+</div>
 <div id="CheaterBrand" style="display:none"></div>
 
 <script src="jquery-4.0.0.min.js"></script>
@@ -48,7 +59,9 @@
 <script src="events.js"></script>
 <script src="combat.js"></script>
 <script src="codex.js"></script>
+<script src="transfer.js"></script>
 <script src="main.js"></script>
+<script src="menubar.js"></script>
 <script src="desktop.js"></script>
 <script src="guard.js"></script>
 
@@ -75,6 +88,14 @@
         </tr>
         <tr>
           <td>Class</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Alignment</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Alignment</td>
           <td></td>
         </tr>
         <tr>
@@ -242,6 +263,8 @@
   <a id="TacticsLink" href="#" title="Standing orders for your hero (T)">Tactics</a>
   <a id="CodexLink" href="index.html#codex" title="The Bestiary, Spellbook, Journal and achievements (opens in a new tab)">Codex</a>
   <a id="LogToggle" href="#" title="Show or hide the combat log (C)">Combat log</a>
+  <a id="ShareLink" href="#" title="A link to this character sheet, for showing off">Share</a>
+  <a id="ExportLink" href="#" title="Download a backup of this hero (.pqw)">Back up</a>
 </div>
 <div id="CombatLog" class="listbox"></div>
 

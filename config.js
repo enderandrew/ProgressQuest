@@ -580,7 +580,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 11;
+var SaveVersion = 12;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -677,6 +677,16 @@ var SaveMigrations = [
     sheet.streak = sheet.streak || 0;
     sheet.questsDone = sheet.questsDone || 0;
     sheet.goldEarned = sheet.goldEarned || 0;
+  },
+  // 11 -> 12: an alignment ("Lawful Gassy") for heroes from before them,
+  // picked from the name so it doesn't touch the game's random numbers
+  function (sheet) {
+    if (sheet.Traits && !sheet.Traits.Alignment) {
+      var h = 0, name = String(sheet.Traits.Name || "");
+      for (var i = 0; i < name.length; ++i) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+      sheet.Traits.Alignment = K.Alignments[h % K.Alignments.length] + " " +
+        K.AlignmentFlaws[Math.floor(h / K.Alignments.length) % K.AlignmentFlaws.length];
+    }
   }
 ];
 
@@ -693,7 +703,40 @@ function MigrateSave(sheet) {
 
 var K = {};
 
-K.Traits = ["Name", "Race", "Class", "Level"];
+// The cheat checks' limits (CheckForCheating in main.js, AuditSheet in
+// transfer.js). Typical gains are measured, not fixed.
+K.Guard = {
+  CheckEvery: 50,       // tasks between checks
+  SpeedSlack: 1.1,      // game time may run this much faster than the clock...
+  SpeedGrace: 600,      // ...plus this many seconds (a task already under way)
+  LevelPace: 0.2,       // game time >= this share of the XP time for the level
+  StatMax: 4,           // a core stat <= 18 + this many times typical for the level
+  PoolMax: 3,           // HP/MP Max <= this many times typical, + 100
+  GearAbove: 20         // gear power <= level + this
+};
+
+// Replays (see replay.js and game.replay in main.js)
+K.Replay = {
+  Every: 500,           // tasks between checkpoints
+  MaxInputs: 5000,      // choices and tactics changes kept for a replay
+  Files: ["config.js", "story.js", "events.js", "combat.js", "main.js"]   // the code that decides a game
+};
+
+// The game code's fingerprint (a hash of K.Replay.Files), or null where the
+// files can't be read
+var _fingerprint;
+function GameFingerprint(callback) {
+  if (_fingerprint !== undefined) { callback(_fingerprint); return; }
+  if (typeof fetch != 'function') { callback(_fingerprint = null); return; }
+  Promise.all(K.Replay.Files.map(function (f) {
+    return fetch(f, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(f); return r.text(); });
+  })).then(function (texts) {
+    callback(_fingerprint = SealHash(texts.map(function (t) { return t.replace(/\r\n/g, '\n'); }).join('\u0000')));
+  }, function () { callback(_fingerprint = null); });
+}
+
+
+K.Traits = ["Name", "Race", "Class", "Alignment", "Level"];
 
 K.PrimeStats = ["STR","CON","DEX","INT","WIS","CHA"];
 K.Stats = K.PrimeStats.slice(0).concat(["HP Max","MP Max"]);
@@ -1942,7 +1985,7 @@ K.Weapons = [
   "Green Powder Ring|14",
   "Ham Cannon|14",
   "Steampunk Chainsaw|14",
-  "Sword of Griff n Door|14",
+  "Sword of Griff n Dork|14",
   "Guillotine on a Stick|14",
   "Warscythe of Seasonal Allergies|14",
   "Buster Buster Sword|15",
@@ -2580,7 +2623,7 @@ K.BoringItems = [
   "Wumpa fruit core",
 ];
 
-// from 273 to 526 Monsters
+// from 273 to 528 Monsters
 K.Monsters = [
   "Ankle-biter|0|baby-teeth",
   "Charlotte the Spider|0|web",
@@ -3089,7 +3132,9 @@ K.Monsters = [
   "Imposter from Among Us|48|sus vent",
   "Kung Fu Chaos|49|insanity",
   "Mind Flayer Lich Itchybitch|50|tentacle",
+  "Bigfoot|50|jerky",
   "Elder Tempest in a Teapot|51|ceramic chip",
+  "Alien Xenomorph|51|slimy discharge",
   "Seattle Kraken|52|tentacle",
   "Bed Baphomet and Beyond|53|towel",
   "Jeff Bezos Prime Giant|53|same-day delivery",
@@ -3438,6 +3483,161 @@ K.Races = [
   "Thirsty Cyberman|INT,STR",
   "Travelocity Gnome|WIS,HP Max",];
 
+// Alignment: one of these, then one of K.AlignmentFlaws ("Chaotic Gassy").
+// Rolled with the stats; just for show (and for the Hall). And not all of these 
+// are really flaws. The point is to come up with funny alignments.
+K.Alignments = ["Lawful", "Neutral", "Chaotic"];
+K.AlignmentFlaws = [
+  "Alcoholic",
+  "Alpha",
+  "Anal-Retentive",
+  "Angry",
+  "Artiste",
+  "Bat-Shit-Crazy",
+  "Big-Titted",
+  "Bisexual",
+  "Boring",
+  "Bougie",
+  "Bull-Headed",
+  "Bureaucratic",
+  "Cheapskate",
+  "Chronically-Online",
+  "Clingy",
+  "Clumsy",
+  "Complicated",
+  "Conformist",
+  "Confused",
+  "Coward",
+  "Creep",
+  "Cringe",
+  "Cromulent",
+  "Crusty",
+  "Cursed",
+  "Curvy",
+  "Damp",
+  "Demanding",
+  "Dependent",
+  "Deviant",
+  "Disaster",
+  "Discombobulated",
+  "Dreamer",
+  "Drunken",
+  "Edgy",
+  "Feral",
+  "Flirty",
+  "Frisky",
+  "Fuckboi",
+  "Furry",
+  "Gamer",
+  "Gassy",
+  "Goblic-Energy",
+  "Gothy",
+  "Greedy",
+  "Gremlin-Brained",
+  "Gullible",
+  "Hangry",
+  "Horny-on-Main",
+  "House-Broken",
+  "Hyperactive",
+  "Idiotic",
+  "Idolatrous",
+  "Influencer",
+  "Insecure",
+  "Lazy",
+  "Litigious",
+  "Loner",
+  "Loud",
+  "Maniacal",
+  "Masoochist",
+  "Meddler",
+  "Melodramatic",
+  "Messy",
+  "Mid",
+  "Mildly-Haunted",
+  "Millenial",
+  "Misunderstood",
+  "Moist",
+  "Murder-Hobo",
+  "Naked",
+  "Narrow-Minded",
+  "Needy",
+  "Nerfed",
+  "Nosy",
+  "Obsessive",
+  "Out-of-Control",
+  "Outsider",
+  "Overcaffeinated",
+  "Overconfident",
+  "Overly-Literal",
+  "Overpowered",
+  "Passive-Aggressive",
+  "Persnickety",
+  "Petty",
+  "Polyamorous",
+  "Pompous",
+  "Promiscuous",
+  "Pungent",
+  "Rebellious",
+  "Redonkulous",
+  "Sadist",
+  "Sarcastic",
+  "Self-Absorbed",
+  "Shaky",
+  "Shifty",
+  "Show-Off",
+  "Sleep-Deprived",
+  "Smug",
+  "Snack-Motivated",
+  "Sticky-Fingered",
+  "Stubborn",
+  "Sweaty",
+  "Tax-Evading",
+  "Theater-Kid",
+  "Thirsty",
+  "Trickster",
+  "Twisted",
+  "Unhinged",
+  "Unwashed",
+  "Vengeful",
+  "Wet Blanket",
+  "Witchy",
+];
+
+// A random alignment, from the game's seeded random numbers
+function RollAlignment() {
+  return Pick(K.Alignments) + " " + Pick(K.AlignmentFlaws);
+}
+
+// Alignment: one of these, then one of K.AlignmentFlaws ("Chaotic Gassy").
+// Rolled with the stats; just for show (and for the Hall).
+K.Alignments = ["Lawful", "Neutral", "Chaotic"];
+K.AlignmentFlaws = [
+  "ADHD", "Adulterous", "Alcoholic", "Anal-Retentive", "Angry", "Arrogant",
+  "At-the-Ready", "Autistic", "Bat-Shit-Crazy", "Bisexual", "Blithering",
+  "Boring", "Bull-Headed", "Confused", "Cromulent", "Cruel-Hearted",
+  "Demanding", "Deviant", "Discombobulated", "Drunken", "Flirty",
+  "Free-Loading", "Frisky", "Furry", "Gassy", "Gothic", "Greedy", "High-End",
+  "Hoity-Toity", "House-Broken", "Hyperactive", "Idiotic", "Idolatrous",
+  "Infuriating", "Insecure", "Maniacal", "Mentally-Impaired",
+  "Misunderstood", "Murder-Hobo", "Naked", "Narrow-Minded", "Out-of-Control",
+  "Pea-Brained", "Promiscuous", "Persnickety", "Pompous", "Pungent",
+  "Rebellious", "Redonkulous", "Self-Absorbed", "Shaky", "Stubborn",
+  "Theater-Kid", "Twisted", "Underhanded", "Useless", "Vengeful", "Vile",
+  "Bureaucratic", "Cheapskate", "Chronically-Online", "Clingy", "Clumsy",
+  "Cringe", "Crusty", "Cursed", "Damp", "Edgy", "Entitled", "Feckless",
+  "Feral", "Gremlin-Brained", "Gullible", "Hangry", "Lazy", "Litigious",
+  "Loud", "Melodramatic", "Mid", "Mildly-Haunted", "Moist", "Nerfed", "Nosy",
+  "Overcaffeinated", "Overconfident", "Overly-Literal", "Overpowered",
+  "Passive-Aggressive", "Petty", "Sanctimonious", "Sarcastic", "Shifty",
+  "Sleep-Deprived", "Smug", "Snack-Motivated", "Spiteful", "Sticky-Fingered",
+  "Sweaty", "Tax-Evading", "Thirsty", "Two-Faced", "Unhinged", "Unwashed"
+];
+
+// A random alignment, from the game's seeded random numbers
+function RollAlignment() {
+  return Pick(K.Alignments) + " " + Pick(K.AlignmentFlaws);
+}
+
 // from 18 to 24 Klasses
 K.Klasses = [
   "99th Degree Stonecutter|CON,STR",
@@ -3452,7 +3652,7 @@ K.Klasses = [
   "Fatal Flatulist|INT,CON",
   "Grimdark Double-Hell Slayer|CON,DEX",
   "Hamburglar|DEX,CHA",
-  "Internal Combustion Felon|STR,HP Max",
+  "Dark Starry Knight|STR,HP Max",
   "Paperback Fighter|STR,INT",
   "Paula Deen Paladin|WIS,CON",
   "Pinball Wizard|MP Max,DEX",
