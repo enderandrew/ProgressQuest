@@ -250,7 +250,7 @@ var MenuBar = [
     { label: "Main Men&u", action: quit }
   ] },
   { label: "&Help", items: [
-    { label: "&Help Topics", key: "F1", action: function () { OpenLink("faq.php"); } },
+    { label: "&Help Topics", key: "F1", action: function () { OpenLink("faq.html"); } },
     { label: "&Tip of the Day…", action: TipOfTheDay },
     "-",
     { label: "Progress Quest &Website", link: "http://progressquest.com/" },
@@ -261,12 +261,12 @@ var MenuBar = [
 	{ label: "Progress Quest &Discord", link: "https://discord.gg/hNar356" },
     { label: "&Report a Bug…", link: "https://github.com/enderandrew/ProgressQuest/issues/new" },
     { label: "Ar&chives", items: [
-      { label: "&News", link: "news.php" },
-      { label: "&Release Notes", link: "releasenotes.php" },
-      { label: "&Tales", link: "tales.php" },
-      { label: "Te&stimonials", link: "testimonials.php" },
-      { label: "&Info", link: "info.php" },
-      { label: "&Links", link: "links.php" }
+      { label: "&News", link: "news.html" },
+      { label: "&Release Notes", link: "releasenotes.html" },
+      { label: "&Tales", link: "tales.html" },
+      { label: "Te&stimonials", link: "testimonials.html" },
+      { label: "&Info", link: "info.html" },
+      { label: "&Links", link: "links.html" }
     ] },
     "-",
     { label: "Check for &Updates…", action: function () { Joke("updates", "Check for Updates"); } },
@@ -449,7 +449,7 @@ function MenuKey(e) {
     SaveGame(function () { MenuStatus("Saved."); });
     return;
   }
-  if (key == "F1" && !_menuOpen) { e.preventDefault(); OpenLink("faq.php"); return; }
+  if (key == "F1" && !_menuOpen) { e.preventDefault(); OpenLink("faq.html"); return; }
   if ((e.ctrlKey || e.metaKey) && !e.altKey && key.toLowerCase() == "p" && !_menuOpen) {
     e.preventDefault();
     Joke("print", "Print");

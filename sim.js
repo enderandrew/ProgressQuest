@@ -116,7 +116,7 @@ function makeSandbox() {
     prompt: () => null,
     setTimeout: (fn) => { fn(); return 0; },
     clearTimeout: () => {},
-    escape, unescape,
+    URL, URLSearchParams,
   };
   // A context with an ordinary global object where Node supports it
   // (v22.8+). A contextified sandbox object routes every global lookup

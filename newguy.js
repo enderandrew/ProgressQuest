@@ -27,8 +27,8 @@ function RollEm() {
     }
   });
   // HP and MP start at 3 or more: with combat, a 1 HP hero never wins.
-  stats['HP Max'] = 3 + Random(8) + stats.CON.div(6);
-  stats['MP Max'] = 3 + Random(8) + stats.INT.div(6);
+  stats['HP Max'] = 3 + Random(8) + Div(stats.CON, 6);
+  stats['MP Max'] = 3 + Random(8) + Div(stats.INT, 6);
   // and an alignment, rolled with them (Unroll brings the old one back)
   traits.Alignment = RollAlignment();
 
@@ -82,8 +82,8 @@ function fill(e, a, n) {
 // Mark the chosen race and class attributes on the stats table and show
 // the martial/arcane split.
 function ShowNewGuyProfile() {
-  var p = AttributeProfile($("input:radio[name=Race]:checked").val(),
-                           $("input:radio[name=Class]:checked").val());
+  var p = AttributeProfile($("input[type=radio][name=Race]:checked").val(),
+                           $("input[type=radio][name=Class]:checked").val());
   $("#stats th").each(function () {
     var stat = $(this).text().trim();
     $(this).toggleClass("primary", p.primary.indexOf(stat) >= 0)
@@ -113,7 +113,7 @@ function NewGuyFormLoad() {
     $('#Sold').on("click", sold);
     $('#quit').on("click", cancel);
     if (Embedded()) $("html").addClass("embedded");
-    $("#races, #classes").on("change", "input:radio", ShowNewGuyProfile);
+    $("#races, #classes").on("change", "input[type=radio]", ShowNewGuyProfile);
     ShowNewGuyProfile();
     $("#Suggest").on("click", SuggestPairing);
     LoadLegacy();
@@ -131,7 +131,7 @@ function NewGuyFormLoad() {
 
 
 if (document)
-  $(document).ready(NewGuyFormLoad);
+  $(NewGuyFormLoad);
 
 
 function sold() {
@@ -195,8 +195,8 @@ function sold() {
       $("#Name").trigger("focus");
       return;
     }
-    newguy.Traits.Race = $("input:radio[name=Race]:checked").val();
-    newguy.Traits.Class = $("input:radio[name=Class]:checked").val();
+    newguy.Traits.Race = $("input[type=radio][name=Race]:checked").val();
+    newguy.Traits.Class = $("input[type=radio][name=Class]:checked").val();
   }
   newguy.Traits.Level = 1;
 
@@ -267,24 +267,7 @@ function sold() {
 
 // ---- Seeds and mutators (from Challenge Modes) --------------------------------
 
-// The page's query string. Flags (?embed&plus&hardcore) are looked up by
-// name: a substring test also matched them inside a Custom Run seed, so a
-// seed like "surplus" made a New Game+ hero and "hardcore-ish" a Hardcore one.
-function UrlParams() {
-  var search = "";
-  try { search = String(window.location.search || ""); } catch (e) {}
-  if (typeof URLSearchParams != "function")   // (sim.js has no URL to read)
-    return { get: function () { return null; }, has: function () { return false; } };
-  return new URLSearchParams(search);
-}
-
-function UrlParam(name) {
-  return UrlParams().get(name) || "";
-}
-
-function UrlFlag(name) {
-  return UrlParams().has(name);
-}
+// (UrlParam and UrlFlag, which read the page's query string, are in config.js)
 
 // newguy.html?seed=...: every roll of the run follows from it
 function RunSeed() { return UrlParam("seed").slice(0, 64); }
@@ -366,7 +349,7 @@ function ShowLegacyPanel() {
 // they all have), so every hero adds to the collection
 function SuggestPairing() {
   function pick(name, done) {
-    var all = $("input:radio[name=" + name + "]").toArray();
+    var all = $("input[type=radio][name=" + name + "]").toArray();
     var fresh = all.filter(function (r) { return !done[r.value]; });
     var choice = (fresh.length ? fresh : all)[Random((fresh.length ? fresh : all).length)];
     if (choice) {

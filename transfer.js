@@ -10,8 +10,11 @@
 
 // ---- Backups ---------------------------------------------------------------
 
+// A .pqw backup is the save's JSON as UTF-8, in base64 (the same bytes the
+// old escape/unescape trick made, so old backups still read)
 function b64_decode(value) {
-  return JSON.parse(decodeURIComponent(escape(atob(value))));
+  // fatal: a file that isn't UTF-8 is an error, not a garbled hero
+  return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(_b64ToBytes(value)));
 }
 
 function b64_stringify(value) {
@@ -19,7 +22,20 @@ function b64_stringify(value) {
 }
 
 function b64_text(text) {
-  return btoa(unescape(encodeURIComponent(text)));
+  return _bytesToB64(new TextEncoder().encode(text));
+}
+
+function _bytesToB64(bytes) {
+  var s = "";
+  // (in slices: fromCharCode.apply can't take a whole save at once)
+  for (var i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+function _b64ToBytes(b64) {
+  var bin = atob(b64), out = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; ++i) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 // Hand the player a file, made when they ask for it (not built ahead of
@@ -440,17 +456,13 @@ function SharePayload(g) {
 }
 
 function _bytesToB64url(bytes) {
-  var s = "";
-  for (var i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return _bytesToB64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function _b64urlToBytes(s) {
   s = s.replace(/-/g, "+").replace(/_/g, "/");
   while (s.length % 4) s += "=";
-  var bin = atob(s), out = new Uint8Array(bin.length);
-  for (var i = 0; i < bin.length; ++i) out[i] = bin.charCodeAt(i);
-  return out;
+  return _b64ToBytes(s);
 }
 
 // The code that goes after sheet.html#: "z" + compressed, or "j" + plain

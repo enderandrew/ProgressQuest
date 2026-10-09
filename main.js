@@ -8,6 +8,7 @@ function timeGetTime() {
 }
 
 function StartTimer() {
+  if (!_heroHere) return;   // another tab is playing this hero (see PlayHere)
   if (!clock) {
     clock = new Worker('clock.js');
     clock.addEventListener('message', e => {
@@ -378,7 +379,7 @@ function Dequeue() {
         game.queue.shift();
         BeginChoice(n, s);
       } else {
-        throw 'bah!' + a;
+        throw new Error('Unknown entry in the task queue: ' + game.queue[0]);
       }
     } else if (EncumBar.done() || MarketDue()) {
       Task('Heading to market to sell viscera-covered loot',4 * 1000);
@@ -1954,7 +1955,7 @@ function ProgressBar(id, tmpl) {
     game[this.id].position = Min(newpos, this.Max());
 
     // Recompute hint
-    game[this.id].percent = (100 * this.Position()).div(this.Max());
+    game[this.id].percent = Div(100 * this.Position(), this.Max());
     game[this.id].remaining = Math.floor(this.Max() - this.Position());
     game[this.id].time = RoughTime(this.Max() - this.Position());
     game[this.id].hint = template(this.tmpl, game[this.id]);
@@ -2128,7 +2129,7 @@ function ListBox(id, columns, fixedkeys) {
 
   this.CheckAll = function (butlast) {
     if (this.box) {
-      var boxes = this.rows().find("input:checkbox");
+      var boxes = this.rows().find("input[type=checkbox]");
       if (butlast) boxes = boxes.slice(0, -1);
       boxes.prop("checked", true);
     }
@@ -2198,7 +2199,7 @@ function StrToIntDef(s, def) {
 
 
 if (document)
-  $(document).ready(FormCreate);
+  $(FormCreate);
 
 
 function WinSpell() {
@@ -2590,8 +2591,8 @@ function PoolGain(base, weight) {
 function LevelUp() {
   var weights = CharProfile().weights;
   Add(Traits,'Level',1);
-  Add(Stats,'HP Max', PoolGain(GetI(Stats,'CON').div(3) + 1 + Random(4), weights['HP Max']));
-  Add(Stats,'MP Max', PoolGain(GetI(Stats,'INT').div(3) + 1 + Random(4), weights['MP Max']));
+  Add(Stats,'HP Max', PoolGain(Div(GetI(Stats,'CON'), 3) + 1 + Random(4), weights['HP Max']));
+  Add(Stats,'MP Max', PoolGain(Div(GetI(Stats,'INT'), 3) + 1 + Random(4), weights['MP Max']));
   WinStat();
   WinStat();
   WinSpell();
@@ -2606,12 +2607,12 @@ function ClearAllSelections() {
 }
 
 function RoughTime(s) {
-  if (s < 120) return s.div(1) + ' seconds';
-  else if (s < 60 * 120) return s.div(60) + ' minutes';
-  else if (s < 60 * 60 * 48) return s.div(3600) + ' hours';
-  else if (s < 60 * 60 * 24 * 60) return s.div(3600 * 24) + ' days';
-  else if (s < 60 * 60 * 24 * 30 * 24) return s.div(3600 * 24 * 30) +" months";
-  else return s.div(3600 * 24 * 30 * 12) + " years";
+  if (s < 120) return Div(s, 1) + ' seconds';
+  else if (s < 60 * 120) return Div(s, 60) + ' minutes';
+  else if (s < 60 * 60 * 48) return Div(s, 3600) + ' hours';
+  else if (s < 60 * 60 * 24 * 60) return Div(s, 3600 * 24) + ' days';
+  else if (s < 60 * 60 * 24 * 30 * 24) return Div(s, 3600 * 24 * 30) +" months";
+  else return Div(s, 3600 * 24 * 30 * 12) + " years";
 
 }
 
@@ -2623,7 +2624,7 @@ function Timer1Timer() {
   if (game.dead) return;   // Hardcore: it's over
   if (TaskBar.done()) {
     game.tasks += 1;
-    game.elapsed += TaskBar.Max().div(1000);
+    game.elapsed += Div(TaskBar.Max(), 1000);
 
     ClearAllSelections();
 
@@ -2795,7 +2796,10 @@ function FormCreate() {
     if (iOS) $("body").addClass("iOS");
   }
 
-  storage.findHero(DecodeName(window.location.href.split('#')[1]), LoadGame);
+  // main.html#<life ID>. (sim.js and replays set location.href to that, so
+  // it's read through URL rather than location.hash.)
+  var hash = new URL(String(window.location.href), "https://pq.invalid/").hash;
+  storage.findHero(DecodeName(hash.slice(1)), LoadGame);
 
   if (window.opener) {
     // Opened as a popup, so go bare style
@@ -2841,7 +2845,7 @@ function quit() {
     if (window.opener) {
       window.close();
     } else {
-      window.location.href = "index.html#resume";
+      window.location.href = "index.html#resume" + (game && game.lifeId ? "/" + EncodeName(game.lifeId) : "");
     }
   });
 }
@@ -2883,6 +2887,109 @@ function CodexHero() {
   if (game.tasks % 10 == 0) CodexBest('seconds', Math.floor(game.elapsed || 0));
   if (level >= 10 && Get(Equips, 'Weapon') == 'Pet Rock') CodexFlag('petrock');
   if (document && game.tasks % 10 == 0) CheckAchievements();
+}
+
+// ---- One tab per hero ---------------------------------------------------------
+//
+// Two tabs (or windows) playing the same hero would each save over the other.
+// So the tab playing a hero holds a Web Lock named for them. A second tab
+// that opens the same hero finds it held and asks: play here instead, or go
+// back to the menu. Playing here takes the lock: the first tab saves, stops,
+// and says where the hero went, and this one reloads to pick up that save.
+// (Without Web Locks, in an old browser or a page not served over https or
+// from localhost, the game just plays.)
+
+var _heroHere = true;      // false while another tab has this hero
+var _heroRelease = null;   // lets go of the lock (LetHeroGo)
+var _heroChannel = null;   // tabs tell each other when they've handed over
+
+function HeroLockName() {
+  return "pq-hero:" + HeroId(game);
+}
+
+function HeroChannel() {
+  if (!_heroChannel && typeof BroadcastChannel == "function") _heroChannel = new BroadcastChannel("pq-heroes");
+  return _heroChannel;
+}
+
+// Start playing, once this tab has the hero. takeOver: from another tab.
+function PlayHere(takeOver) {
+  if (!document || !navigator.locks) { StartTimer(); return; }
+  _heroHere = false;
+  HeroChannel();
+  navigator.locks.request(HeroLockName(), takeOver ? { steal: true } : { ifAvailable: true }, function (lock) {
+    if (!lock) { AskToTakeOver(); return; }
+    if (takeOver) {
+      WaitForHandOver();
+      return new Promise(function () {});   // kept until the page reloads
+    }
+    _heroHere = true;
+    StartTimer();
+    return new Promise(function (resolve) { _heroRelease = resolve; });   // kept while the page is open
+  }).catch(function (err) {
+    if (err && err.name == "AbortError") TakenOver();   // another tab took this hero
+  });
+}
+
+// Let the hero go (the pop-out window plays them next)
+function LetHeroGo() {
+  StopTimer();
+  _heroHere = false;
+  if (_heroRelease) _heroRelease();
+  _heroRelease = null;
+}
+
+// This tab opened a hero another tab is playing
+function AskToTakeOver() {
+  var name = Get(Traits,'Name');
+  WinBox({ title: "Progress Quest Remix", icon: "warn",
+           text: name + " is already playing in another tab or window.\n" +
+                 "If both played, each would save over the other. Play " + name + " here instead? " +
+                 "The other one will save and stop.",
+           buttons: [{ label: "Play here", value: "here", primary: true }, { label: "Main menu", value: null }],
+           onClose: function (v) {
+             if (v == "here") PlayHere(true);
+             else window.location.href = "index.html#resume/" + EncodeName(HeroId(game));
+           } });
+}
+
+// This tab took the hero over: reload once the other tab has saved (or
+// after a moment, if it never says)
+function WaitForHandOver() {
+  var id = HeroId(game), done = false;
+  var reload = function () {
+    if (done) return;
+    done = true;
+    SuspendAutosave();
+    window.location.reload();
+  };
+  setTimeout(reload, 2500);
+  var channel = HeroChannel();
+  if (channel) channel.addEventListener("message", function (e) {
+    if (e.data && e.data.handedOver === id) reload();
+  });
+}
+
+// Another tab took this hero over: save where we are, stop, and say so
+function TakenOver() {
+  StopTimer();
+  StopChoiceAlert();
+  CloseEventPopup();
+  SaveGame(function () {
+    _heroHere = false;
+    SuspendAutosave();
+    var channel = HeroChannel();
+    if (channel) channel.postMessage({ handedOver: HeroId(game) });
+    var name = Get(Traits,'Name');
+    WinBox({ title: "Progress Quest Remix", icon: "info",
+             text: name + " is playing in another tab or window now. This one has saved and stopped, " +
+                   "so the two won't save over each other.",
+             buttons: [{ label: "Play here again", value: "here" }, { label: "Main menu", value: null, primary: true }],
+             onClose: function (v) {
+               if (v == "here") PlayHere(true);
+               else window.location.href = "index.html#resume/" + EncodeName(HeroId(game));
+             } });
+  });
 }
 
 // ---- Replays (see replay.js) -------------------------------------------------
@@ -2960,8 +3067,9 @@ function CheckReplayCode() {
 function SaveGame(callback, urgent) {
   // A Hardcore hero who died, or one who retired, has left the roster: a
   // save now (S, Q, the File menu...) would put them back in it. (And a page
-  // whose hero didn't load has nothing to save.)
-  if (!game || !game.Traits || game.dead || game.retired) { if (callback) callback(); return; }
+  // whose hero didn't load has nothing to save, and one whose hero is playing
+  // in another tab mustn't save over it.)
+  if (!game || !game.Traits || game.dead || game.retired || !_heroHere) { if (callback) callback(); return; }
   Log('Saving game: ' + GameSaveName());
   CodexFlush();
   HotOrNot();
@@ -3052,7 +3160,7 @@ function LoadGame(sheet) {
   }
   if (!game.elapsed)
     Brag('s');
-  StartTimer();
+  PlayHere();
 }
 
 // Mark the race/class attributes on the character sheet and show the
@@ -3216,7 +3324,8 @@ function PopOut() {
     let ext = window.open(window.location.href, "Progress Quest Remix",
       `resizable,width=${$("#main")[0].offsetWidth},height=${$("#main")[0].offsetHeight},popup,location=0`);
     if(ext && !ext.closed && typeof ext.closed !== 'undefined') {
-      // popup was apparently not blocked
+      // popup was apparently not blocked: it plays the hero now
+      LetHeroGo();
       window.location.href = "index.html#resume";  // this window can go back to the menu
     }
   });

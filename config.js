@@ -6,13 +6,27 @@
 // (removeItem to turn it off). The game then writes what it does to the
 // console (Log in main.js); otherwise it keeps no log at all.
 var PQDebug = (function () {
-  try {
-    if (/[?&]debug(=|&|$)/.test(String(window.location.search || ""))) return true;
-    return window.localStorage.getItem("pq.debug") === "1";
-  } catch (e) {
-    return false;
-  }
+  if (UrlFlag("debug")) return true;
+  try { return window.localStorage.getItem("pq.debug") === "1"; } catch (e) { return false; }
 })();
+
+// The page's query string (newguy.html?embed&plus&seed=abc). Flags are
+// looked up by name: UrlFlag("plus") is not fooled by ?seed=surplus.
+function UrlParams() {
+  var search = "";
+  try { search = String(window.location.search || ""); } catch (e) {}
+  if (typeof URLSearchParams != "function")   // (sim.js has no address to read)
+    return { get: function () { return null; }, has: function () { return false; } };
+  return new URLSearchParams(search);
+}
+
+function UrlParam(name) {
+  return UrlParams().get(name) || "";
+}
+
+function UrlFlag(name) {
+  return UrlParams().has(name);
+}
 
 // "$position/$max HP": a progress bar's hint, with its numbers filled in
 // (ProgressBar in main.js; shown with .text(), so nothing needs escaping)
@@ -181,10 +195,10 @@ function UrlEncode(s) {
   return encodeURIComponent(s).replace(/%20/g, "+");
 }
 
-var iPad = navigator.userAgent.match(/iPad/);
-var iPod = navigator.userAgent.match(/iPod/);
-var iPhone = navigator.userAgent.match(/iPhone/);
-var iOS = iPad || iPod || iPhone;
+// An iPhone, iPod or iPad. Since iPadOS 13 an iPad's Safari says it's a Mac,
+// so a "Mac" with a touch screen counts too.
+var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
 function HasLocalStorage() {
   // Accessing window.localStorage can itself throw (e.g. blocked cookies).
@@ -753,10 +767,10 @@ storage.noteDaily = function (date, entry, callback) {
   });
 };
 
-Number.prototype.div = function (divisor) {
-  var dividend = this / divisor;
-  return (dividend < 0 ? Math.ceil : Math.floor)(dividend);
-};
+// Whole-number division, rounding toward zero (Delphi's div)
+function Div(dividend, divisor) {
+  return Math.trunc(dividend / divisor);
+}
 
 function LevelUpTime(level) {  // seconds
   // Normally 20 minutes for level 1. Set to 3 for testing
@@ -772,8 +786,9 @@ let RevString = '&rev=6';
 // rev=6 is this here, pq-web multiplayer enabled
 
 // Heroes travel in the URL hash: main.html#<life ID> (older links have the
-// name; see storage.findHero). New links use encodeURIComponent; old links
-// and bookmarks used escape(), so decoding falls back to unescape() for those.
+// name; see storage.findHero). New links use encodeURIComponent. Old links
+// and bookmarks used escape(), whose %E9 and %u2122 decodeURIComponent
+// rejects, so those are read the old way.
 function EncodeName(name) {
   return encodeURIComponent(name);
 }
@@ -783,7 +798,9 @@ function DecodeName(s) {
   try {
     return decodeURIComponent(s);
   } catch (e) {
-    return unescape(s);
+    return s.replace(/%u([0-9a-f]{4})|%([0-9a-f]{2})/gi, function (m, u, b) {
+      return String.fromCharCode(parseInt(u || b, 16));
+    });
   }
 }
 

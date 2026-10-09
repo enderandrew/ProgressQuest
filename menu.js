@@ -6,7 +6,7 @@
 
 // ---- Windows --------------------------------------------------------------
 
-function OpenWindow(id, mode, extra) {
+function OpenWindow(id, mode, custom) {
   // New Game+ is the character roller with a legacy, once someone has
   // retired to the Hall; until then its window explains how to unlock it.
   // Hardcore (from Challenge Modes) is the roller too.
@@ -16,12 +16,12 @@ function OpenWindow(id, mode, extra) {
   var dlg = document.getElementById(id);
   if (!dlg) return;
   $("dialog[open]").each(function () { if (this !== dlg) this.close(); });
-  if (id == "dlgNew") StartNewGame(mode, extra);
+  if (id == "dlgNew") StartNewGame(mode, custom);
   if (id == "dlgChallenge") ShowChallenges();
   if (id == "dlgCodex") CodexLoad(function () { ShowCodex(); CodexBadge(); });
   if (id == "dlgResume") LoadRoster();
   if (id == "dlgHall") LoadHall();
-  if (id == "dlgFaq" && !$("#faqFrame").attr("src")) $("#faqFrame").attr("src", "faq.php");
+  if (id == "dlgFaq" && !$("#faqFrame").attr("src")) $("#faqFrame").attr("src", "faq.html");
   if (!dlg.open) dlg.showModal();
   // a link to index.html#resume (or #new...) opens that window
   history.replaceState(null, "", "#" + (mode || id.replace(/^dlg/, "").toLowerCase()));
@@ -33,12 +33,13 @@ function CloseWindows() {
 
 // index.html#resume, #new, #plus, #hall, #challenge, #codex, #faq, #github
 // index.html#hall/<id> opens the Hall with that legend highlighted (a hero
-// who just retired).
-var hallHighlight = "";
+// who just retired); index.html#resume/<life ID> the Resume list with that
+// hero highlighted (the one you just left).
+var hashTarget = "";
 function WindowFromHash() {
   var parts = (window.location.hash || "").slice(1).split("/");
   var name = parts[0].toLowerCase();
-  hallHighlight = parts[1] ? decodeURIComponent(parts[1]) : "";
+  hashTarget = DecodeName(parts[1] || "");
   var ids = { "new": "dlgNew", resume: "dlgResume", plus: "dlgPlus", hall: "dlgHall",
               challenge: "dlgChallenge", hardcore: "dlgHardcore", codex: "dlgCodex", faq: "dlgFaq", github: "dlgGitHub" };
   if (ids[name]) OpenWindow(ids[name]);
@@ -46,12 +47,19 @@ function WindowFromHash() {
 
 // The character roller runs in its own page (newguy.html) inside the New
 // Game window. It is reloaded each time, so every visit is a fresh roll.
-// extra: more of the query string, e.g. "seed=abc&mut=nospells" (Custom Run)
-function StartNewGame(mode, extra) {
+// mode: "plus" or "hardcore" (or none); custom: a Custom Run's { seed, mut }
+function StartNewGame(mode, custom) {
+  var q = new URLSearchParams();
+  q.set("embed", "");
+  if (mode) q.set(mode, "");
+  custom = custom || {};
+  if (custom.seed) q.set("seed", custom.seed);
+  if (custom.mut && custom.mut.length) q.set("mut", custom.mut.join(","));
   $("#dlgNewTitle").text((mode == "plus" ? "New Character (New Game+)" :
                           mode == "hardcore" ? "New Character (\u2620 Hardcore)" : "New Character") +
-                         (extra ? " \u2014 custom run" : ""));
-  $("#newguyFrame").attr("src", "newguy.html?embed" + (mode ? "&" + mode : "") + (extra ? "&" + extra : ""));
+                         (custom.seed || (custom.mut || []).length ? " \u2014 custom run" : ""));
+  // (flags without the "=": newguy.html?embed&plus&seed=abc)
+  $("#newguyFrame").attr("src", "newguy.html?" + q.toString().replace(/=(?=&|$)/g, ""));
 }
 
 // Challenge Modes: the Daily, Custom Run, and what a Hardcore hero would
@@ -183,10 +191,7 @@ function StartCustom() {
   var mode = $("input[name=customMode]:checked").val() || "";
   var seedText = String($("#customSeed").val() || "").trim().slice(0, 64);
   var muts = $("#customMutators input:checked").map(function () { return this.value; }).get();
-  var extra = [];
-  if (seedText) extra.push("seed=" + encodeURIComponent(seedText));
-  if (muts.length) extra.push("mut=" + muts.join(","));
-  OpenWindow("dlgNew", mode, extra.join("&"));
+  OpenWindow("dlgNew", mode, { seed: seedText, mut: muts });
 }
 
 // How many heroes are in the Hall (New Game+ unlocks at 1), and the menu
@@ -218,7 +223,7 @@ function LoadRoster() {
 // read only when it's wanted (Back up, Share).
 function ShowRoster(heroes) {
   var list = $("#roster").empty();
-  var lit = DecodeName((window.location.hash.split("=")[1]) || "");
+  var lit = hashTarget;
 
   $("#resumeCount").text(heroes.length ? heroes.length : "");
 
@@ -315,7 +320,7 @@ function ShowFallen(fallen) {
       (o.chance ? " (this one: a " + Math.round(o.chance * 10000) / 100 + "% chance)" : ""));
     row.find(".words").text(o.lastWords ? "\u201c" + o.lastWords + "\u201d" : "");
     row.find(".epitaph").text(o.epitaph || "");
-    if (hallHighlight == "fallen" && i == 0) row.addClass("lit");
+    if (hashTarget == "fallen" && i == 0) row.addClass("lit");
     row.find(".del").on("click", function () {
       if (!confirm("Remove " + o.name + "'s obituary from the Hall of the Fallen?")) return;
       storage.loadFallen(function (all) {
@@ -324,7 +329,7 @@ function ShowFallen(fallen) {
     });
     list.append(row);
   });
-  if (hallHighlight == "fallen") {
+  if (hashTarget == "fallen") {
     var head = document.getElementById("fallenHead");
     if (head) head.scrollIntoView({ block: "start" });
   }
@@ -396,7 +401,7 @@ function ShowHall(legends) {
       " \u00b7 " + Hours(l.played || 0) + " played");
     row.find(".best").text([l.bestequip, l.bestspell, l.beststat].filter(Boolean).join(" / "));
     row.find(".taunt").text(l.taunt ? "\u201c" + l.taunt + "\u201d (the Old Bastard\u2122, in the Prologue)" : "");
-    if (l.id === hallHighlight) row.addClass("lit");
+    if (l.id === hashTarget) row.addClass("lit");
     if (!LegendCounts(l)) {
       row.addClass("void");
       row.find(".where").append($("<span class='voided'>").text(
