@@ -239,6 +239,15 @@ dialog.win95::backdrop { background: rgba(0, 0, 40, 0.3); }
 .sheet-view .vbox > table { display: table; }
 .sheet-view [hidden] { display: none !important; }
 #SheetEquips td:first-child { width: 80px; }
+/* The hero's journal (journal.js) */
+.journal { max-height: 60vh; overflow-y: auto; background: #fffef6; border: 1px solid #808080; padding: 4px 8px;
+           font-family: Georgia, "Times New Roman", serif; font-size: 13px; line-height: 1.45; text-align: left; }
+.journal-entry { margin: 0 0 7px; }
+.journal-stamp { display: block; font: 8pt Tahoma, sans-serif; color: #777; }
+.journal-aside .journal-text { font-style: italic; color: #5a3d8a; }
+.journal-act .journal-text { font-weight: bold; }
+.journal-end .journal-text, .journal-finale .journal-text { color: #8a1c1c; }
+
 /* The "While you were away" summary */
 .away-list { margin: 4px 0 0; padding-left: 18px; list-style: disc; }
 .away-list li { margin: 2px 0; }

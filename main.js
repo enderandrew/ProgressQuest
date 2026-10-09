@@ -149,6 +149,7 @@ function InterplotCinematic() {
     entry.ending = ending;
     RefreshActTooltips();
   }
+  if (typeof JournalActEnd == "function") JournalActEnd(game.act, ending);
   $.each(ending, function (i, line) { Q('scene|4|' + line); });
   Q('plot|1|Loading ...');
 }
@@ -526,6 +527,7 @@ function Percent(p) {
 
 function Die(fight) {
   var obit = MakeObituary(fight);
+  if (typeof JournalDeath == "function") JournalDeath(obit.cause);   // (the tombstone has a Journal button)
   game.dead = obit;
   game.queue.length = 0;
   if (game.daily && !game.daily.status) SettleDaily('died');
@@ -675,6 +677,7 @@ function FinishBoss() {
     f.wonAt = game.elapsed || 0;
     f.wonLevel = GetI(Traits,'Level');
     Log('Defeated the Old Bastard\u2122 after ' + f.tries + (f.tries == 1 ? ' try' : ' tries'));
+    if (typeof JournalFinale == "function") JournalFinale(true, f.tries);
     CodexFlag('boss');
     if (f.tries == 1) CodexFlag('bossfirst');
     if (game.mode == 'hardcore') CodexFlag('bosshc');
@@ -684,6 +687,7 @@ function FinishBoss() {
     Brag('f');
   } else {
     f.nextTry = (game.elapsed || 0) + K.Boss.RetryMinutes * 60;
+    if (typeof JournalFinale == "function") JournalFinale(false, f.tries);
     QueueFinale('escape');
   }
 }
@@ -739,6 +743,7 @@ function Brand(reason, later) {
   var level = game.Traits ? parseInt(game.Traits.Level, 10) || 0 : 0;
   game.cheater = { reason: reason, at: new Date().toISOString(), level: level };
   Log('Branded a cheater: ' + reason);
+  if (typeof JournalBrand == "function") JournalBrand(reason);
   if (later) return;
   ShowBrand();
   if (document) SaveGame();
@@ -825,6 +830,7 @@ function AskRetire() {
 function Retire() {
   if (!CanRetire()) return;
   CheckForCheating();   // a branded hero still retires, but won't count
+  if (typeof JournalRetire == "function") JournalRetire();
   SuspendAutosave();   // or leaving the page would save them back
   StopTimer();
   game.retired = true;   // and nothing else saves them either (SaveGame)
@@ -1171,6 +1177,7 @@ function FinishEvent() {
   }
   ApplyEventEffect(ev.effect || {}, ev, result);
   Log('Event: ' + ev.key);
+  if (typeof JournalEvent == "function") JournalEvent(ev, result);
 
   var shown = game.recentEvent;
   if (!shown || shown.key != ev.key || shown.result.length)
@@ -1386,6 +1393,7 @@ function SettleDaily(status) {
   d.status = status;
   d.doneAt = GameNow();
   d.played = Math.round(game.elapsed || 0);
+  if (typeof JournalDaily == "function") JournalDaily(status);
   NoteDaily();
   ShowDaily();
   Log('Daily challenge ' + status);
@@ -1773,6 +1781,7 @@ function Defeated(fight) {
   }
   ShowPurse();
   Log('Defeated by ' + fight.foe + '; lost ' + lostGold + ' gold and ' + lostItems + ' items');
+  if (typeof JournalFirstDefeat == "function") JournalFirstDefeat(fight.foe);
 
   var taken = [];
   if (lostGold) taken.push(lostGold + ' gold');
@@ -2515,6 +2524,7 @@ function CompleteAct() {
   PlotBar.reset(60 * 60 * (1 + 5 * game.act)); // 1 hr + 5/act
   game.bestplot = 'Act ' + toRoman(game.act);
   BeginStory(NewStory(game.act));
+  if (typeof JournalActBegin == "function") JournalActBegin();
   Narrate(ActCaption(game.act) + '. ' + game.story.purpose);
   Plots.AddUI(ActCaption(game.act));
 
@@ -2607,6 +2617,7 @@ function LevelUp() {
   WinSpell();
   RestoreHealth();  // a new level, a fresh start
   ExpBar.reset(LevelUpTime(GetI(Traits,'Level')));
+  if (typeof JournalLevel == "function") JournalLevel();
   Brag('l');
   CheckForCheating();
 }
@@ -2769,6 +2780,8 @@ function FormCreate() {
     $("#RetireYes").on("click", Retire);
     $("#DeathHall").on("click", function () { window.location.href = "index.html#hall/fallen"; });
     $("#DeathMenu").on("click", function () { window.location.href = "index.html"; });
+    $("#DeathJournal, #JournalLink").on("click", function (e) { e.preventDefault(); OpenJournal(); });
+    $("#RetireJournal").on("click", function (e) { e.preventDefault(); DownloadJournal(); });
     $("#RetireNo").on("click", function () { this.closest("dialog").close(); });
     $("#DailyOk").on("click", function () { this.closest("dialog").close(); });
     $("#DailyMenu").on("click", function () { window.location.href = "index.html#challenge"; });
@@ -2956,6 +2969,7 @@ function CatchUp(then) {
     SaveGame();
     ShowFight(true);
     var lines = CatchUpSummary(before, CatchUpSnapshot(), credit);
+    if (typeof JournalAway == "function") JournalAway(credit, lines);
     line.textContent = "While you were away (" + RoughTime(Math.round(credit)) + " of play):";
     meter.remove();
     var list = document.createElement("ul");
@@ -3162,6 +3176,7 @@ function AnchorReplay() {
   delete birth.seal;
   delete birth.replay;
   birth.choiceLog = [];
+  birth.journal = [];   // (the replay doesn't need the journal)
   birth.seed = randseed();   // the dice, as they are now
   game.replay = { birth: birth, list: [], fp: want.fp || null,
                   since: { t: game.tasks, level: GetI(Traits,'Level'), why: want.why } };
@@ -3232,6 +3247,8 @@ function LoadGame(sheet) {
   else if (!game.unverified && UnverifiedReason(game, sealState))
     game.unverified = UnverifiedReason(game, sealState);   // sealed in from the next save
   StartReplay(game);
+  // The journal's first entry (journal.js), for a new hero or one from before it
+  if (typeof JournalBegin == "function" && !game.dead) JournalBegin(!(game.tasks > 0));
   if (document) CheckReplayCode();
 
   if (document) {
@@ -3404,6 +3421,10 @@ function FormKeyDown(e) {
 
   if (e.key === 't') {
     OpenTactics();
+  }
+
+  if (e.key === 'j' && typeof OpenJournal == "function") {
+    OpenJournal();
   }
 
   if (e.key === 'e') {

@@ -232,6 +232,7 @@ var MenuBar = [
   { label: "&Game", items: [
     { label: "&Pause", key: "P", checked: IsPaused, action: TogglePause },
     { label: "&Tactics…", key: "T", action: OpenTactics },
+    { label: "&Journal…", key: "J", action: function () { OpenJournal(); } },
     { label: "&Speed", items: [
       { label: "&Slow", action: function () { Joke("slow", "Speed"); } },
       { label: "&Normal", checked: function () { return true; }, action: function () {} },

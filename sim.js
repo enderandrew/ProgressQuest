@@ -149,6 +149,7 @@ function run(opts) {
   if (fs.existsSync(path.join(opts.dir, "events.js"))) load(ctx, opts.dir, "events.js");
   if (fs.existsSync(path.join(opts.dir, "codex.js"))) load(ctx, opts.dir, "codex.js");
   load(ctx, opts.dir, "main.js");
+  if (fs.existsSync(path.join(opts.dir, "journal.js"))) load(ctx, opts.dir, "journal.js");
   load(ctx, opts.dir, "newguy.js");
 
   // Virtual clock

@@ -52,6 +52,7 @@
 <script src="codex.js"></script>
 <script src="transfer.js"></script>
 <script src="main.js"></script>
+<script src="journal.js"></script>
 <script src="menubar.js"></script>
 <script src="desktop.js"></script>
 <script src="guard.js"></script>
@@ -283,6 +284,7 @@
   <a id="EventPopupToggle" href="#" title="Show events in a pop-up window (E)">Event pop-ups: on</a>
   <a id="RetireLink" href="#" title="Retire this hero to the Hall of Legends" style="display:none">Retire</a>
   <a id="TacticsLink" href="#" title="Standing orders for your hero (T)">Tactics</a>
+  <a id="JournalLink" href="#" title="Your hero's journal: the milestones, the story so far, and a few things nobody was meant to read (J)">Journal</a>
   <a id="CodexLink" href="index.html#codex" title="The Bestiary, Spellbook, Journal and achievements (opens in a new tab)">Codex</a>
   <a id="LogToggle" href="#" title="Show or hide the combat log (C)">Combat log</a>
   <a id="ShareLink" href="#" title="A link to this character sheet, for showing off">Share</a>
@@ -327,6 +329,7 @@
     <div id="DeathWords"></div>
     <div id="DeathEpitaph"></div>
     <div class="dlg-buttons">
+      <button type="button" id="DeathJournal">Journal</button>
       <button type="button" id="DeathHall">Hall of the Fallen</button>
       <button type="button" id="DeathMenu">Main menu</button>
     </div>
@@ -361,7 +364,8 @@
     <div><b id="RetireName"></b> will be enshrined in the Hall of Legends, and the
       <span id="RetireRace"></span> race and the <span id="RetireClass"></span> class will
       count as honored. Retired heroes leave your roster, so this can't be undone.</div>
-    <div class="dlg-small"><a id="RetireBackup" href="#">Download a backup first</a>
+    <div class="dlg-small"><a id="RetireJournal" href="#">Download their journal</a> or
+      <a id="RetireBackup" href="#">a backup</a>
       if you might want to play them again.</div>
     <div class="dlg-buttons">
       <button type="button" id="RetireYes">Retire</button>
