@@ -289,6 +289,11 @@ function EquipPrice(power) {
   return 5 * power * power + 10 * power + 20;
 }
 
+// What the shop charges this hero for it (the Cheapskate perk pays less)
+function ShopPrice(power) {
+  return Max(1, Math.round(EquipPrice(power) * MutatorProduct('shopMult')));
+}
+
 function Dequeue() {
   while (TaskDone()) {
     if (Split(game.task,0) == 'kill') {
@@ -321,7 +326,7 @@ function Dequeue() {
       // buy some equipment, if the shop has anything better
       var offer = ShopPower();
       if (WinEquip(offer, true)) {
-        Add(Inventory,'Gold',-EquipPrice(offer));
+        Add(Inventory,'Gold',-ShopPrice(offer));
       } else {
         game.shopped = true;  // nothing worth buying until next trip
       }
@@ -337,7 +342,7 @@ function Dequeue() {
         var amt = GetI(Inventory, 1) * GetI(Traits,'Level');
         if (Pos(' of ', Inventory.label(1)) > 0)
           amt *= (1+RandomLow(10)) * (1+RandomLow(GetI(Traits,'Level')));
-        amt = Math.round(amt * ChaFactor(K.Loot.PriceSlope, K.Loot.PriceMin, K.Loot.PriceMax));
+        amt = Math.round(amt * ChaFactor(K.Loot.PriceSlope, K.Loot.PriceMin, K.Loot.PriceMax) * MutatorProduct('goldMult'));
         Inventory.remove1();
         Add(Inventory, 'Gold', amt);
         game.goldEarned = (game.goldEarned || 0) + amt;
@@ -356,6 +361,7 @@ function Dequeue() {
     var old = game.task;
     if (Split(old,0) == 'event') old = game.eventResume || '';
     game.task = '';
+    if (game.perkDue && !game.event && !game.queue.length) OfferPerk();
     if (game.queue.length > 0) {
       var a = Split(game.queue[0],0);
       var n = StrToInt(Split(game.queue[0],1));
@@ -383,14 +389,14 @@ function Dequeue() {
         throw new Error('Unknown entry in the task queue: ' + game.queue[0]);
       }
     } else if (EncumBar.done() || MarketDue()) {
-      Task('Heading to market to sell viscera-covered loot',4 * 1000);
+      Task('Heading to market to sell viscera-covered loot', Math.round(4000 * MutatorProduct('travelMult')));
       game.task = 'market';
     } else if ((Pos('kill|',old) <= 0) && (old != 'heading') && (old != 'rest')) {
-      if (GetI(Inventory, 'Gold') > EquipPrice() && !game.shopped && !HasMutator('noShop')) {
+      if (GetI(Inventory, 'Gold') > ShopPrice() && !game.shopped && !HasMutator('noShop')) {
         Task('Haggling over the price of better equipment', 5 * 1000);
         game.task = 'buying';
       } else {
-        Task('Heading to the Killing Fields™', 4 * 1000);
+        Task('Heading to the Killing Fields™', Math.round(4000 * MutatorProduct('travelMult')));
         game.task = 'heading';
       }
     } else if (FinaleDue()) {
@@ -442,6 +448,7 @@ function HeroSnapshot() {
     castMult: Tactic('spells').castMult * MutatorProduct('castMult'),
     damageMult: MutatorProduct('damageMult'),
     giveUpMult: MutatorProduct('giveUpMult'),
+    takenMult: MutatorProduct('takenMult'),
     spells: game.Spells.map(function (s) {
       return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
     })
@@ -495,9 +502,9 @@ function FinishFight() {
   } else {
     if (fight.outcome == 'flee')
       game.queue.push('task|2|Running away from ' + fight.foe + ' as fast as you can');
-    var regen = CombatRegen(HeroSnapshot());
-    HPBar.increment(regen.hp);
-    MPBar.increment(regen.mp);
+    var regen = CombatRegen(HeroSnapshot()), more = MutatorProduct('regenMult');
+    HPBar.increment(Math.round(regen.hp * more));
+    MPBar.increment(Math.round(regen.mp * more));
   }
   fight.done = true;
   ShowFight();
@@ -517,7 +524,7 @@ function DeathChance(fight) {
   var above = (fight.foeLevel || 0) - GetI(Traits,'Level');
   if (above > 0) p *= Math.pow(H.TougherMult, above);
   if (fight.boss) p *= H.BossMult;
-  return Min(H.DeathMax, p);
+  return Min(H.DeathMax, p * MutatorProduct('deathMult'));
 }
 
 function Percent(p) {
@@ -916,7 +923,7 @@ function ShowNarration() {
 function MaybeEvent(where, resume) {
   if (!K.Events || game.queue.length) return;
   if (game.tasks - (game.lastEvent || 0) < K.EventCooldown) return;
-  if (Random(1000) >= (K.EventChance[where] || 0) * 1000) return;
+  if (Random(1000) >= Min(1, (K.EventChance[where] || 0) * MutatorProduct('eventMult')) * 1000) return;
   var level = GetI(Traits,'Level');
   var choices = K.Events.filter(function (e) {
     return e.where.indexOf(where) >= 0 &&
@@ -1124,7 +1131,7 @@ function ResolveChoice() {
   // (a pick of yours ended the deciding task early: ms is how long it took)
   LogInput(mine ? { t: game.tasks, event: ev.key, pick: ev.chosen, by: ev.by, ms: TaskBar.Max() }
                 : { t: game.tasks, event: ev.key, pick: ev.chosen, by: ev.by });
-  CodexChoice(ev.key, ev.chosen, ev.by);
+  if (!ev.perk) CodexChoice(ev.key, ev.chosen, ev.by);   // (a perk isn't an event, for the Codex)
   var o = ev.choices[ev.chosen];
   var lines = o.lines && o.lines.length ? o.lines : ['You decide: ' + o.label];
   var first = ev.lines.length;
@@ -1232,6 +1239,62 @@ function ApplyEventEffect(fx, amt, result) {
     ExpBar.increment(ExpBar.Max() * fx.xp);
     result.push('+' + Math.round(fx.xp * 100) + '% of the way to the next level');
   }
+  if (fx.perk && AddPerk(fx.perk)) result.push('New perk: ' + PerkByKey(fx.perk).label);
+}
+
+// ---- Perks (K.Perks in combat.js) ----------------------------------------------
+//
+// One at creation; another offered at every K.PerkEvery levels up to
+// K.PerkLast (combat.js), as a choice of three: like an event's choices, you pick (1, 2
+// or 3, or click) or fate does, and the pick goes in the replay log.
+
+
+function OfferPerk() {
+  game.perkDue = Max(0, (game.perkDue || 0) - 1);
+  var have = game.perks || [];
+  var pool = K.Perks.filter(function (p) { return have.indexOf(p.key) < 0; });
+  var options = [];
+  while (options.length < 3 && pool.length) options.push(pool.splice(Random(pool.length), 1)[0]);
+  if (!options.length) return;
+  var level = GetI(Traits,'Level');
+  var ev = { key: 'perk', perk: true, where: 'perk', effect: {}, shown: 0,
+             lines: ['Level ' + level + '. You feel a new quirk coming on',
+                     'Three of them, actually. Only one of them will stick'] };
+  ev.choices = options.map(function (p) {
+    return { label: PerkText(p), effect: { perk: p.key }, lines: [p.label + '. It is who you are now'] };
+  });
+  ev.ask = 'Which perk will it be?';
+  ev.askAt = ev.lines.length;
+  game.event = ev;
+  game.eventResume = '';
+  game.lastEvent = game.tasks;
+  $.each(ev.lines, function (i, text) { game.queue.push('scene|3|' + text + '|ev'); });
+  game.queue.push('choice|' + K.ChoiceSeconds + '|' + ev.ask);
+}
+
+// Returns whether it was new
+function AddPerk(key) {
+  var p = PerkByKey(key);
+  if (!p) return false;
+  game.perks = game.perks || [];
+  if (game.perks.indexOf(key) >= 0) return false;
+  game.perks.push(key);
+  // the pools and the pack may change size
+  HPBar.reset(PoolMax('HP Max'), Min(HPBar.Position(), PoolMax('HP Max')));
+  MPBar.reset(PoolMax('MP Max'), Min(MPBar.Position(), PoolMax('MP Max')));
+  EncumBar.reset(CarryMax(), EncumBar.Position());
+  Log('New perk: ' + p.label);
+  if (typeof JournalAdd == "function") JournalAdd('perk', 'New perk: ' + PerkText(p));
+  ShowPerks();
+  return true;
+}
+
+// "Perks: Pack Mule, Greedy" under the stats, the details on hover
+function ShowPerks() {
+  if (!document) return;
+  var perks = Perks();
+  $("#PerkLine").text(perks.length ? "Perks: " + perks.map(function (p) { return p.label; }).join(", ") : "")
+    .attr("title", perks.map(PerkText).join("\n"));
 }
 
 // ---- Temporary buffs --------------------------------------------------------
@@ -1286,15 +1349,31 @@ function Mutators() {
   }).filter(Boolean);
 }
 
+// Everything that changes the rules for this hero: the run's mutators and
+// the hero's perks (K.Perks in combat.js). Asked for many times a fight, so
+// it's kept until the hero, their perks or their mutators change.
+var _modifiers = { key: null, list: null, products: {} };
+function Modifiers() {
+  var key = (game.lifeId || '') + '|' + (game.perks || []).join(',') + '|' + (game.mutators || []).join(',');
+  if (_modifiers.key !== key) _modifiers = { key: key, list: Mutators().concat(Perks()), products: {} };
+  return _modifiers.list;
+}
+
+function Perks() {
+  return (game.perks || []).map(PerkByKey).filter(Boolean);
+}
+
 function HasMutator(prop) {
-  return Mutators().some(function (m) { return !!m[prop]; });
+  return Modifiers().some(function (m) { return !!m[prop]; });
 }
 
 // The product of a numeric property over this hero's mutators (1 if none)
 function MutatorProduct(prop) {
+  var list = Modifiers(), cache = _modifiers.products;
+  if (cache[prop] !== undefined) return cache[prop];
   var p = 1;
-  Mutators().forEach(function (m) { if (typeof m[prop] == 'number') p *= m[prop]; });
-  return p;
+  list.forEach(function (m) { if (typeof m[prop] == 'number') p *= m[prop]; });
+  return cache[prop] = p;
 }
 
 function CarryMax() {
@@ -1329,7 +1408,7 @@ function LegacyAmount(stat) {
 // HP Max and MP Max as they count (the bars' maximum): the legacy share of
 // the hero's own
 function PoolMax(stat) {
-  var mult = stat == 'HP Max' ? MutatorProduct('hpMult') : 1;
+  var mult = MutatorProduct(stat == 'HP Max' ? 'hpMult' : 'mpMult');
   return Max(1, Math.round(GetI(Stats, stat) * (1 + LegacyPct(stat)) * mult));
 }
 
@@ -1476,7 +1555,7 @@ function ShowBuffs() {
 
 // ---- Event pop-up and "Last event" box -------------------------------------
 
-K.EventWhere = { rest: 'While resting', road: 'On the road', town: 'In town',
+K.EventWhere = { perk: 'A new perk', rest: 'While resting', road: 'On the road', town: 'In town',
                  field: 'On the Killing Fields™' };
 
 // Called as each line of an event starts: remember what has been shown so
@@ -1762,9 +1841,9 @@ function Defeated(fight) {
   game.deaths = (game.deaths || 0) + 1;
 
   // Pockets: a share of the purse and of each stack of loot
-  var lostGold = 0, lostItems = 0;
+  var lostGold = 0, lostItems = 0, loss = MutatorProduct('lossMult');
   if (game.purse) {
-    lostGold = Math.round(game.purse * (D.PurseLossMin + Random(100) / 100 * (D.PurseLossMax - D.PurseLossMin)));
+    lostGold = Min(game.purse, Math.round(game.purse * loss * (D.PurseLossMin + Random(100) / 100 * (D.PurseLossMax - D.PurseLossMin))));
     game.purse -= lostGold;
   }
   for (var i = game.Inventory.length - 1; i >= 1; --i) {
@@ -1772,7 +1851,7 @@ function Defeated(fight) {
     var qty = StrToInt(game.Inventory[i][1]);
     var lose = 0;
     for (var u = 0; u < qty; ++u)
-      if (Random(100) < D.ItemLossPercent) ++lose;
+      if (Random(100) < D.ItemLossPercent * loss) ++lose;
     if (lose) {
       lostItems += lose;
       Add(Inventory, name, -lose);
@@ -1804,14 +1883,15 @@ function RecoveryTime() {
   var D = K.Defeat;
   var level = GetI(Traits,'Level');
   var con = EffStat('CON') / ExpectedStat(level);
-  return Math.round((D.RecoveryBase + D.RecoveryPerLevel * level) / Min(2, Max(0.5, con)));
+  return Math.round((D.RecoveryBase + D.RecoveryPerLevel * level) / Min(2, Max(0.5, con)) * MutatorProduct('recoveryMult'));
 }
 
 // The temple's tithe: a share of your purse and of your banked gold. The
 // richer you are, the more salvation costs.
 function PayTemple() {
-  var fromPurse = Math.floor((game.purse || 0) * K.Defeat.Tithe);
-  var fromBank = Math.floor(GetI(Inventory, 'Gold') * K.Defeat.Tithe);
+  var tithe = Min(0.5, K.Defeat.Tithe * MutatorProduct('titheMult'));
+  var fromPurse = Math.floor((game.purse || 0) * tithe);
+  var fromBank = Math.floor(GetI(Inventory, 'Gold') * tithe);
   game.purse = (game.purse || 0) - fromPurse;
   if (fromBank) Add(Inventory, 'Gold', -fromBank);
   if (fromPurse + fromBank) Log('Tithed ' + (fromPurse + fromBank) + ' gold to the temple');
@@ -1853,7 +1933,7 @@ function NeedsRest() {
 function RestTime() {
   var hurt = 1 - HPBar.Position() / Max(1, HPBar.Max());
   var con = EffStat('CON') / ExpectedStat(GetI(Traits,'Level'));
-  return Math.round(1000 * (3 + 5 * hurt) / Min(2, Max(0.5, con)));
+  return Math.round(1000 * (3 + 5 * hurt) / Min(2, Max(0.5, con)) * MutatorProduct('restMult'));
 }
 
 function RestoreHealth() {
@@ -1878,7 +1958,8 @@ function DropLoot(part) {
   var fight = game.combat || {};
   var gap = (fight.foeLevel || GetI(Traits,'Level')) - GetI(Traits,'Level');
   var cha = ChaFactor(1, 0, 3) - 1;   // -1 .. +2
-  var chance = Min(L.DropMax, Max(L.DropMin, L.DropBase + L.DropPerLevel * gap + L.DropPerCha * cha));
+  var chance = Min(0.99, Min(L.DropMax, Max(L.DropMin, L.DropBase + L.DropPerLevel * gap + L.DropPerCha * cha)) *
+                    MutatorProduct('dropMult'));
   var rare = Min(L.RareMax, Max(L.RareMin, L.RareBase + L.RarePerLevel * gap + L.RarePerCha * cha));
   var qty = fight.qty || 1;
   for (var i = 0; i < qty; ++i) {
@@ -1890,7 +1971,7 @@ function DropLoot(part) {
   }
   if (Random(1000) < L.GoldChance * 1000) {
     var gold = Math.round((fight.foeLevel || 1) * qty * (0.5 + Random(100) / 100) *
-                          ChaFactor(L.PriceSlope, L.PriceMin, L.PriceMax));
+                          ChaFactor(L.PriceSlope, L.PriceMin, L.PriceMax) * MutatorProduct('goldMult'));
     if (gold > 0) {
       game.purse = (game.purse || 0) + gold;
       Log('Looted ' + gold + ' gold');
@@ -2308,10 +2389,10 @@ function ShopPower() {
     Math.round(ChaFactor(K.Loot.HaggleSlope, 0, K.Loot.HaggleMax) * Random(2));
   var gold = GetI(Inventory,'Gold');
   for (var extra = 0; extra < K.Loot.PremiumMax &&
-       EquipPrice(power + 1) * 2 <= gold; ++extra)
+       ShopPrice(power + 1) * 2 <= gold; ++extra)
     ++power;
   // ...but never more than you can pay for
-  while (power > 0 && EquipPrice(power) > gold)
+  while (power > 0 && ShopPrice(power) > gold)
     --power;
   return power;
 }
@@ -2426,7 +2507,9 @@ function CompleteQuest() {
     game.questsDone = (game.questsDone || 0) + 1;
     Log('Quest completed: ' + game.bestquest);
     Quests.CheckAll();
-    [WinSpell,WinEquip,WinStat,WinItem][Random(4)]();
+    var prize = [WinSpell,WinEquip,WinStat,WinItem][Random(4)];
+    if (prize === WinEquip && HasMutator('noRewardGear')) prize = WinItem;   // (the Looter perk)
+    prize();
   }
   while (Quests.length() > 99)
     Quests.remove0();
@@ -2618,6 +2701,9 @@ function LevelUp() {
   RestoreHealth();  // a new level, a fresh start
   ExpBar.reset(LevelUpTime(GetI(Traits,'Level')));
   if (typeof JournalLevel == "function") JournalLevel();
+  // A new perk on offer every K.PerkEvery levels (OfferPerk, between tasks)
+  var lv = GetI(Traits,'Level');
+  if (lv % K.PerkEvery == 0 && lv <= K.PerkLast) game.perkDue = (game.perkDue || 0) + 1;
   Brag('l');
   CheckForCheating();
 }
@@ -2672,7 +2758,7 @@ function Timer1Timer() {
       if (QuestBar.done() || !Quests.length()) {
         CompleteQuest();
       } else {
-        QuestBar.increment(reward);
+        QuestBar.increment(reward * MutatorProduct('questMult'));
       }
     }
 
@@ -3278,6 +3364,7 @@ function LoadGame(sheet) {
   ShowRecentEvent();
   ShowRetire();
   ShowLegacy();
+  ShowPerks();
   ShowDaily();
   ShowTactics();
   ShowFight(true);

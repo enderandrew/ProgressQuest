@@ -105,6 +105,8 @@ function ShowDailyCard() {
     .append($("<div>").text("A level " + plan.level + " " + plan.race + " " + plan.klass + "."))
     .append($("<div class=goal>").text("Goal: " + DailyGoalText(plan.goal) + " within " + K.DailyHours + " hours."))
     .append($("<div class=twist>").text(twist ? "Twist: " + twist.label + ". " + twist.help : "No twist today."))
+    .append($("<div class=perks>").text("Perks: " + plan.perks.map(function (k) { return PerkByKey(k).label; }).join(", "))
+      .attr("title", plan.perks.map(function (k) { return PerkText(PerkByKey(k)); }).join("\n")))
     .append(plan.hardcore ? $("<div class=hc>").text("\u2620 Hardcore: one life.") : "");
   var midnight = new Date(date + "T00:00:00Z").getTime() + 24 * 3600 * 1000;
   var left = Math.max(0, midnight - Date.now()) / 60000;

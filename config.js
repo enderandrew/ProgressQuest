@@ -915,7 +915,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 15;
+var SaveVersion = 16;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -1042,6 +1042,16 @@ var SaveMigrations = [
   // come out of the stats
   function (sheet) {
     if (sheet.Stats) { delete sheet.Stats.seed; delete sheet.Stats.best; }
+  },
+  // 15 -> 16: perks (K.Perks). A hero from before them gets one, picked from
+  // the name (not the game's dice), and is offered more from the next tenth
+  // level on, as new heroes are
+  function (sheet) {
+    if (!sheet.perks) {
+      var h = 7, name = String(sheet.Traits && sheet.Traits.Name || "");
+      for (var i = 0; i < name.length; ++i) h = (h * 33 + name.charCodeAt(i)) >>> 0;
+      sheet.perks = typeof K.Perks != "undefined" ? [K.Perks[h % K.Perks.length].key] : [];
+    }
   }
 ];
 

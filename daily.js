@@ -53,8 +53,17 @@ function DailyPlan(date) {
     klass: P(K.Klasses).split("|")[0],
     mutators: mutator ? [mutator] : [],
     hardcore: R(7) == 0,
-    goal: { type: type, target: K.DailyGoals[type].target(level) }
+    goal: { type: type, target: K.DailyGoals[type].target(level) },
+    // a perk, and one more for every K.PerkEvery levels the hero starts at
+    perks: DailyPerks(rng, level)
   };
+}
+
+function DailyPerks(rng, level) {
+  var pool = K.Perks.map(function (p) { return p.key; }), out = [];
+  var n = 1 + Math.floor(Math.min(level, K.PerkLast) / K.PerkEvery);
+  while (out.length < n && pool.length) out.push(pool.splice(rng.uint32() % pool.length, 1)[0]);
+  return out;
 }
 
 // Gear of a given power for a slot: the closest item, plus or minus
@@ -116,8 +125,12 @@ function MakeDaily(date) {
     return K.Mutators.filter(function (m) { return m.key == k; })[0];
   }).filter(Boolean);
   var now = Date.now();
-  var carry = Math.max(5, Math.round(CarryFor(stats.STR) * twist.reduce(function (p, m) { return p * (m.carryMult || 1); }, 1)));
-  var hp = Math.max(1, Math.round(stats["HP Max"] * twist.reduce(function (p, m) { return p * (m.hpMult || 1); }, 1)));
+  // (the twist and the perks change the pools and the pack)
+  var mods = twist.concat(plan.perks.map(PerkByKey).filter(Boolean));
+  var product = function (prop) { return mods.reduce(function (p, m) { return p * (m[prop] || 1); }, 1); };
+  var carry = Math.max(5, Math.round(CarryFor(stats.STR) * product("carryMult")));
+  var hp = Math.max(1, Math.round(stats["HP Max"] * product("hpMult")));
+  var mp = Math.max(1, Math.round(stats["MP Max"] * product("mpMult")));
 
   var sheet = {
     Traits: { Name: name, Race: plan.race, Class: plan.klass, Alignment: alignment, Level: L },
@@ -140,7 +153,7 @@ function MakeDaily(date) {
     QuestBar: { position: 0, max: 1 },
     TaskBar: { position: 0, max: 2000 },
     HPBar: { position: hp, max: hp },
-    MPBar: { position: stats["MP Max"], max: stats["MP Max"] },
+    MPBar: { position: mp, max: mp },
     saveVersion: SaveVersion, birthVersion: SaveVersion,
     startLevel: L,
     buffs: [], recentEvent: null, finale: null,
@@ -150,6 +163,7 @@ function MakeDaily(date) {
     saveGen: 0,
     runSeed: "daily-" + date,
     mutators: plan.mutators,
+    perks: plan.perks,
     wins: 0, streak: 0, questsDone: 0, goldEarned: 0,
     tactics: { fights: "normal", resting: "normal", spells: "normal" },
     choiceLog: [],

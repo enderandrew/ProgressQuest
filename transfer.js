@@ -451,6 +451,7 @@ function SharePayload(g, end) {
     d: g.deaths || 0, w: g.wins || 0, qd: g.questsDone || 0,
     fin: g.finale && g.finale.state == "won" ? g.finale.wonLevel : 0,
     daily: g.daily ? g.daily.date : "", ch: g.cheater ? g.cheater.reason : "", uv: g.unverified || "",
+    pk: g.perks || [],
     dead: g.dead ? (g.dead.cause || "dead") : "",
     at: Date.now()
   };

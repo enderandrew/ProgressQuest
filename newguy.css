@@ -1,7 +1,7 @@
 
 #newguy.window {
   width: 508px;
-  height: 535px;
+  height: 575px;   /* (with the perk under the name) */
 }
 
 #newguy > .client {
@@ -66,6 +66,12 @@ fieldset table td {
 #stats th { white-space: nowrap; }
 div.profile { font-size: 8pt; color: #555; margin-top: 4px; height: 2.5em; }
 div.alignment { font-size: 8pt; font-weight: bold; color: #5a2a82; text-align: center; min-height: 1.2em; }
+/* The perk rolled with the stats */
+div.perk { font-size: 8pt; margin: 4px 0 2px; padding: 3px 6px; border: 1px solid #c9a227; background: #fff8d6;
+           text-align: left; line-height: 1.35; }
+div.perk b { color: #6b4e00; margin-right: 6px; }
+div.perk .pro { color: #1d6b1d; margin-right: 6px; }
+div.perk .con { color: #8a1c1c; }
 
 /* Inside the main menu's New Game window (index.html) */
 html.embedded body { margin: 0; background: #ece9d8; }

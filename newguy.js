@@ -9,6 +9,7 @@ function Roll(stat) {
 
 var stats = {};
 var traits = {};
+var perkRoll = null;   // the perk rolled with the stats
 var total = 0;
 var seedHistory = [];
 
@@ -31,6 +32,8 @@ function RollEm() {
   stats['MP Max'] = 3 + Random(8) + Div(stats.INT, 6);
   // and an alignment, rolled with them (Unroll brings the old one back)
   traits.Alignment = RollAlignment();
+  // and a perk (K.Perks in combat.js)
+  perkRoll = Pick(K.Perks).key;
 
   var color =
     (total >= (63+18)) ? 'red'    :
@@ -43,6 +46,12 @@ function RollEm() {
     var Total = $("#Total");
     Total.text(total);
     $("#Alignment").text(traits.Alignment);
+    var perk = PerkByKey(perkRoll);
+    $("#Perk").empty()
+      .append($("<b>").text("Perk: " + perk.label))
+      .append($("<span class='pro'>").text("+ " + perk.pro))
+      .append($("<span class='con'>").text("\u2212 " + perk.con))
+      .attr("title", "Rolled with your stats. Another is offered every " + K.PerkEvery + " levels.");
     Total.css("background-color", color);
 
     $("#Unroll").prop("disabled", !seedHistory.length);
@@ -175,6 +184,7 @@ function sold() {
     wins: 0, streak: 0, questsDone: 0, goldEarned: 0,
     tactics: { fights: "normal", resting: "normal", spells: "normal" },
     choiceLog: [],
+    perks: [perkRoll],
     mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : "normal",
     lifeId: NewLifeId(),   // who they are in storage, and to the Hardcore ledger
     saveGen: 0,
@@ -226,10 +236,13 @@ function sold() {
       bar.max = bar.position = Math.round(stats[pool] * (1 + (newguy.legacy.bonus[pool] || 0)));
     });
   }
-  // Mutators: Glass Cannon halves HP, Holey Pockets halves what you carry
-  var mutators = (K.Mutators || []).filter(function (m) { return newguy.mutators.indexOf(m.key) >= 0; });
+  // Mutators and the perk: Glass Cannon halves HP, Holey Pockets halves what
+  // you carry, a Pack Mule carries more...
+  var mutators = (K.Mutators || []).filter(function (m) { return newguy.mutators.indexOf(m.key) >= 0; })
+    .concat(newguy.perks.map(PerkByKey).filter(Boolean));
   var product = function (prop) { return mutators.reduce(function (p, m) { return p * (m[prop] || 1); }, 1); };
   newguy.HPBar.max = newguy.HPBar.position = Math.max(1, Math.round(newguy.HPBar.max * product("hpMult")));
+  newguy.MPBar.max = newguy.MPBar.position = Math.max(1, Math.round(newguy.MPBar.max * product("mpMult")));
   newguy.EncumBar.max = Math.max(5, Math.round(newguy.EncumBar.max * product("carryMult")));
 
 

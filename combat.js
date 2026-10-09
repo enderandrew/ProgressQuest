@@ -138,6 +138,80 @@ K.Mutators = [
     help: "Three quarters of the XP from every fight." }
 ];
 
+// Perks: a quirk with a pro and a con. A hero gets one at creation (rolled
+// with the stats) and is offered another at levels 10, 20, 30, 40 and 50
+// (OfferPerk in main.js: pick one of three, or fate picks). game.perks lists
+// the keys. Each perk is { key, label, pro, con } and changes some of these
+// (several perks multiply together, and with the mutators above):
+//   xp           XP per fight             questMult    quest progress
+//   damageMult   your damage              takenMult    damage you take
+//   hpMult       HP Max                   mpMult       MP Max
+//   castMult     how often you cast       giveUpMult   monsters giving up
+//   carryMult    carrying capacity        travelMult   time on the road
+//   restMult     time resting             recoveryMult time at the temple
+//   regenMult    HP/MP back after fights  titheMult    the temple's tithe
+//   goldMult     gold found, loot's price dropMult     chance of a drop
+//   shopMult     what gear costs          lossMult     what a defeat takes
+//   deathMult    Hardcore death chance    eventMult    chance of events
+//   noRewardGear quest rewards are never gear (an item instead)
+K.Perks = [
+  { key: "questlover", label: "Quest Lover", questMult: 1.4, takenMult: 1.12,
+    pro: "Quests go 40% faster.", con: "Takes 12% more damage, being so busy." },
+  { key: "questhater", label: "Quest Hater", xp: 1.15, questMult: 0.7,
+    pro: "15% more XP from fights.", con: "Quests go 30% slower." },
+  { key: "packmule", label: "Pack Mule", carryMult: 1.5, travelMult: 1.5,
+    pro: "Carries half again as much.", con: "Walks half again as slowly." },
+  { key: "steelbladder", label: "Steel Bladder", travelMult: 0.7, carryMult: 0.8,
+    pro: "Travels 30% faster. No stops.", con: "Carries 20% less (no room for snacks)." },
+  { key: "looter", label: "Looter", dropMult: 1.3, noRewardGear: true,
+    pro: "Monsters drop loot 30% more often.", con: "Quest rewards are never gear." },
+  { key: "berserker", label: "Berserker", damageMult: 1.2, takenMult: 1.2,
+    pro: "Hits 20% harder.", con: "Takes 20% more damage. Defense is for cowards." },
+  { key: "turtle", label: "Turtle", takenMult: 0.82, damageMult: 0.88,
+    pro: "Takes 18% less damage.", con: "Hits 12% softer, from inside the shell." },
+  { key: "cheapskate", label: "Cheapskate", shopMult: 0.75, goldMult: 0.85,
+    pro: "Gear costs 25% less.", con: "Loot sells for 15% less. Merchants talk." },
+  { key: "greedy", label: "Greedy", goldMult: 1.3, lossMult: 1.5,
+    pro: "30% more gold from loot and sales.", con: "Loses half again as much when defeated." },
+  { key: "lucky", label: "Lucky", lossMult: 0.5, deathMult: 0.5, goldMult: 0.85,
+    pro: "Loses half as much when defeated (and in Hardcore, is half as likely to die).",
+    con: "15% less gold. Luck is expensive." },
+  { key: "silvertongue", label: "Silver Tongue", giveUpMult: 1.6, castMult: 0.8,
+    pro: "Beaten monsters give up 60% more easily.", con: "Casts 20% less often; too busy talking." },
+  { key: "bookworm", label: "Bookworm", castMult: 1.3, mpMult: 1.2, hpMult: 0.9,
+    pro: "Casts 30% more often, with 20% more MP.", con: "10% less HP. Paper cuts." },
+  { key: "brawler", label: "Brawler", damageMult: 1.15, castMult: 0.6,
+    pro: "Hits 15% harder.", con: "Casts 40% less often. Reading is hard." },
+  { key: "insomniac", label: "Insomniac", restMult: 0.6, regenMult: 0.7,
+    pro: "Rests 40% faster.", con: "Gets 30% less back between fights." },
+  { key: "hypochondriac", label: "Hypochondriac", recoveryMult: 0.5, titheMult: 2,
+    pro: "Recovers at the temple twice as fast.", con: "Tithes twice as much. They know you." },
+  { key: "teacherspet", label: "Teacher's Pet", xp: 1.1, goldMult: 0.85,
+    pro: "10% more XP.", con: "15% less gold. Apples aren't free." },
+  { key: "showoff", label: "Show-off", damageMult: 1.1, giveUpMult: 0.7,
+    pro: "Hits 10% harder.", con: "Monsters give up 30% less (they want to see the show)." },
+  { key: "overachiever", label: "Overachiever", questMult: 1.3, restMult: 1.4,
+    pro: "Quests go 30% faster.", con: "Rests 40% longer. Burnout is real." },
+  { key: "wanderer", label: "Easily Distracted", eventMult: 2, xp: 0.92,
+    pro: "Twice as many random events.", con: "8% less XP. Ooh, a squirrel." },
+  { key: "tank", label: "Built Like a Shed", hpMult: 1.2, travelMult: 1.2,
+    pro: "20% more HP.", con: "Travels 20% slower. Doors are a problem." }
+];
+
+// A perk at creation, and another on offer every PerkEvery levels up to PerkLast
+K.PerkEvery = 10;
+K.PerkLast = 50;
+
+function PerkByKey(key) {
+  for (var i = 0; i < K.Perks.length; ++i) if (K.Perks[i].key == key) return K.Perks[i];
+  return null;
+}
+
+// "Pack Mule: Carries half again as much. But: Walks half again as slowly."
+function PerkText(p) {
+  return p.label + ": " + p.pro + " But: " + p.con;
+}
+
 // Tactics: the player's standing orders (the Tactics panel in the game,
 // game.tactics). The hero still plays itself; these change how. "normal"
 // is how the game has always played. Each option: key, label, help, and
@@ -281,6 +355,7 @@ function _log2(x) { return Math.log(x) / Math.LN2; }
 //                                over shield and armor slots)
 //         physicality,          (0..1, from AttributeProfile)
 //         wounded,              (true after a recent defeat)
+//         damageMult, takenMult, castMult, giveUpMult  (mutators and perks)
 //         spells: [{name, level, roman, type}] }  (type: see SpellType)
 // foe:  { name, level, qty }    (level is per monster; qty fight together)
 //       optional: boss (never gives up), hpMult (more health),
@@ -446,7 +521,7 @@ function ResolveCombat(hero, foe, seed) {
       if (roll() < hit) {
         var dmg = P / C.MonsterHitsToKill *
           Math.pow(ratio(magic ? mon.INT : mon.STR, resist), C.DefenseExponent) *
-          (magic ? 1 : armorF) * (1 - buff / 2) * (1 - debuff / 2) * between(0.8, 1.2);
+          (magic ? 1 : armorF) * (1 - buff / 2) * (1 - debuff / 2) * (hero.takenMult || 1) * between(0.8, 1.2);
         // Damage stays fractional inside the fight (a level 1 monster hits
         // for well under 1 HP); only the log and the totals are rounded.
         hp -= dmg;

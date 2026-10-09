@@ -140,6 +140,7 @@ function JournalActBegin() {
 // An event has played out (FinishEvent). The first of each kind goes in,
 // and any choice you made yourself.
 function JournalEvent(ev, result) {
+  if (ev.perk) return;   // (AddPerk writes its own line)
   var seen = game.journalEvents = game.journalEvents || {};
   var mine = ev.by == 'you';
   if (seen[ev.key] && !mine) return;
@@ -262,7 +263,8 @@ function OpenJournal() {
 K.JournalBegin = [
   "Had a dream. The Old Bastard™ was in it, sneering “{taunt}”. I don't know who he is, but he's going down. Bought this journal on the way out of town.",
   "Day one. A terrible old man called me “{taunt}” in a dream, so naturally I've left home to kill him. Mom packed snacks.",
-  "Starting a journal, because heroes have journals. Also an Old Bastard™ called me “{taunt}” in my sleep and I need to process that."
+  "Starting a journal, because heroes have journals. Also an Old Bastard™ called me “{taunt}” in my sleep and I need to process that.",
+  "Started a journal so the bards know what to write about me. The Old Bastard™ called me “{taunt}”! Sticks and stones will break his bones!",
 ];
 
 K.JournalFirstAside =
