@@ -229,6 +229,9 @@ div.profile#Condition.wounded { color: #b33; font-weight: bold; }
 /* Event buffs */
 div.profile#Buffs { color: #060; font-weight: bold; }
 div.profile#Buffs:empty { display: none; }
+div.profile#Boons { color: #6a2c91; font-weight: bold; }
+div.profile#Boons:empty, div.profile#Owned:empty { display: none; }
+div.profile#Owned { color: #806000; margin-bottom: 2px; }
 #Stats tr.buffed td:last-child { color: #060; font-weight: bold; }
 #Stats tr.buffed td:last-child::after { content: " \25B2"; font-size: 7pt; }
 

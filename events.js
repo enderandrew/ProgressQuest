@@ -1170,3 +1170,166 @@ K.Events = [
         lines: ['The shanty is stuck in your head for a week', 'At least you rest well'],
         effect: { heal: true } } ] }
 ];
+
+// ---- Gold sinks ------------------------------------------------------------------
+//
+// Gold piles up: past a point the shops have nothing better to sell. A hero
+// sitting on a hoard spends some of it at market on one of K.Sinks, picked
+// at random (StartSplurge in main.js). It plays out like an event, without
+// a choice: for once, the hero has money, and no use for advice.
+//
+// A hoard is banked gold of at least (Keep + Hoard) times the price of the
+// best gear the shop sells (premium gear, K.Loot.PremiumMax levels up). A
+// splurge spends a share of what is above Keep times that price, so there's
+// always enough left to keep shopping. Perks change all this (hoardMult,
+// sinkMult, boonMult, allyPower and gambleMult; see K.Perks in combat.js).
+K.Sink = {
+  Keep: 2,              // never spends below this many times the price of premium gear
+  Hoard: 1.5,           // ...and splurges with this many times that to spare
+  CooldownHours: 2,     // game hours between splurges, at least
+  MinLevel: 5,
+  AllyPower: 0.3,       // a henchman's blow, as a share of a typical hero's
+  GambleOdds: 0.45,     // the dice tables pay double this often
+  // Tavern names: "The {word} {thing}"
+  TavernWords: ['Prancing', 'Drunken', 'Sleepy', 'Rusty', 'Leaky', 'Gilded', 'Surly', 'Damp',
+                'Wobbly', 'Suspicious', 'Bottomless', 'Second-Best', 'Haunted', 'Itchy'],
+  TavernThings: ['Ferret', 'Goblet', 'Pony', 'Kobold', 'Flagon', 'Mimic', 'Bard', 'Tankard',
+                 'Owlbear', 'Boot', 'Gnome', 'Lich', 'Turnip', 'Sock']
+};
+
+// Each sink:
+//   key, label  a unique name; what the gold went on ('a horse')
+//   spend       the share of the spare gold it costs (0.3 = 30%)
+//   weight      how likely, against the others (default 1)
+//   minLevel    optional
+//   lines       what happens, one task per line. {gold} is the cost, and
+//               {hench}, {tavern} and {rock} are names made up for the
+//               occasion; the story placeholders work too ({kingdom}...)
+//   boon        something that lasts: the perk properties it gives (see
+//               K.Perks in combat.js; ally: a henchman, see K.Combat.AllyHit),
+//               shown under the health bars, or under the purse if for good
+//     name      what it's called ('Henchman {hench}')
+//     help      what it does
+//     hours     how long it lasts, in game hours; without: it's for good,
+//               and bought only once (or stack times)
+//     ends      what the log says when it wears off
+//   spells      spells learned, there and then
+//   stats       stat points gained, there and then
+//   buff        a stat buffed, as by an event
+//   gear        true: gear better than anything the shop sells
+//   gamble      { win: lines, lose: lines }: double or nothing
+//   memoir      true: a ghostwritten entry in the journal
+K.Sinks = [
+  { key: 'henchman', label: 'a henchman', spend: 0.35, weight: 2,
+    lines: ['A sign in {kingdom}: “Henchman for hire. Will hench. Own pointy stick”',
+            'You hire {hench} for {gold} gold, plus snacks'],
+    boon: { ally: 1, name: 'Henchman {hench}', help: 'An extra attack every round', hours: 8,
+            ends: 'Your henchman {hench} quits to start a podcast' } },
+
+  { key: 'horse', label: 'a horse', spend: 0.25,
+    lines: ['A horse trader in {kingdom} swears this one is “mostly horse”',
+            'You pay {gold} gold. It is at least sixty percent horse'],
+    boon: { travelMult: 0.6, name: 'Mostly a horse', help: 'Travels 40% faster', hours: 8,
+            ends: 'Your horse wanders off to find itself' } },
+
+  { key: 'temple', label: 'a temple donation', spend: 0.4,
+    lines: ['You donate {gold} gold to the temple in {kingdom}',
+            'A priest blesses you. Then he sees the amount and blesses you again, harder'],
+    boon: { takenMult: 0.85, name: 'Blessed', help: 'Takes 15% less damage', hours: 6,
+            ends: 'Your blessing wears off. The temple sends a newsletter' } },
+
+  { key: 'feast', label: 'a feast', spend: 0.3,
+    lines: ['You throw a feast for the whole of {kingdom}',
+            '{guy} gives a toast. It goes on far too long. Everyone loves you anyway',
+            'The bill comes to {gold} gold'],
+    buff: 'CHA',
+    boon: { regenMult: 1.5, restMult: 0.8, name: 'Well fed', hours: 4,
+            help: 'Gets half again as much back between fights, and rests 20% faster',
+            ends: 'The feast finally wears off. You could eat' } },
+
+  { key: 'tutor', label: 'a private tutor', spend: 0.35,
+    lines: ['You hire a tutor from the Academy of {kingdom}',
+            'They charge by the hour, and by the syllable: {gold} gold'],
+    spells: 3 },
+
+  { key: 'trainer', label: 'a personal trainer', spend: 0.4,
+    lines: ['A personal trainer in {kingdom} promises “results”',
+            'You pay {gold} gold to be yelled at. It works, a little'],
+    stats: 2 },
+
+  { key: 'backpack', label: 'a bigger backpack', spend: 0.3,
+    lines: ['A leatherworker in {kingdom} sells you a bigger backpack for {gold} gold',
+            'It has a cup holder. You will never use the cup holder'],
+    boon: { carryMult: 1.2, name: 'a bigger backpack', help: 'Carries 20% more', stack: 2 } },
+
+  { key: 'insurance', label: 'adventurer’s insurance', spend: 0.3,
+    lines: ['An insurance salesman corners you in {kingdom}',
+            'You buy a policy for {gold} gold. It covers acts of gods, but not of their followers'],
+    boon: { lossMult: 0.4, name: 'Insured', help: 'Loses 60% less when defeated', hours: 12,
+            ends: 'Your insurance lapses. The renewal letter is written in blood' } },
+
+  { key: 'taxes', label: 'taxes', spend: 0.5,
+    lines: ['The tax collector of {kingdom} has found you',
+            '“The Crown would like its cut,” he says, and takes {gold} gold',
+            'You ask what the Crown does with it. He says “Crown stuff”'] },
+
+  { key: 'lawsuit', label: 'a lawsuit', spend: 0.4,
+    lines: ['The next of kin of {nemesis} are suing you for wrongful slaying',
+            'You point out that you haven’t slain {nemesis} yet. The court calls this a technicality',
+            'Damages: {gold} gold'] },
+
+  { key: 'dice', label: 'the dice tables', spend: 0.5,
+    lines: ['You wander into a dice den in {kingdom} with {gold} gold burning a hole in your pocket',
+            'You put it all on seven. It’s a twenty-sided die'],
+    gamble: { win: ['The die lands on seven. The whole den goes quiet',
+                    'You walk out with twice what you came in with'],
+              lose: ['The die lands on twelve. The house always wins',
+                     'You walk out with your dignity, which nobody wanted to bet against'] } },
+
+  { key: 'tavern', label: 'a tavern', spend: 0.7, minLevel: 20, weight: 0.7,
+    lines: ['{tavern}, a tavern in {kingdom}, is up for sale',
+            'Your retirement plan, at last. You buy it for {gold} gold',
+            'You hire someone to run it. They seem honest. They are not'],
+    boon: { restMult: 0.85, name: '{tavern}, a tavern in {kingdom}',
+            help: 'Rests 15% faster. Free naps upstairs' } },
+
+  { key: 'statue', label: 'a statue of yourself', spend: 0.5, minLevel: 15,
+    lines: ['You commission a statue of yourself for the square in {kingdom}',
+            'The sculptor makes you taller. You pay {gold} gold, and tip'],
+    boon: { giveUpMult: 1.15, name: 'a statue of you in {kingdom}',
+            help: 'Monsters who have seen it give up 15% more easily' } },
+
+  { key: 'memoir', label: 'a ghostwriter', spend: 0.25,
+    lines: ['You hire a ghostwriter to punch up your journal',
+            'They read it, sigh, and ask for {gold} gold up front'],
+    memoir: true },
+
+  { key: 'coin', label: 'DungeonCoin', spend: 0.5,
+    lines: ['{guy} tells you about DungeonCoin. “It’s like gold, but imaginary”',
+            'You invest {gold} gold. To the moon!',
+            'DungeonCoin is down one hundred percent. {guy} has left {kingdom}'] },
+
+  { key: 'egg', label: 'a dragon egg', spend: 0.2,
+    lines: ['A merchant in {kingdom} sells you a genuine dragon egg for {gold} gold',
+            'You keep it warm for weeks. It is a rock',
+            'You name it {rock}. You love it anyway'],
+    boon: { name: 'a pet rock named {rock}', help: 'Does nothing. Perfect in every way' } },
+
+  { key: 'enchanter', label: 'an enchanter', spend: 0.45,
+    lines: ['An enchanter in {kingdom} offers to “improve” your weakest piece of gear',
+            'You hand over {gold} gold. It comes back glowing, slightly'],
+    gear: true },
+
+  { key: 'seminar', label: 'a self-help seminar', spend: 0.3,
+    lines: ['You attend “The Seven Habits of Highly Effective Adventurers” in {kingdom}',
+            'Habit one: be the protagonist. You already are. That will be {gold} gold'],
+    boon: { xp: 1.1, name: 'Motivated', help: '10% more XP', hours: 6,
+            ends: 'The seminar wears off. You were never going to do habits two through seven' } },
+
+  { key: 'ballad', label: 'a ballad', spend: 0.3,
+    lines: ['You pay a bard {gold} gold for “The Ballad of {hero}”',
+            'It rhymes “{hero}” with “hero”. Close enough'],
+    boon: { questMult: 1.2, name: 'The Ballad of {hero}', hours: 8,
+            help: 'Quests go 20% faster (the quest givers have all heard it)',
+            ends: 'Nobody sings your ballad anymore. There’s a new one, about a goose' } }
+];

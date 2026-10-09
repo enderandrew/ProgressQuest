@@ -47,6 +47,7 @@ seconds. Runs with the same seed are identical.
     node sim.js --levels 50 --seed pq
     node sim.js --race "4chan Troll" --class "Barbarian Pretzel" --quiet
     node sim.js --daily 2026-10-07 --quiet     # play that day's Daily Challenge
+    node sim.js --mut noshop,glasscannon       # with mutators (K.Mutators)
     node sim.js --replay Hero.pqw              # replay a backup and check it
     node sim.js --help
 
@@ -232,6 +233,50 @@ Lose a fight and:
   weak character from losing, getting robbed, losing again forever.
 
 Tuning knobs are in K.Defeat in combat.js.
+
+
+Perks
+-----
+
+Every hero has quirks, each with a pro and a con: Pack Mule carries half
+again as much and walks half again as slowly. One is rolled with the
+stats; at levels 10, 20, 30, 40 and 50 the hero is offered three more and
+keeps one (you pick, or fate does, like an event's choice). They multiply
+together, and with any mutators. The list is K.Perks in combat.js, with
+the properties a perk can change described above it; check-events.js
+catches a misspelled one.
+
+
+Gold sinks
+----------
+
+Past the middle levels gold piles up: the shop has nothing better to
+sell, so it sits in the bank. A hero sitting on a hoard splurges on
+something at random, at market, once done shopping: a henchman, a horse,
+a temple donation, a tutor, a feast, a tavern, a statue of themselves,
+or taxes, a lawsuit, the dice tables and DungeonCoin. It plays out like
+an event (no choice: the hero has money, and no use for advice).
+
+- A hoard is banked gold of at least 3.5 times the price of the best gear
+  the shop sells (premium stock, 5 levels up). A splurge spends a share
+  of what is above twice that price, so there is always enough left to
+  keep shopping. Two hours of play, at least, between splurges.
+- Some buy something that lasts a while (shown under the health bars,
+  with the time left): a henchman swings after you every round, a horse
+  travels faster, a blessing softens blows. Some are for good, and bought
+  once (shown under the purse): a tavern, a statue, a bigger backpack
+  (twice), a pet rock. Some are just gone.
+- Perks change all of it: how much gold piles up first (Miser, Big
+  Spender), what a splurge costs, how long one lasts (Trust-Fund Kid,
+  Workaholic), how hard henchmen hit (Natural Leader, Lone Wolf), the
+  odds at the dice tables (Gambler).
+
+Simulated heroes (seed "pq" and "alpha", to level 50): the one who
+earned the most splurged 33 times from level 30 on, under 5% of all the
+gold it earned; the poorer one 3 times, after level 40. A hero with the
+Hand-me-downs mutator (no shops) starts splurging around level 15.
+
+The list is K.Sinks at the end of events.js, and the knobs K.Sink.
 
 
 Watching
@@ -714,7 +759,6 @@ So they trade speed against gold and safety, which matters for a
 challenge that scores one of them (and defeats will matter a lot in
 Hardcore). Careful resting and the Spells settings change little on
 average (within what 6 heroes can tell apart); they depend on the hero.
-Saves are now version 10 (game.tactics, game.choiceLog).
 
 
 The finale, retiring and the Hall of Legends

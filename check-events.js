@@ -46,7 +46,7 @@ const sandbox = { console, window: {}, document: null, navigator: { userAgent: "
 sandbox.window = sandbox;
 sandbox.$ = sandbox.jQuery = Object.assign(function () { return {}; }, { extend: Object.assign, each: () => {} });
 const ctx = vm.createContext(sandbox);
-for (const file of ["config.js", "story.js", "events.js"]) {
+for (const file of ["config.js", "story.js", "combat.js", "events.js"]) {
   try {
     vm.runInContext(fs.readFileSync(path.join(dir, file), "utf8"), ctx, { filename: file });
   } catch (e) {
@@ -155,6 +155,56 @@ events.forEach((e, n) => {
   if (used.indexOf("loot") >= 0 && !anyItem) warn(`${name} says {loot} but no effect gives an item`);
 });
 
+// 2b. Perks (combat.js) and gold sinks (the end of events.js)
+const PROPS = ["xp", "questMult", "damageMult", "takenMult", "hpMult", "mpMult", "castMult", "giveUpMult",
+               "carryMult", "travelMult", "restMult", "recoveryMult", "regenMult", "titheMult", "goldMult",
+               "dropMult", "shopMult", "lossMult", "deathMult", "eventMult", "initiativeMult", "fleeMult",
+               "healMult", "poolGainMult", "buffMult", "hoardMult", "sinkMult", "boonMult", "allyPower",
+               "gambleMult"];
+const perkKeys = {};
+(K.Perks || []).forEach((p, n) => {
+  const name = p && p.key ? `perk "${p.key}"` : `perk #${n + 1}`;
+  if (!p || !p.key || !p.label || !p.pro || !p.con) { error(`${name}: needs a key, label, pro and con`); return; }
+  if (perkKeys[p.key]) error(`${name}: the key is used twice`);
+  perkKeys[p.key] = true;
+  Object.keys(p).forEach((k) => {
+    if (["key", "label", "pro", "con", "noRewardGear"].indexOf(k) >= 0) return;
+    if (PROPS.indexOf(k) < 0) error(`${name}: unknown property "${k}" (known: ${PROPS.join(", ")})`);
+    else if (!(p[k] >= 0)) error(`${name}: ${k} should be a number`);
+  });
+});
+const SINK_WORDS = PLACEHOLDERS.concat(["hench", "tavern", "rock"]);
+const sinkKeys = {};
+(K.Sinks || []).forEach((sk, n) => {
+  const name = sk && sk.key ? `gold sink "${sk.key}"` : `gold sink #${n + 1}`;
+  if (!sk || !sk.key || !sk.label) { error(`${name}: needs a key and a label`); return; }
+  if (sinkKeys[sk.key]) error(`${name}: the key is used twice`);
+  sinkKeys[sk.key] = true;
+  if (!(sk.spend > 0 && sk.spend <= 1)) error(`${name}: spend should be a share of the spare gold, above 0 and at most 1`);
+  if ("weight" in sk && !(sk.weight >= 0)) error(`${name}: weight should be a number`);
+  const texts = [].concat(sk.lines || [], sk.gamble ? (sk.gamble.win || []).concat(sk.gamble.lose || []) : [],
+                          sk.boon ? [sk.boon.name || "", sk.boon.ends || ""] : []);
+  if (!sk.lines || !sk.lines.length) error(`${name}: no lines`);
+  if (sk.gamble && (!(sk.gamble.win || []).length || !(sk.gamble.lose || []).length)) error(`${name}: a gamble needs win and lose lines`);
+  checkHoles(name, sk.lines, "lines");
+  texts.forEach((line) => {
+    if (typeof line !== "string") { error(`${name}: a line isn't text`); return; }
+    if (line.indexOf("|") >= 0) error(`${name}: "${line}" has a "|", which the game uses to separate fields`);
+    (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+      if (SINK_WORDS.indexOf(p.slice(1, -1)) < 0) error(`${name}: unknown placeholder ${p} in "${line}"`);
+    });
+  });
+  if (sk.boon) {
+    if (!sk.boon.name) error(`${name}: a boon needs a name`);
+    Object.keys(sk.boon).forEach((k) => {
+      if (["name", "help", "hours", "stack", "ends", "ally"].indexOf(k) >= 0) return;
+      if (PROPS.indexOf(k) < 0) error(`${name}: boon has an unknown property "${k}" (known: ${PROPS.join(", ")})`);
+    });
+  }
+  if (sk.buff && STATS.indexOf(sk.buff) < 1) error(`${name}: buff should be one of ${STATS.slice(1).join(", ")}`);
+});
+if (K.Sinks && !K.Sink) error("events.js has K.Sinks but no K.Sink settings");
+
 (K.Races || []).forEach((r) => { r = r.split("|")[0]; if (!racial[r]) warn(`the ${r} race has no event of its own`); });
 (K.Klasses || []).forEach((c) => { c = c.split("|")[0]; if (!racial["class:" + c]) warn(`the ${c} class has no event of its own`); });
 
@@ -196,6 +246,7 @@ Object.keys(K).forEach((k) => { if (Array.isArray(K[k])) checkHoles(`K.${k}`, K[
 
 console.log(`\n${storyCount} stories (${Object.keys(K.RaceStories || {}).length} races, ` +
             `${Object.keys(K.ClassStories || {}).length} classes, ${(K.Stories || []).length} others).`);
+console.log(`\n${(K.Perks || []).length} perks, ${(K.Sinks || []).length} gold sinks.`);
 console.log(`\n${events.length} events, ${withChoices} with choices` +
             ` (${Math.round(withChoices / Math.max(1, events.length) * 100)}%).` +
             ` ${errors} error(s), ${warnings} warning(s).`);

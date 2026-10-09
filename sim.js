@@ -15,6 +15,7 @@
 //   --name NAME     character name                            (default random)
 //   --race RACE     race, e.g. "4chan Troll"                  (default random)
 //   --class CLASS   class, e.g. "Barbarian Pretzel"           (default random)
+//   --mut KEYS      challenge mutators, e.g. noshop,glasscannon (K.Mutators)
 //   --daily DATE    play that day's Daily Challenge hero, e.g. 2026-10-07
 //                   (stops when the challenge is done or lost)
 //   --replay FILE   replay a saved hero (a .pqw backup) from its birth and
@@ -46,6 +47,7 @@ function parseArgs(argv) {
       case "--name":   opts.name = next(); break;
       case "--race":   opts.race = next(); break;
       case "--class":  opts.klass = next(); break;
+      case "--mut":    opts.mut = next(); break;
       case "--daily":  opts.daily = next(); break;
       case "--replay": opts.replay = next(); break;
       case "--quiet":  opts.quiet = true; break;
@@ -165,9 +167,12 @@ function run(opts) {
     ctx.__date = opts.daily;
     g("seed = new Alea(__seed); var __d = MakeDaily(__date);" +
       "storage.saveHero(__d, function () {}); window.location.href = 'main.html#' + EncodeName(__d.lifeId);");
-  } else
+  } else {
+  // (the roller reads its mutators from the page's address, as in the browser)
+  if (opts.mut) ctx.location.search = "?mut=" + encodeURIComponent(opts.mut);
   g("seed = new Alea(__seed); RollEm(); GenClick();" +
     "fill(null, K.Races, 'Race'); fill(null, K.Klasses, 'Class');");
+  }
 
   const pickFrom = (list, want, label) => {
     const names = g(list).map(s => s.split("|")[0]);
@@ -180,6 +185,7 @@ function run(opts) {
   if (opts.klass) ctx.traits.Class = pickFrom("K.Klasses", opts.klass, "class");
 
   if (!opts.daily) g("sold()");   // adds the character to the roster, sets location
+  ctx.location.search = "";
   g("FormCreate()");    // loads the game from the roster and starts it
 
   const game = () => ctx.game;

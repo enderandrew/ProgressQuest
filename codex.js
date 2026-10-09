@@ -87,6 +87,16 @@ K.Achievements = [
   { key: "gold10m", icon: "💰", label: "Dragon Hoard", help: "Earn 10,000,000 gold, all heroes together.",
     value: function (c) { return c.totals.gold || 0; }, goal: 10000000 },
 
+  // Spending it
+  { key: "splurge", icon: "💸", label: "Money to Burn", help: "Have so much gold that your hero splurges on something.",
+    value: function (c) { return c.sinks; }, goal: 1 },
+  { key: "tavern", icon: "🍺", label: "The Retirement Plan", help: "Buy a tavern.",
+    value: function (c) { return c.flag("sink:tavern"); }, goal: 1 },
+  { key: "spent1m", icon: "💸", label: "Conspicuous Consumption", help: "Splurge 1,000,000 gold, all heroes together.",
+    value: function (c) { return c.totals.spent || 0; }, goal: 1000000 },
+  { key: "sinksall", icon: "🛍", label: "Retail Therapy", help: "Splurge on every kind of thing there is.",
+    value: function (c) { return c.sinks; }, goal: function () { return K.Sinks ? K.Sinks.length : 19; } },
+
   // The Codex
   { key: "beasts100", icon: "📖", label: "Amateur Zoologist", help: "Slay 100 kinds of monster.",
     value: function (c) { return c.monsters; }, goal: 100 },
@@ -361,8 +371,11 @@ function CodexContext() {
     Object.keys(b.monsters).forEach(function (k) { if (b.monsters[k].k) slain++; });
     var mutators = 0;
     (K.Mutators || []).forEach(function (m) { if (b.flags["boss:" + m.key]) mutators++; });
-    var icons = 0;
-    Object.keys(b.flags).forEach(function (k) { if (/^icon:/.test(k)) icons++; });
+    var icons = 0, sinks = 0;
+    Object.keys(b.flags).forEach(function (k) {
+      if (/^icon:/.test(k)) icons++;
+      if (/^sink:/.test(k)) sinks++;
+    });
     var legends = (CodexExtra.legends || []).filter(LegendCounts);
     var hall = typeof LegacyFromHall == "function" ? LegacyFromHall(CodexExtra.legends || []) : { races: [], klasses: [] };
     var dailies = 0;
@@ -372,7 +385,7 @@ function CodexContext() {
     });
     Codex.counts = {
       monsters: slain, spells: Object.keys(b.spells).length, events: Object.keys(b.events).length,
-      bossMutators: mutators, icons: icons,
+      bossMutators: mutators, icons: icons, sinks: sinks,
       legends: legends.length, races: hall.races.length, klasses: hall.klasses.length,
       fallen: (CodexExtra.fallen || []).length, dailies: dailies
     };

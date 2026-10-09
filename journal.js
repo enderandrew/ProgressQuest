@@ -81,7 +81,8 @@ function JournalSentences(lines) {
 }
 
 // Now and then, something just for the reader. Each one at most once a hero.
-function JournalAside(chance, pool) {
+// extra: more {placeholders}
+function JournalAside(chance, pool, extra) {
   if (!JournalChance(chance === undefined ? K.Journal.AsideChance : chance)) return;
   pool = pool || K.JournalAsides;
   var used = game.journalAsides = game.journalAsides || [];
@@ -90,7 +91,7 @@ function JournalAside(chance, pool) {
   if (!fresh.length) return;
   var line = JournalPick(fresh);
   used.push(line.slice(0, 40));
-  JournalAdd('aside', JournalText(line));
+  JournalAdd('aside', JournalText(line, extra));
 }
 
 // ---- The hooks (called from main.js) -----------------------------------------
@@ -150,6 +151,15 @@ function JournalEvent(ev, result) {
   JournalAdd('event', text);
   if (mine && ev.choices && ev.chosen !== undefined && ev.choices[ev.chosen])
     JournalAdd('aside', JournalText(JournalPick(K.JournalYouChose), { choice: ev.choices[ev.chosen].label }));
+}
+
+// A gold sink has played out (JournalEvent has the first of each kind). A
+// ghostwriter always gets their entry in; otherwise, maybe a word.
+function JournalSplurge(ev) {
+  var sink = typeof SinkByKey == "function" ? SinkByKey(ev.sink) : null;
+  var extra = { gold: (ev.gold || 0).toLocaleString(), thing: sink ? sink.label : "something" };
+  if (sink && sink.memoir) JournalAside(1, K.JournalGhostwriter, extra);
+  else JournalAside(K.Journal.AsideChance, K.JournalSplurgeAsides, extra);
 }
 
 function JournalFirstDefeat(foe) {
@@ -265,6 +275,7 @@ K.JournalBegin = [
   "Day one. A terrible old man called me “{taunt}” in a dream, so naturally I've left home to kill him. Mom packed snacks.",
   "Starting a journal, because heroes have journals. Also an Old Bastard™ called me “{taunt}” in my sleep and I need to process that.",
   "Started a journal so the bards know what to write about me. The Old Bastard™ called me “{taunt}”! Sticks and stones will break his bones!",
+  "Started a journal because my podcast never took off. The Old Bastard™ refused to be a guess and called me “{taunt}”!",
 ];
 
 K.JournalFirstAside =
@@ -333,6 +344,25 @@ K.JournalYouChose = [
   "A voice from the sky told me to “{choice}”. It's never spoken up before. I listened. Was that you?",
   "Went with “{choice}”. Not my idea. Someone was actually paying attention for once.",
   "“{choice}”. Chosen by a mysterious presence I'm choosing to call the Reader. Hi, Reader."
+];
+
+K.JournalSplurgeAsides = [
+  "Spent {gold} gold on {thing} today. You'd think a world this size would have more to buy. It doesn't. It's monsters all the way down.",
+  "My accountant (I have an accountant now) says I should diversify. Into what? I'm already heavily invested in monsters.",
+  "If you're reading this and you're from the tax office: I've never heard of gold. What's gold.",
+  "Bought myself something nice. Nobody saw. You didn't see either; you were in another tab. That's fine. I saw.",
+  "There's a version of this game where gold matters. I've heard rumors. I'm not in it.",
+  "{gold} gold, gone, on {thing}. A month ago that was a fortune. Now it's a Tuesday. Inflation is just me, getting richer, and worse with money."
+];
+
+// A ghostwriter's work (the memoir sink). The reader is told, again, that
+// there is no reader.
+K.JournalGhostwriter = [
+  "[This entry was written by a professional ghostwriter, for {gold} gold.] Our hero rose at dawn, as heroes do, and went on to be extremely brave about it. (Note from the ghostwriter: nobody reads these. I checked. I'm paid either way.)",
+  "[Ghostwritten.] Chapter One, in which our hero is tall. (They are not tall. You'll never know. Nobody reads these.)",
+  "[Ghostwritten, for {gold} gold.] It was a dark and stormy night. It wasn't, actually; I wasn't there. But you weren't either, reader, so who's going to check?",
+  "[Ghostwritten.] I have punched up the earlier entries. Most of them said “hit a thing” and “hit a bigger thing”. Now they say the same, but with feeling.",
+  "[Ghostwritten.] Dear reader, if there is one: the hero asked me to add more dragons. There are no dragons. I have added three."
 ];
 
 K.JournalFirstDefeatLine =

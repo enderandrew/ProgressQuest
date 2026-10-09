@@ -294,8 +294,14 @@ function ShopPrice(power) {
   return Max(1, Math.round(EquipPrice(power) * MutatorProduct('shopMult')));
 }
 
+// Off to haggle for gear, if there's gold for it and the shop had anything
+function WillShop() {
+  return GetI(Inventory, 'Gold') > ShopPrice() && !game.shopped && !HasMutator('noShop');
+}
+
 function Dequeue() {
   while (TaskDone()) {
+    ExpireBoons();
     if (Split(game.task,0) == 'kill') {
       if (FightWon()) {
         if (Split(game.task,3) == '*') {
@@ -362,6 +368,8 @@ function Dequeue() {
     if (Split(old,0) == 'event') old = game.eventResume || '';
     game.task = '';
     if (game.perkDue && !game.event && !game.queue.length) OfferPerk();
+    // Done shopping, and still rolling in gold? Spend some (K.Sinks)
+    if (SplurgeDue(old) && !WillShop()) StartSplurge(old);
     if (game.queue.length > 0) {
       var a = Split(game.queue[0],0);
       var n = StrToInt(Split(game.queue[0],1));
@@ -392,7 +400,7 @@ function Dequeue() {
       Task('Heading to market to sell viscera-covered loot', Math.round(4000 * MutatorProduct('travelMult')));
       game.task = 'market';
     } else if ((Pos('kill|',old) <= 0) && (old != 'heading') && (old != 'rest')) {
-      if (GetI(Inventory, 'Gold') > ShopPrice() && !game.shopped && !HasMutator('noShop')) {
+      if (WillShop()) {
         Task('Haggling over the price of better equipment', 5 * 1000);
         game.task = 'buying';
       } else {
@@ -449,6 +457,10 @@ function HeroSnapshot() {
     damageMult: MutatorProduct('damageMult'),
     giveUpMult: MutatorProduct('giveUpMult'),
     takenMult: MutatorProduct('takenMult'),
+    initiativeMult: MutatorProduct('initiativeMult'),
+    fleeMult: MutatorProduct('fleeMult'),
+    healMult: MutatorProduct('healMult'),
+    ally: Henchman(),
     spells: game.Spells.map(function (s) {
       return { name: s[0], level: toArabic(s[1]), roman: s[1], type: SpellType(s[0]) };
     })
@@ -1178,6 +1190,7 @@ function FinishEvent() {
   game.event = null;
   if (!ev) return;
   var result = [];
+  if (ev.sink) ApplySink(ev, result);
   if (ev.choices && ev.chosen !== null && ev.chosen !== undefined) {
     var o = ev.choices[ev.chosen];
     ApplyEventEffect(o.effect || {}, o, result);
@@ -1185,6 +1198,7 @@ function FinishEvent() {
   ApplyEventEffect(ev.effect || {}, ev, result);
   Log('Event: ' + ev.key);
   if (typeof JournalEvent == "function") JournalEvent(ev, result);
+  if (ev.sink && typeof JournalSplurge == "function") JournalSplurge(ev);
 
   var shown = game.recentEvent;
   if (!shown || shown.key != ev.key || shown.result.length)
@@ -1217,7 +1231,7 @@ function ApplyEventEffect(fx, amt, result) {
   if (fx.stat) {
     var stat = fx.stat == 'random' ? Pick(K.PrimeStats) : fx.stat;
     var amount = AddBuff(stat);
-    result.push('+' + amount + ' ' + stat + ' for ' + K.BuffMinutes + ' minutes');
+    result.push('+' + amount + ' ' + stat + ' for ' + RoughTime(BuffSeconds()));
   }
   if (fx.spell) {
     var spell = WinSpell();
@@ -1279,10 +1293,7 @@ function AddPerk(key) {
   game.perks = game.perks || [];
   if (game.perks.indexOf(key) >= 0) return false;
   game.perks.push(key);
-  // the pools and the pack may change size
-  HPBar.reset(PoolMax('HP Max'), Min(HPBar.Position(), PoolMax('HP Max')));
-  MPBar.reset(PoolMax('MP Max'), Min(MPBar.Position(), PoolMax('MP Max')));
-  EncumBar.reset(CarryMax(), EncumBar.Position());
+  RefreshPools();   // the pools and the pack may change size
   Log('New perk: ' + p.label);
   if (typeof JournalAdd == "function") JournalAdd('perk', 'New perk: ' + PerkText(p));
   ShowPerks();
@@ -1308,7 +1319,7 @@ function ShowPerks() {
 // stats stack. Returns the amount.
 function AddBuff(stat) {
   var amount = Max(1, Math.round(ExpectedStat(GetI(Traits,'Level')) * K.BuffPercent));
-  var until = (game.elapsed || 0) + K.BuffMinutes * 60;
+  var until = (game.elapsed || 0) + BuffSeconds();
   var buffs = ActiveBuffs(), found = null;
   $.each(buffs, function (i, b) { if (b.stat == stat) found = b; });
   if (found) {
@@ -1321,6 +1332,11 @@ function AddBuff(stat) {
   game.buffs = buffs;
   ShowBuffs();
   return amount;
+}
+
+// How long a buff lasts (the Party Animal perk: longer)
+function BuffSeconds() {
+  return Math.round(K.BuffMinutes * 60 * MutatorProduct('buffMult'));
 }
 
 // The buffs still running (and forget the ones that have worn off)
@@ -1349,13 +1365,15 @@ function Mutators() {
   }).filter(Boolean);
 }
 
-// Everything that changes the rules for this hero: the run's mutators and
-// the hero's perks (K.Perks in combat.js). Asked for many times a fight, so
-// it's kept until the hero, their perks or their mutators change.
+// Everything that changes the rules for this hero: the run's mutators, the
+// hero's perks (K.Perks in combat.js) and what their gold has bought
+// (boons: K.Sinks in events.js). Asked for many times a fight, so it's kept
+// until the hero, or any of those, change.
 var _modifiers = { key: null, list: null, products: {} };
 function Modifiers() {
-  var key = (game.lifeId || '') + '|' + (game.perks || []).join(',') + '|' + (game.mutators || []).join(',');
-  if (_modifiers.key !== key) _modifiers = { key: key, list: Mutators().concat(Perks()), products: {} };
+  var key = (game.lifeId || '') + '|' + (game.perks || []).join(',') + '|' + (game.mutators || []).join(',') +
+            '|' + (game.boons || []).map(function (b) { return b.k + (b.c || 1); }).join(',');
+  if (_modifiers.key !== key) _modifiers = { key: key, list: Mutators().concat(Perks(), BoonModifiers()), products: {} };
   return _modifiers.list;
 }
 
@@ -1378,6 +1396,216 @@ function MutatorProduct(prop) {
 
 function CarryMax() {
   return Max(5, Math.round(CarryFor(GetI(Stats,'STR')) * MutatorProduct('carryMult')));
+}
+
+// HP, MP and the pack, after what changes them has changed
+function RefreshPools() {
+  HPBar.reset(PoolMax('HP Max'), Min(HPBar.Position(), PoolMax('HP Max')));
+  MPBar.reset(PoolMax('MP Max'), Min(MPBar.Position(), PoolMax('MP Max')));
+  EncumBar.reset(CarryMax(), EncumBar.Position());
+}
+
+// ---- Gold sinks (K.Sink and K.Sinks in events.js) -----------------------------
+//
+// A hero who has piled up more gold than the shops can soak up spends some
+// of it, after shopping, on something at random: a henchman, a horse, a
+// tavern, taxes. It plays like an event (game.event, with sink: its key).
+// What lasts is a boon: game.boons, a list of { k: the sink's key, n: its
+// name, until: game seconds (0: for good), c: times bought, e: the line
+// when it wears off }. A boon's perk properties count like a perk's.
+
+function SinkByKey(key) {
+  for (var i = 0; i < K.Sinks.length; ++i) if (K.Sinks[i].key == key) return K.Sinks[i];
+  return null;
+}
+
+// The best gear the shop sells, at the price this hero pays
+function PremiumPrice() {
+  return ShopPrice(GetI(Traits,'Level') + K.Loot.PremiumMax);
+}
+
+// Banked gold to spare: beyond K.Sink.Keep times the price of premium gear
+function SpareGold() {
+  return Max(0, GetI(Inventory,'Gold') - Math.round(K.Sink.Keep * PremiumPrice()));
+}
+
+// Time to splurge? In town, between tasks, now and then, with a hoard.
+// old: the task just done.
+function SplurgeDue(old) {
+  if (!K.Sinks || game.event || game.queue.length || game.dead) return false;
+  if (old != 'market' && old != 'sell' && old != 'buying') return false;
+  if (GetI(Traits,'Level') < K.Sink.MinLevel) return false;
+  if (game.lastSplurge !== undefined &&
+      (game.elapsed || 0) - game.lastSplurge < K.Sink.CooldownHours * 3600) return false;
+  return SpareGold() >= K.Sink.Hoard * PremiumPrice() * MutatorProduct('hoardMult');
+}
+
+// Spend some gold on one of K.Sinks, at random (only: that one, for tests).
+// resume: the task to carry on from. Returns whether it started.
+function StartSplurge(resume, only) {
+  var level = GetI(Traits,'Level');
+  var choices = K.Sinks.filter(function (sk) {
+    if (only) return sk.key == only;
+    if (sk.minLevel && level < sk.minLevel) return false;
+    var have = sk.boon && !sk.boon.hours ? BoonByKey(sk.key) : null;   // bought for good already?
+    return !have || (have.c || 1) < (sk.boon.stack || 1);
+  });
+  if (!choices.length) return false;
+  var total = 0;
+  $.each(choices, function (i, sk) { total += sk.weight || 1; });
+  var r = Random(1000) / 1000 * total, sink = choices[choices.length - 1];
+  for (var i = 0; i < choices.length; ++i) {
+    r -= choices[i].weight || 1;
+    if (r < 0) { sink = choices[i]; break; }
+  }
+
+  var spare = SpareGold();
+  var cost = Min(spare, Max(1, Math.round(spare * sink.spend * MutatorProduct('sinkMult'))));
+  var vars = StoryVars();
+  vars.gold = cost;
+  vars.hench = GenerateName();
+  vars.rock = GenerateName();
+  vars.tavern = 'The ' + Pick(K.Sink.TavernWords) + ' ' + Pick(K.Sink.TavernThings);
+  var ev = { key: 'sink-' + sink.key, sink: sink.key, where: 'splurge', effect: {}, shown: 0, gold: cost };
+  var lines = sink.lines;
+  if (sink.gamble) {
+    var odds = Min(0.9, K.Sink.GambleOdds * MutatorProduct('gambleMult'));
+    ev.won = Random(1000) < odds * 1000 ? 2 * cost : 0;
+    lines = lines.concat(ev.won ? sink.gamble.win : sink.gamble.lose);
+  }
+  ev.lines = lines.map(function (line) { return EventLine(line, vars); });
+  if (sink.boon) {
+    ev.boon = StoryText(sink.boon.name, vars).replace(/\|/g, '/');   // (as written: "a bigger backpack")
+    if (sink.boon.ends) ev.ends = EventLine(sink.boon.ends, vars);
+  }
+  game.event = ev;
+  game.eventResume = resume || '';
+  game.lastEvent = game.tasks;
+  game.lastSplurge = game.elapsed || 0;
+  $.each(ev.lines, function (i, text) {
+    game.queue.push('scene|3|' + text + '|' + (i == ev.lines.length - 1 ? 'event' : 'ev'));
+  });
+  return true;
+}
+
+// The splurge has played out: pay up, and get what was paid for
+function ApplySink(ev, result) {
+  var sink = SinkByKey(ev.sink);
+  if (!sink) return;
+  var paid = Min(GetI(Inventory,'Gold'), ev.gold || 0);
+  if (paid) Add(Inventory, 'Gold', -paid);
+  game.goldSpent = (game.goldSpent || 0) + paid;
+  game.splurges = (game.splurges || 0) + 1;
+  result.push('Spent ' + paid + ' gold on ' + sink.label);
+  CodexBump('spent', paid);
+  CodexFlag('sink:' + sink.key);
+  if (ev.won) {
+    Add(Inventory, 'Gold', ev.won);
+    result.push('Won ' + ev.won + ' gold');
+  }
+  if (sink.boon) result.push(AddBoon(sink, ev));
+  if (sink.buff) result.push('+' + AddBuff(sink.buff) + ' ' + sink.buff + ' for ' + RoughTime(BuffSeconds()));
+  var i, got = [];
+  for (i = 0; i < (sink.spells || 0); ++i) got.push(WinSpell());
+  if (got.length) result.push('Learned ' + got.join(', '));
+  got = {};
+  for (i = 0; i < (sink.stats || 0); ++i) { var stat = WinStat(); got[stat] = (got[stat] || 0) + 1; }
+  if (sink.stats) result.push(Object.keys(got).map(function (k) { return '+' + got[k] + ' ' + k; }).join(', '));
+  if (sink.gear) {
+    // better than the shop sells, and than the weakest piece worn
+    var weakest = Infinity;
+    $.each(K.Equips, function (i, slot) { weakest = Min(weakest, SlotPower(slot)); });
+    WinEquip(Max(GetI(Traits,'Level') + K.Loot.PremiumMax, weakest + 1) + 1 + Random(2));
+    result.push('Equipped ' + game.bestequip);
+  }
+  if (sink.memoir) result.push('Your journal has a new entry, better written than the others');
+  ShowPurse();
+}
+
+// A boon from a sink (sink.boon). Returns what to say about it.
+function AddBoon(sink, ev) {
+  var b = sink.boon, boons = game.boons = (game.boons || []).slice();
+  var have = BoonByKey(sink.key), said;
+  var help = b.help ? ': ' + b.help.charAt(0).toLowerCase() + b.help.slice(1) : '';
+  if (!b.hours) {
+    // for good
+    if (have) have.c = (have.c || 1) + 1;
+    else boons.push({ k: sink.key, n: ev.boon, until: 0, c: 1 });
+    said = 'Now owns ' + ev.boon + (have ? ' (' + have.c + ')' : '') + help;
+    ShowOwned();
+  } else {
+    // for a while (again: the new one replaces the old)
+    var seconds = Math.round(b.hours * 3600 * MutatorProduct('boonMult'));
+    if (have) boons.splice(boons.indexOf(have), 1);
+    boons.push({ k: sink.key, n: ev.boon, until: (game.elapsed || 0) + seconds, c: 1, e: ev.ends });
+    said = ev.boon + ' for ' + RoughTime(seconds) + help;
+  }
+  game.boons = boons;
+  RefreshPools();
+  ShowBuffs();
+  return said;
+}
+
+function BoonByKey(key) {
+  var boons = game.boons || [];
+  for (var i = 0; i < boons.length; ++i) if (boons[i].k == key) return boons[i];
+  return null;
+}
+
+// The boons, as modifiers: a sink's boon properties, once per time bought
+function BoonModifiers() {
+  var list = [];
+  (game.boons || []).forEach(function (b) {
+    var sink = SinkByKey(b.k);
+    for (var i = 0; sink && sink.boon && i < (b.c || 1); ++i) list.push(sink.boon);
+  });
+  return list;
+}
+
+// Boons whose time is up go (between tasks)
+function ExpireBoons() {
+  var boons = game.boons;
+  if (!boons || !boons.length) return;
+  var now = game.elapsed || 0;
+  var live = boons.filter(function (b) { return !b.until || b.until > now; });
+  if (live.length == boons.length) return;
+  boons.forEach(function (b) {
+    if (!b.until || b.until > now) return;
+    Log(b.e || b.n + ' wears off');
+    // (the first time each kind wears off, the journal hears about it)
+    var seen = game.journalBoons = game.journalBoons || {};
+    if (!seen[b.k] && b.e && typeof JournalAdd == "function") {
+      seen[b.k] = 1;
+      JournalAdd('event', JournalSentences([b.e]));
+    }
+  });
+  game.boons = live;
+  RefreshPools();
+  ShowBuffs();
+}
+
+// The henchman, if one is on the payroll: { name, power } for ResolveCombat
+function Henchman() {
+  var boons = game.boons || [];
+  for (var i = 0; i < boons.length; ++i) {
+    var sink = SinkByKey(boons[i].k);
+    if (sink && sink.boon && sink.boon.ally && (!boons[i].until || boons[i].until > (game.elapsed || 0)))
+      return { name: boons[i].n, power: K.Sink.AllyPower * sink.boon.ally * MutatorProduct('allyPower') };
+  }
+  return null;
+}
+
+// "Owns: The Leaky Ferret, a tavern in Dunkirk; a bigger backpack (2)"
+// under the purse
+function ShowOwned() {
+  if (!document) return;
+  var owned = (game.boons || []).filter(function (b) { return !b.until; });
+  $("#Owned").text(owned.length ? "Owns: " + owned.map(function (b) {
+    return b.n + ((b.c || 1) > 1 ? " (" + b.c + ")" : "");
+  }).join("; ") : "").attr("title", owned.map(function (b) {
+    var sink = SinkByKey(b.k);
+    return b.n + (sink && sink.boon.help ? ": " + sink.boon.help : "");
+  }).join("\n"));
 }
 
 // Time for a trip to market even if the pack isn't full? (K.Loot.MarketHours)
@@ -1540,6 +1768,7 @@ function ShowBuffs() {
     return '+' + b.amount + ' ' + b.stat + ' (' + Math.floor(left / 60) + ':' +
            ('0' + (left % 60)).slice(-2) + ')';
   }).join('  ');
+  ShowBoons(now);
   if (text === _buffShown) return;
   _buffShown = text;
   $("#Buffs").text(text ? 'Buffed: ' + text : '')
@@ -1553,10 +1782,27 @@ function ShowBuffs() {
   });
 }
 
+// "Splurged: Henchman Grub (7h 12m) · Blessed (3h 5m)" under the buffs: the
+// boons that wear off (those for good are under the purse, ShowOwned)
+var _boonShown = null;
+function ShowBoons(now) {
+  var live = (game.boons || []).filter(function (b) { return b.until && b.until > now; });
+  var text = live.map(function (b) {
+    var left = Math.ceil((b.until - now) / 60);
+    return b.n + ' (' + (left >= 60 ? Math.floor(left / 60) + 'h ' : '') + (left % 60) + 'm)';
+  }).join(' \u00b7 ');
+  if (text === _boonShown) return;
+  _boonShown = text;
+  $("#Boons").text(text ? 'Splurged: ' + text : '').attr("title", live.map(function (b) {
+    var sink = SinkByKey(b.k);
+    return b.n + (sink && sink.boon.help ? ": " + sink.boon.help : "");
+  }).join("\n"));
+}
+
 // ---- Event pop-up and "Last event" box -------------------------------------
 
 K.EventWhere = { perk: 'A new perk', rest: 'While resting', road: 'On the road', town: 'In town',
-                 field: 'On the Killing Fields™' };
+                 field: 'On the Killing Fields™', splurge: 'Money to burn' };
 
 // Called as each line of an event starts: remember what has been shown so
 // far, and show it.
@@ -2479,6 +2725,7 @@ function WinStat() {
     });
   }
   Add(Stats, i, 1);
+  return i;
 }
 
 function SpecialItem() {
@@ -2693,8 +2940,9 @@ function PoolGain(base, weight) {
 function LevelUp() {
   var weights = CharProfile().weights;
   Add(Traits,'Level',1);
-  Add(Stats,'HP Max', PoolGain(Div(GetI(Stats,'CON'), 3) + 1 + Random(4), weights['HP Max']));
-  Add(Stats,'MP Max', PoolGain(Div(GetI(Stats,'INT'), 3) + 1 + Random(4), weights['MP Max']));
+  var more = MutatorProduct('poolGainMult');   // (the Late Bloomer perk)
+  Add(Stats,'HP Max', Math.round(PoolGain(Div(GetI(Stats,'CON'), 3) + 1 + Random(4), weights['HP Max']) * more));
+  Add(Stats,'MP Max', Math.round(PoolGain(Div(GetI(Stats,'INT'), 3) + 1 + Random(4), weights['MP Max']) * more));
   WinStat();
   WinStat();
   WinSpell();
@@ -3094,7 +3342,8 @@ function CatchUpSnapshot() {
     tasks: game.tasks || 0, level: GetI(Traits,'Level'),
     xp: ExpBar.Max() ? ExpBar.Position() / ExpBar.Max() : 0,
     act: game.act || 0, quests: game.questsDone || 0, wins: game.wins || 0, deaths: game.deaths || 0,
-    gold: (game.goldEarned || 0), spells: (game.Spells || []).length, gear: game.bestequip || "",
+    gold: (game.goldEarned || 0), spent: (game.goldSpent || 0), splurges: (game.splurges || 0),
+    spells: (game.Spells || []).length, gear: game.bestequip || "",
     won: CanRetire(), daily: game.daily ? game.daily.status || "" : null
   };
 }
@@ -3111,6 +3360,9 @@ function CatchUpSummary(a, b, seconds) {
     lines.push("Won " + plural(b.wins - a.wins, "fight", "fights") +
                (b.deaths > a.deaths ? ", and was defeated " + plural(b.deaths - a.deaths, "time", "times") : ""));
   if (b.gold > a.gold) lines.push("Banked " + plural(b.gold - a.gold, "gold piece", "gold") + " at market");
+  if (b.splurges > a.splurges)
+    lines.push("Splurged " + plural(b.spent - a.spent, "gold piece", "gold") + " on " +
+               (b.splurges - a.splurges == 1 ? "something" : plural(b.splurges - a.splurges, "thing", "things")));
   if (b.spells > a.spells) lines.push("Learned " + plural(b.spells - a.spells, "new spell", "new spells"));
   if (b.gear != a.gear) lines.push("Now wielding or wearing " + b.gear);
   var fate = (game.choiceLog || []).filter(function (e) { return e.by == "fate" && e.t > a.tasks; }).length;
@@ -3365,6 +3617,7 @@ function LoadGame(sheet) {
   ShowRetire();
   ShowLegacy();
   ShowPerks();
+  ShowOwned();
   ShowDaily();
   ShowTactics();
   ShowFight(true);

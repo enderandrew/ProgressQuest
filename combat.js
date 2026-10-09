@@ -67,6 +67,11 @@ K.Combat = {
   // FleeIfFoeAbove of its health, tries to run
   FleeAtHP: 0.25, FleeIfFoeAbove: 0.4, FleeBase: 0.35,
 
+  // A henchman (a gold sink, see K.Sinks in events.js) swings after the
+  // hero each round: AllyHit is the chance it lands, and a blow does the
+  // henchman's power (hero.ally.power) times a typical hero's melee blow
+  AllyHit: 0.7,
+
   // A win that costs more than this share of max HP is a close win
   CloseWin: 0.25,
   // Share of a fight's XP earned by running away or losing
@@ -153,7 +158,14 @@ K.Mutators = [
 //   goldMult     gold found, loot's price dropMult     chance of a drop
 //   shopMult     what gear costs          lossMult     what a defeat takes
 //   deathMult    Hardcore death chance    eventMult    chance of events
+//   initiativeMult striking first         fleeMult     running from a losing fight
+//   healMult     what heal spells heal    poolGainMult HP/MP gained each level
+//   buffMult     how long event buffs last
 //   noRewardGear quest rewards are never gear (an item instead)
+// and for the gold sinks (K.Sinks in events.js):
+//   hoardMult    the gold piled up before a splurge   sinkMult   what a splurge costs
+//   boonMult     how long a splurge lasts            allyPower  how hard henchmen hit
+//   gambleMult   the odds at the dice tables
 K.Perks = [
   { key: "questlover", label: "Quest Lover", questMult: 1.4, takenMult: 1.12,
     pro: "Quests go 40% faster.", con: "Takes 12% more damage, being so busy." },
@@ -195,7 +207,48 @@ K.Perks = [
   { key: "wanderer", label: "Easily Distracted", eventMult: 2, xp: 0.92,
     pro: "Twice as many random events.", con: "8% less XP. Ooh, a squirrel." },
   { key: "tank", label: "Built Like a Shed", hpMult: 1.2, travelMult: 1.2,
-    pro: "20% more HP.", con: "Travels 20% slower. Doors are a problem." }
+    pro: "20% more HP.", con: "Travels 20% slower. Doors are a problem." },
+  { key: "quickdraw", label: "Quick Draw", initiativeMult: 1.5, castMult: 0.85,
+    pro: "Strikes first far more often.", con: "Casts 15% less often. No patience for the wind-up." },
+  { key: "coward", label: "Strategic Retreater", fleeMult: 2, takenMult: 1.08,
+    pro: "Runs from a losing fight twice as readily.", con: "Takes 8% more damage, mostly in the back." },
+  { key: "sprinter", label: "Sprinter", travelMult: 0.75, fleeMult: 0.5,
+    pro: "Travels 25% faster.", con: "Too proud to run from a fight: flees half as readily." },
+  { key: "healer", label: "Healer's Touch", healMult: 1.6, damageMult: 0.9,
+    pro: "Heal spells heal 60% more.", con: "Hits 10% softer. Doesn't really want to hurt anyone." },
+  { key: "thickskin", label: "Thick-Skinned", takenMult: 0.9, healMult: 0.6,
+    pro: "Takes 10% less damage.", con: "Heal spells barely get through: 40% less healing." },
+  { key: "latebloomer", label: "Late Bloomer", poolGainMult: 1.3, xp: 0.93,
+    pro: "Gains 30% more HP and MP every level.", con: "7% less XP. Blooms late, as advertised." },
+  { key: "glutton", label: "Glutton", regenMult: 1.4, travelMult: 1.15,
+    pro: "Gets 40% more back between fights. Snacks.", con: "Travels 15% slower. More snacks." },
+  { key: "partyanimal", label: "Party Animal", buffMult: 2, restMult: 1.25,
+    pro: "Buffs from events last twice as long.", con: "Rests 25% longer. Hangovers." },
+  { key: "workaholic", label: "Workaholic", restMult: 0.75, boonMult: 0.5,
+    pro: "Rests 25% faster.", con: "Can't enjoy anything: splurges wear off twice as fast." },
+  { key: "superstitious", label: "Superstitious", deathMult: 0.6, lossMult: 0.8, castMult: 0.85,
+    pro: "Loses 20% less when defeated (and in Hardcore, is 40% less likely to die). Lucky socks.",
+    con: "Casts 15% less often. Not on a Tuesday." },
+  { key: "collector", label: "Collector", carryMult: 1.25, goldMult: 0.92,
+    pro: "Carries 25% more.", con: "Won't part with the good stuff: 8% less gold." },
+  { key: "miser", label: "Miser", sinkMult: 0.5, hoardMult: 2,
+    pro: "Splurges cost half as much.", con: "Won't splurge at all until sitting on twice the gold." },
+  { key: "bigspender", label: "Big Spender", hoardMult: 0.5, sinkMult: 1.5,
+    pro: "Splurges with half as much gold piled up: more henchmen, more horses.",
+    con: "Spends half again as much each time." },
+  { key: "trustfund", label: "Trust-Fund Kid", boonMult: 2, xp: 0.9,
+    pro: "Splurges last twice as long.", con: "10% less XP. Never had to try." },
+  { key: "philanthropist", label: "Philanthropist", titheMult: 0.5, sinkMult: 1.3,
+    pro: "The temple tithes them half as much. They've given enough.",
+    con: "Splurges cost 30% more. Always rounds up for charity." },
+  { key: "celebrity", label: "Celebrity", shopMult: 0.9, questMult: 0.9,
+    pro: "Gear costs 10% less. It's an endorsement.", con: "Quests go 10% slower. Autographs." },
+  { key: "leader", label: "Natural Leader", allyPower: 1.6, initiativeMult: 0.8,
+    pro: "Henchmen hit 60% harder.", con: "Gives a speech before every fight: strikes first less often." },
+  { key: "lonewolf", label: "Lone Wolf", damageMult: 1.1, allyPower: 0.4,
+    pro: "Hits 10% harder.", con: "Henchmen hate working for them: 60% less help." },
+  { key: "gambler", label: "Gambler", gambleMult: 1.6, lossMult: 1.25,
+    pro: "Wins at the dice tables 60% more often.", con: "Loses 25% more when defeated. It was a side bet." }
 ];
 
 // A perk at creation, and another on offer every PerkEvery levels up to PerkLast
@@ -450,7 +503,7 @@ function ResolveCombat(hero, foe, seed) {
     switch (spell.type) {
     case "heal":
       var healed = Math.min(hero.hpMax - hp, hero.hpMax * C.HealAmount * levelF(spell) *
-                            Math.pow(ratio(hero.WIS, ExpectedStat(hero.level)), 0.5));
+                            Math.pow(ratio(hero.WIS, ExpectedStat(hero.level)), 0.5) * (hero.healMult || 1));
       hp += healed;
       log.push("You cast " + label + " and recover " + Show(healed) + " HP");
       break;
@@ -505,6 +558,19 @@ function ResolveCombat(hero, foe, seed) {
     }
   }
 
+  // The henchman's swing (only with one: no dice are rolled without)
+  var ally = hero.ally && hero.ally.power > 0 ? hero.ally : null;
+  function allyTurn() {
+    if (roll() < C.AllyHit) {
+      var dmg = baseHP / C.MeleeHitsToKill * ally.power * (1 + debuff) * between(0.8, 1.2);
+      monHP -= dmg;
+      log.push(ally.name + " hits for " + Show(dmg));
+    } else {
+      log.push(ally.name + " " + flavor(["misses", "trips", "hesitates", "asks about dental",
+                                         "is on a break", "attacks the wrong monster"]));
+    }
+  }
+
   function foeTurn() {
     if (stunned > 0) {
       --stunned;
@@ -535,10 +601,12 @@ function ResolveCombat(hero, foe, seed) {
   var outcome = null, foeFled = false, rounds = 0;
   while (!outcome) {
     ++rounds;
-    var heroFirst = roll() < ratio(hero.DEX, 1) / (ratio(hero.DEX, 1) + ratio(mon.DEX, 1));
+    var quick = ratio(hero.DEX, 1) * (hero.initiativeMult || 1);
+    var heroFirst = roll() < quick / (quick + ratio(mon.DEX, 1));
     for (var turn = 0; turn < 2 && !outcome; ++turn) {
       if ((turn === 0) === heroFirst) {
         heroTurn();
+        if (ally && monHP > 0) allyTurn();
         if (monHP <= 0) outcome = "win";
       } else {
         foeTurn();
@@ -559,7 +627,8 @@ function ResolveCombat(hero, foe, seed) {
     }
     // DEX: a losing hero may run
     if (hp < hero.hpMax * C.FleeAtHP && monHP > monMax * C.FleeIfFoeAbove) {
-      if (roll() < _clamp(C.FleeBase * ratio(hero.DEX, mon.DEX), 0.1, 0.8)) {
+      var fm = hero.fleeMult === undefined ? 1 : hero.fleeMult;
+      if (roll() < _clamp(C.FleeBase * ratio(hero.DEX, mon.DEX) * fm, 0.1 * fm, Math.min(0.95, 0.8 * fm))) {
         log.push("You flee from " + name);
         outcome = "flee";
         break;
