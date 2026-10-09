@@ -1070,6 +1070,14 @@ K.Guard = {
   GearAbove: 20         // gear power <= level + this
 };
 
+// Progress while the game is closed (CatchUp in main.js): time away shorter
+// than MinSeconds is ignored, and no more than MaxHours of it is played
+// (0 turns it off)
+K.CatchUp = {
+  MinSeconds: 60,
+  MaxHours: 12
+};
+
 // Replays (see replay.js and game.replay in main.js)
 K.Replay = {
   Every: 500,           // tasks between checkpoints

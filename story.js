@@ -1007,8 +1007,8 @@ function StoryVars() {
     guy: ImpressiveGuy(),
     guy2: ImpressiveGuy(),
     giver: PickLow(K.Titles) + ' ' + GenerateName(),
-    kingdom: GenerateName(),
-    kingdom2: GenerateName(),
+    kingdom: KingdomName(),
+    kingdom2: KingdomName(),
     item: SpecialItem(),
     boring: BoringItem(),
     race: Plural(race),
@@ -1285,7 +1285,7 @@ function MakeQuest() {
   var vars = {
     guy: ImpressiveGuy(),
     giver: PickLow(K.Titles) + ' ' + GenerateName(),
-    kingdom: GenerateName(),
+    kingdom: KingdomName(),
     'the-item': Definite(InterestingItem(), 1),
     boring: BoringItem(),
     n: 3 + Random(10)

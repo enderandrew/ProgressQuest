@@ -178,7 +178,7 @@ function ImpressiveGuy() {
   if (Random(2)) {
     return 'the ' + Pick(K.ImpressiveTitles) + ' of the ' + Plural(Split(Pick(K.Races), 0));
   } else {
-    return Pick(K.ImpressiveTitles) + ' ' + GenerateName() + ' of ' + GenerateName();
+    return Pick(K.ImpressiveTitles) + ' ' + GenerateName() + ' of ' + KingdomName();
   }
 }
 
@@ -700,6 +700,7 @@ function ShowRetire() {
 
 function ShowFinaleDialog() {
   if (!document || !CanRetire()) return;
+  if (_catchingUp) { _catchingUp.finale = true; return; }   // shown after the summary
   var dlg = document.getElementById("FinaleDialog");
   if (!dlg || !dlg.showModal) return;
   var f = game.finale;
@@ -722,7 +723,8 @@ function ShowFinaleDialog() {
 // What gets noticed:
 // - a save edited outside the game (its seal, see Seal in config.js)
 // - game time running faster than the clock (console fast-forwarding,
-//   speed hacks): game time can only pass while the game is open
+//   speed hacks): game time can only pass while the game is open, or be
+//   made up for time it was closed (CatchUp), never more
 // - for heroes created from save version 9 on, things a fair game can't
 //   produce: levels faster than the XP allows, stats, HP/MP or gear far
 //   beyond the level. The limits are several times what simulated heroes
@@ -755,7 +757,7 @@ function ShowBrand() {
 
 // Typical gains are measured, not fixed: see K.Guard
 function CheckForCheating() {
-  if (!document || !game || game.cheater) return;
+  if (!document || !game || game.cheater || _catchingUp) return;   // (checked once it's caught up)
   var G = K.Guard, now = Date.now(), elapsed = game.elapsed || 0;
   if (!_guardSession) _guardSession = { real: now, elapsed: elapsed };
 
@@ -846,6 +848,7 @@ function NarrationOn() {
 
 function Narrate(text) {
   if (!document || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+  if (_catchingUp) return;   // hours of it, all at once: no
   if (!NarrationOn()) return;
   if (_narrationQueued > 12) return;   // don't pile up hours of backlog
   var speech = String(text)
@@ -1130,7 +1133,7 @@ function ResolveChoice() {
 // Flash the tab title while a choice waits, for whoever is in another tab
 var _titleAlert = null, _titleSaved = null;
 function StartChoiceAlert() {
-  if (!document) return;
+  if (!document || _catchingUp) return;
   StopChoiceAlert();
   _titleSaved = document.title;
   var on = false;
@@ -1381,7 +1384,7 @@ function SettleDaily(status) {
   var d = game.daily;
   if (!d || d.status) return;
   d.status = status;
-  d.doneAt = +new Date();
+  d.doneAt = GameNow();
   d.played = Math.round(game.elapsed || 0);
   NoteDaily();
   ShowDaily();
@@ -1390,7 +1393,7 @@ function SettleDaily(status) {
     storage.loadDailies(function (book) { CodexExtra.dailies = book; Codex.counts = null; CheckAchievements(); });
     if (game.mode == 'hardcore') CodexFlag('dailyhc');
   }
-  if (!document) return;
+  if (!document || _catchingUp) return;   // (the catch-up summary says so)
   if (status == 'done') {
     $("#DailyResult").text(Get(Traits,'Name') + " did it: " + d.label + ", in " +
       RoughTime(d.played) + " of play (" + RoughTime((d.doneAt - d.startedAt) / 1000) + " on the clock).");
@@ -1409,7 +1412,7 @@ function CheckDaily() {
   if (game.dead) { SettleDaily('died'); return; }
   if (game.cheater) { SettleDaily('failed'); return; }
   if (DailyProgress() >= d.goal.target) SettleDaily('done');
-  else if (+new Date() > d.deadline) SettleDaily('failed');
+  else if (GameNow() > d.deadline) SettleDaily('failed');
   else ShowDaily();
 }
 
@@ -1578,7 +1581,7 @@ var _popupTimer = null;
 // K.EventPopupLinger seconds after it ends (longer while the mouse is over
 // it). Click, Esc or OK closes it sooner. The game keeps running behind it.
 function ShowEventPopup(finished) {
-  if (!document || !EventPopupsOn()) return;
+  if (!document || !EventPopupsOn() || _catchingUp) return;
   var dlg = document.getElementById("EventDialog");
   if (!dlg || !dlg.showModal || !game.recentEvent) return;
   RenderEvent(game.recentEvent, $("#EventWhere"), $("#EventLines"), $("#EventResult"));
@@ -2895,6 +2898,128 @@ function CodexHero() {
   if (document && game.tasks % 10 == 0) CheckAchievements();
 }
 
+// ---- While you were away ------------------------------------------------------
+//
+// An idle game should play on while it's closed. When a hero is opened, the
+// time since they were last saved (game.stamp) is played now, as fast as it
+// will go, up to K.CatchUp.MaxHours. It is the ordinary game, task by task:
+// the same dice, fate making the choices, defeats and all (in Hardcore, death
+// too). So a replay checks it like any other play, and game time never gets
+// ahead of the clock. Only the pop-ups, narration and saving wait; then a
+// summary says what happened.
+
+var _catchingUp = null;   // while catching up: { clock0, elapsed0, target, finale }
+
+// The time, as the game sees it: while catching up, the moment the hero has
+// reached (for the Daily Challenge's deadline)
+function GameNow() {
+  return _catchingUp ? _catchingUp.clock0 + ((game.elapsed || 0) - _catchingUp.elapsed0) * 1000 : Date.now();
+}
+
+// then: what to do once it's caught up (start the clock)
+function CatchUp(then) {
+  var C = K.CatchUp;
+  var away = (Date.now() - (game.stamp || Date.now())) / 1000;
+  if (!document || game.dead || !C.MaxHours || !(away >= C.MinSeconds)) { then(); return; }
+  var credit = Math.min(away, C.MaxHours * 3600);
+  var before = CatchUpSnapshot();
+  _catchingUp = { clock0: game.stamp, elapsed0: game.elapsed || 0, target: (game.elapsed || 0) + credit,
+                  finale: false, ended: false };
+
+  var body = document.createElement("div");
+  var line = document.createElement("p");
+  var meter = document.createElement("div");
+  meter.className = "scan-meter";
+  meter.innerHTML = "<div></div><span></span>";
+  body.appendChild(line);
+  body.appendChild(meter);
+  line.textContent = Get(Traits,'Name') + " kept going for " + RoughTime(Math.round(away)) + " while you were away" +
+    (credit < away ? " (the most that counts is " + C.MaxHours + " hours)" : "") + ". Catching up…";
+  var dlg = WinBox({ title: "While you were away", icon: "info", body: body, buttons: [] });
+  var bar = meter.querySelector("div"), label = meter.querySelector("span");
+
+  var chunk = function () {
+    var until = performance.now() + 40;   // a frame or two at a time, so the page keeps breathing
+    while (performance.now() < until && !game.dead && !_catchingUp.ended) CatchUpTask();
+    var done = (game.elapsed || 0) - _catchingUp.elapsed0;
+    bar.style.width = Math.min(100, 100 * done / credit) + "%";
+    label.textContent = RoughTime(Math.round(done)) + " of " + RoughTime(Math.round(credit)) +
+                        " · level " + GetI(Traits,'Level');
+    if (game.dead || _catchingUp.ended) finish(); else setTimeout(chunk, 0);
+  };
+  var finish = function () {
+    var finale = _catchingUp.finale;
+    _catchingUp = null;
+    _guardSession = null;   // the speed check starts over from here
+    if (game.dead) { dlg.closeWith(null); return; }   // Die() has put up the tombstone
+    CheckForCheating();
+    SaveGame();
+    ShowFight(true);
+    var lines = CatchUpSummary(before, CatchUpSnapshot(), credit);
+    line.textContent = "While you were away (" + RoughTime(Math.round(credit)) + " of play):";
+    meter.remove();
+    var list = document.createElement("ul");
+    list.className = "away-list";
+    lines.forEach(function (text) {
+      var li = document.createElement("li");
+      li.textContent = text;
+      list.appendChild(li);
+    });
+    body.appendChild(list);
+    dlg.setButtons([{ label: "OK", value: "ok", primary: true, action: function () {
+      dlg.closeWith("ok");
+      if (finale) ShowFinaleDialog();
+    } }]);
+    Narrate("While you were away, " + lines[0].charAt(0).toLowerCase() + lines[0].slice(1));
+    then();
+  };
+  setTimeout(chunk, 0);
+}
+
+// Finish the task under way, unless the time away runs out first
+function CatchUpTask() {
+  var owed = (_catchingUp.target - (game.elapsed || 0)) * 1000;   // game ms still to play
+  var rest = TaskBar.Max() - TaskBar.Position();
+  if (rest > owed) {
+    TaskBar.increment(Max(0, owed));   // part of the way, and the clock takes it from there
+    _catchingUp.ended = true;
+    return;
+  }
+  TaskBar.reposition(TaskBar.Max());
+  Timer1Timer();
+}
+
+function CatchUpSnapshot() {
+  return {
+    tasks: game.tasks || 0, level: GetI(Traits,'Level'),
+    xp: ExpBar.Max() ? ExpBar.Position() / ExpBar.Max() : 0,
+    act: game.act || 0, quests: game.questsDone || 0, wins: game.wins || 0, deaths: game.deaths || 0,
+    gold: (game.goldEarned || 0), spells: (game.Spells || []).length, gear: game.bestequip || "",
+    won: CanRetire(), daily: game.daily ? game.daily.status || "" : null
+  };
+}
+
+// What happened, a line each
+function CatchUpSummary(a, b, seconds) {
+  var lines = [];
+  var plural = function (n, one, many) { return n.toLocaleString() + " " + (n == 1 ? one : many); };
+  if (b.level > a.level) lines.push("Reached level " + b.level + " (up from " + a.level + ")");
+  else lines.push("Got " + Math.max(0, Math.round(100 * (b.xp - a.xp))) + "% closer to level " + (b.level + 1));
+  if (b.act > a.act) lines.push("Moved on to " + ActCaption(b.act));
+  if (b.quests > a.quests) lines.push("Completed " + plural(b.quests - a.quests, "quest", "quests"));
+  if (b.wins > a.wins || b.deaths > a.deaths)
+    lines.push("Won " + plural(b.wins - a.wins, "fight", "fights") +
+               (b.deaths > a.deaths ? ", and was defeated " + plural(b.deaths - a.deaths, "time", "times") : ""));
+  if (b.gold > a.gold) lines.push("Banked " + plural(b.gold - a.gold, "gold piece", "gold") + " at market");
+  if (b.spells > a.spells) lines.push("Learned " + plural(b.spells - a.spells, "new spell", "new spells"));
+  if (b.gear != a.gear) lines.push("Now wielding or wearing " + b.gear);
+  var fate = (game.choiceLog || []).filter(function (e) { return e.by == "fate" && e.t > a.tasks; }).length;
+  if (fate) lines.push("Fate made " + plural(fate, "choice", "choices") + " for you");
+  if (b.won && !a.won) lines.push("Defeated the Old Bastard\u2122!");
+  if (b.daily != a.daily && b.daily) lines.push("Daily challenge: " + (b.daily == "done" ? "done!" : b.daily == "failed" ? "out of time" : b.daily));
+  return lines;
+}
+
 // ---- One tab per hero ---------------------------------------------------------
 //
 // Two tabs (or windows) playing the same hero would each save over the other.
@@ -2920,7 +3045,8 @@ function HeroChannel() {
 
 // Start playing, once this tab has the hero. takeOver: from another tab.
 function PlayHere(takeOver) {
-  if (!document || !navigator.locks) { StartTimer(); return; }
+  if (!document) { StartTimer(); return; }
+  if (!navigator.locks) { CatchUp(StartTimer); return; }
   _heroHere = false;
   HeroChannel();
   navigator.locks.request(HeroLockName(), takeOver ? { steal: true } : { ifAvailable: true }, function (lock) {
@@ -2930,7 +3056,7 @@ function PlayHere(takeOver) {
       return new Promise(function () {});   // kept until the page reloads
     }
     _heroHere = true;
-    StartTimer();
+    CatchUp(StartTimer);
     return new Promise(function (resolve) { _heroRelease = resolve; });   // kept while the page is open
   }).catch(function (err) {
     if (err && err.name == "AbortError") TakenOver();   // another tab took this hero
@@ -3075,7 +3201,8 @@ function SaveGame(callback, urgent) {
   // save now (S, Q, the File menu...) would put them back in it. (And a page
   // whose hero didn't load has nothing to save, and one whose hero is playing
   // in another tab mustn't save over it.)
-  if (!game || !game.Traits || game.dead || game.retired || !_heroHere) { if (callback) callback(); return; }
+  // (While catching up it saves once, at the end.)
+  if (!game || !game.Traits || game.dead || game.retired || !_heroHere || _catchingUp) { if (callback) callback(); return; }
   Log('Saving game: ' + GameSaveName());
   CodexFlush();
   HotOrNot();
