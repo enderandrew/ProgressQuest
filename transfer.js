@@ -429,8 +429,9 @@ function ScanHero(sheet, fileName, done) {
 
 // What a share link shows: the character sheet, not the save (it can't be
 // imported or played). Sealed, so the viewer can tell if it was edited.
-// retired: when the hero retired (MakeLegend keeps one of these in the Hall).
-function SharePayload(g, retired) {
+// end: how the hero's story ended, for the sheets the Halls keep:
+// { retired: when } (MakeLegend) or { died: when, cause } (MakeObituary).
+function SharePayload(g, end) {
   var gold = 0;
   (g.Inventory || []).forEach(function (row) { if (row[0] == "Gold") gold = row[1]; });
   var L = g.legacy;
@@ -453,7 +454,8 @@ function SharePayload(g, retired) {
     dead: g.dead ? (g.dead.cause || "dead") : "",
     at: Date.now()
   };
-  if (retired) p.ret = retired;
+  if (end && end.retired) p.ret = end.retired;
+  if (end && end.died) { p.died = end.died; p.dead = end.cause || "dead"; }
   return Seal(p);
 }
 
@@ -475,6 +477,23 @@ function LegendSheet(l) {
     ret: l.retired || "", at: Date.parse(l.retired || "") || Date.now()
   };
   return SealOk(l) ? Seal(p) : p;
+}
+
+// The same for a Hardcore hero in the Hall of the Fallen: the sheet kept
+// when they died, or, for one who died before the Hall kept them, what the
+// obituary remembers (no stats; their level, time played and end)
+function FallenSheet(o) {
+  if (o.sheet) return o.sheet;
+  var p = {
+    v: 1, partial: 1,
+    n: o.name, r: o.race, c: o.klass, a: "", l: o.level || 0,
+    st: K.Stats.map(function () { return "?"; }), best: [],
+    plot: o.act || "", xp: [0, 1], el: o.played || 0, mode: o.mode || "hardcore",
+    leg: o.legacy || 0, d: o.survived || 0, ch: o.cheater || "",
+    dead: o.cause || ("Slain by " + (o.slainBy || "something")),
+    died: o.died || "", at: Date.parse(o.died || "") || Date.now()
+  };
+  return SealOk(o) ? Seal(p) : p;
 }
 
 function _bytesToB64url(bytes) {

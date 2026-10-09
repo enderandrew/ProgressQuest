@@ -553,7 +553,7 @@ function MakeObituary(fight) {
                boring: BoringItem(), act: game.bestplot || 'Prologue' };
   var O = K.Obituary || { lastWords: [], epitaphs: [] };
   var prologue = StoryFor(0);
-  return {
+  var obit = {
     id: Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36),
     name: Get(Traits,'Name'),
     race: Get(Traits,'Race'),
@@ -579,6 +579,10 @@ function MakeObituary(fight) {
     epitaph: O.epitaphs.length ? StoryText(Pick(O.epitaphs), vars) : '',
     cheater: game.cheater ? game.cheater.reason : null
   };
+  // their character sheet as it was (the Hall of the Fallen links to it:
+  // FallenSheet). (transfer.js isn't loaded in the simulator.)
+  if (typeof SharePayload == "function") obit.sheet = SharePayload(game, { died: obit.died, cause: obit.cause });
+  return obit;
 }
 
 // The tombstone
@@ -801,7 +805,7 @@ function MakeLegend() {
     cheater: game.cheater ? game.cheater.reason : null,
     unverified: game.unverified || null,
     // their character sheet as it was (the Hall links to it: LegendSheet)
-    sheet: SharePayload(game, new Date().toISOString())
+    sheet: SharePayload(game, { retired: new Date().toISOString() })
   };
 }
 

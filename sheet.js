@@ -3,9 +3,11 @@
 // link, after the #; see ShareCode() and LegendSheet() in transfer.js.
 // Nothing is stored, and it can't be played or imported.
 //
-// A legend's sheet has p.ret, when they retired. One retired before the
-// Hall kept sheets is partial (p.partial): just their stats, and their best
-// gear, spell and stat (p.best).
+// A legend's sheet has p.ret, when they retired; a fallen Hardcore hero's
+// p.died, when they died (and p.dead, how). One from before the Halls kept
+// sheets is partial (p.partial): what the Hall remembers. For a legend that's
+// their stats and their best gear, spell and stat (p.best); for the fallen,
+// not even their stats.
 
 function SheetRows(table, rows) {
   var body = $(table).find("tbody").first();
@@ -57,10 +59,12 @@ function ShowSheet(p) {
   if (p.qd !== undefined) record.push(["Quests done", (p.qd || 0).toLocaleString()]);
   if (p.fin) record.push(["Finale", "Beat the Old Bastard™ at level " + p.fin]);
   if (p.ret) record.push(["Retired", SheetDate(p.ret) || "yes"]);
+  if (p.died) record.push(["Died", SheetDate(p.died) || "yes"]);
   SheetRows("#SheetRecord", record);
 
   var notes = [];
   if (p.ret) notes.push("🏆 In the Hall of Legends");
+  if (p.died) notes.push("In the Hall of the Fallen");
   if (p.mode == "hardcore") notes.push("☠ Hardcore");
   if (p.mode == "plus") notes.push("New Game+");
   if (p.leg) notes.push("Legacy of " + p.leg + (p.leg == 1 ? " race or class" : " races and classes"));
@@ -75,11 +79,12 @@ function ShowSheet(p) {
   $("#SheetNotes").text(notes.join(" · "));
 
   // (a partial sheet has only the best of each)
-  var notKept = "(the rest wasn't kept: they retired before the Hall kept character sheets)";
-  SheetRows("#SheetEquips", partial ? [["Best", best[0] || ""], ["", notKept]] :
+  var notKept = "(" + (best.length ? "the rest" : "this") + " wasn't kept: they " + (p.died ? "died" : "retired") +
+                " before the Hall kept character sheets)";
+  SheetRows("#SheetEquips", partial ? (best.length ? [["Best", best[0] || ""], ["", notKept]] : [["", notKept]]) :
                                       K.Equips.map(function (e, i) { return [e, (p.eq || [])[i]]; }));
   var spells = p.sp || [];
-  if (partial) SheetRows("#SheetSpells", [[best[1] || "(none recorded)", ""], [notKept, ""]]);
+  if (partial) SheetRows("#SheetSpells", best.length ? [[best[1] || "(none recorded)", ""], [notKept, ""]] : [[notKept, ""]]);
   else SheetRows("#SheetSpells", spells.length ? spells.map(function (s) { return [s[0], s[1]]; }) : [["(none yet)", ""]]);
   $("#SpellCount").text(spells.length ? "(" + spells.length + ")" : "");
   $("#SheetSpells tbody tr").each(function (i) {
@@ -95,10 +100,12 @@ function ShowSheet(p) {
     [["Gold", (p.gold || 0).toLocaleString()]].concat(items.map(function (r) { return [r[0], r[1]]; })));
   $("#InventoryCount").text(items.length ? "(" + items.length + (items.length == 1 ? " item)" : " items)") : "");
   $("#SheetPlot").text(p.plot || (p.act ? "Act " + SheetRoman(p.act) : "Prologue"));
-  $("#SheetQuest").text(p.quest || (p.ret ? "None: retired" : "Nothing yet"));
-  $("#SheetFoot").text(p.ret ?
-    "Retired " + SheetDate(p.ret, true) + " · their character sheet as it was then, kept in the Hall of Legends" +
-      (partial ? " (only the highlights: they retired before the Hall kept whole sheets)" : "") :
+  $("#SheetQuest").text(p.quest || (p.ret ? "None: retired" : p.died ? "None: dead" : "Nothing yet"));
+  $("#SheetFoot").text(p.ret || p.died ?
+    (p.ret ? "Retired " + SheetDate(p.ret, true) : "Died " + SheetDate(p.died, true)) +
+      " · their character sheet as it was then, kept in the Hall of " + (p.ret ? "Legends" : "the Fallen") +
+      (partial ? " (only what the Hall remembered: they " + (p.ret ? "retired" : "died") +
+                 " before it kept whole sheets)" : "") :
     "Shared " + SheetDate(p.at, true) + " · a snapshot: the hero has kept playing since");
   $("#SheetBody").prop("hidden", false);
 }

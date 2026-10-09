@@ -321,6 +321,11 @@ function ShowFallen(fallen) {
     row.find(".words").text(o.lastWords ? "\u201c" + o.lastWords + "\u201d" : "");
     row.find(".epitaph").text(o.epitaph || "");
     if (hashTarget == "fallen" && i == 0) row.addClass("lit");
+    // A link to their character sheet, as in the Hall of Legends
+    var sheetLink = row.find(".sheetlink");
+    ShareCodeFor(FallenSheet(o)).then(function (code) {
+      sheetLink.attr("href", ShareUrl(code)).prop("hidden", false);
+    }, function () {});
     row.find(".del").on("click", function () {
       if (!confirm("Remove " + o.name + "'s obituary from the Hall of the Fallen?")) return;
       storage.loadFallen(function (all) {
