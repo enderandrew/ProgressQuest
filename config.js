@@ -154,6 +154,115 @@ function GenerateName() {
   return result.charAt(0).toUpperCase() + result.slice(1);
 }
 
+// Endings that make a name sound like a place: towns, shires and nations
+var PlaceSuffixes = [
+  'aber',
+  'ania',
+  'avon',
+  'ban',
+  'bec',
+  'berg',
+  'berry',
+  'bie',
+  'borough',
+  'burg',
+  'burgh',
+  'burn',
+  'bury',
+  'by',
+  'caster',
+  'cester',
+  'cher',
+  'chester',
+  'combe',
+  'court',
+  'croft',
+  'dale',
+  'den',
+  'don',
+  'dorf',
+  'field',
+  'firth',
+  'fleur',
+  'ford',
+  'gard',
+  'gate',
+  'grad', 
+  'ham',
+  'haven',
+  'heim',
+  'holm',
+  'hurst',
+  'ia',
+  'ing',
+  'ingham',
+  'ington',
+  'istan',
+  'kirk',
+  'land',
+  'leigh',
+  'ley',
+  'low',
+  'mark',
+  'mead',
+  'mere',
+  'minster',
+  'mont',
+  'more',
+  'mouth',
+  'ness',
+  'onia',
+  'opolis',
+  'ova',
+  'polis',
+  'pool',
+  'port',
+  'roe',
+  'roy',
+  'sex',
+  'shaw',
+  'shire',
+  'stan',
+  'stead',
+  'stow',
+  'sylvania', 
+  'thorpe',
+  'thwaite',
+  'toft',
+  'ton',
+  'tun',
+  'val',
+  'vale',
+  'ville',
+  'wald',
+  'wich',
+  'wick',
+  'wood', 
+  'worth',
+];
+
+var PlaceMiddles = 'b|d|g|k|l|m|n|r|s|t|v|z'.split('|');
+
+// A kingdom, town or other place: a syllable or two of a name and a
+// place-like ending ("Brakchester", "Frogford", "Xenland", "Trachotvale")
+function KingdomName() {
+  var suffix = Pick(PlaceSuffixes);
+  var root = Pick(KParts[0]) + Pick(KParts[1]);
+  // A second syllable only before a short ending ("Grimaborough" is a
+  // mouthful), and it starts with a plain consonant, not "sch" or "wh"
+  if (suffix.length <= 4 && Random(2))
+    root += Pick(PlaceMiddles) + Pick(KParts[1]);
+  // A vowel ending needs a consonant before it ("Grakia", not "Graeia");
+  // otherwise, sometimes
+  if (/^[aeiouy]/.test(suffix) || Random(2)) root += Pick(KParts[2]);
+  // No doubled-up letters at the join ("Drokkirk" is fine; "Drokkkirk" isn't)
+  while (root.length > 1 && root.charAt(root.length - 1) == suffix.charAt(0) &&
+         root.charAt(root.length - 2) == suffix.charAt(0))
+    root = root.slice(0, -1);
+  var name = root + suffix;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 function LocalStorage() {
   this.getItem = function (key, callback) {
     var result = window.localStorage.getItem(key);
