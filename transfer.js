@@ -429,7 +429,8 @@ function ScanHero(sheet, fileName, done) {
 
 // What a share link shows: the character sheet, not the save (it can't be
 // imported or played). Sealed, so the viewer can tell if it was edited.
-function SharePayload(g) {
+// retired: when the hero retired (MakeLegend keeps one of these in the Hall).
+function SharePayload(g, retired) {
   var gold = 0;
   (g.Inventory || []).forEach(function (row) { if (row[0] == "Gold") gold = row[1]; });
   var L = g.legacy;
@@ -439,7 +440,7 @@ function SharePayload(g) {
     l: parseInt(g.Traits.Level, 10) || 0,
     st: K.Stats.map(function (s) { return g.Stats[s]; }),
     eq: K.Equips.map(function (e) { return (g.Equips || {})[e] || ""; }),
-    sp: (g.Spells || []).slice(0, 120),
+    sp: (g.Spells || []).slice(0, 400),   // (a level 50 hero has about 200)
     inv: (g.Inventory || []).filter(function (row) { return row[0] != "Gold"; }).slice(0, 40),
     gold: gold, act: g.act || 0, plot: g.bestplot || "",
     quest: (g.Quests && g.Quests.length) ? g.Quests[g.Quests.length - 1] : "",
@@ -452,7 +453,28 @@ function SharePayload(g) {
     dead: g.dead ? (g.dead.cause || "dead") : "",
     at: Date.now()
   };
+  if (retired) p.ret = retired;
   return Seal(p);
+}
+
+// The character sheet of a legend in the Hall: the one kept when they
+// retired, or, for legends from before the Hall kept them, what the Hall
+// remembers (stats, and their best gear, spell and stat). That one is
+// sealed only if the legend itself is untouched.
+function LegendSheet(l) {
+  if (l.sheet) return l.sheet;
+  var stats = l.stats || {};
+  var p = {
+    v: 1, partial: 1,
+    n: l.name, r: l.race, c: l.klass, a: l.alignment || "", l: l.level || 0,
+    st: K.Stats.map(function (s) { return stats[s] !== undefined ? stats[s] : ""; }),
+    best: [l.bestequip || "", l.bestspell || "", l.beststat || ""],
+    act: l.acts || 0, xp: [1, 1], el: l.played || 0, mode: l.mode || "normal", mut: l.mutators || [],
+    d: l.deaths || 0, fin: l.wonLevel || 0,
+    daily: l.daily || "", ch: l.cheater || "", uv: l.unverified || "",
+    ret: l.retired || "", at: Date.parse(l.retired || "") || Date.now()
+  };
+  return SealOk(l) ? Seal(p) : p;
 }
 
 function _bytesToB64url(bytes) {
@@ -467,7 +489,11 @@ function _b64urlToBytes(s) {
 
 // The code that goes after sheet.html#: "z" + compressed, or "j" + plain
 function ShareCode(sheet) {
-  var bytes = new TextEncoder().encode(JSON.stringify(SharePayload(sheet)));
+  return ShareCodeFor(SharePayload(sheet));
+}
+
+function ShareCodeFor(payload) {
+  var bytes = new TextEncoder().encode(JSON.stringify(payload));
   if (typeof CompressionStream != "function") return Promise.resolve("j" + _bytesToB64url(bytes));
   var stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate-raw"));
   return new Response(stream).arrayBuffer().then(function (buf) { return "z" + _bytesToB64url(new Uint8Array(buf)); });

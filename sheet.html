@@ -12,7 +12,8 @@
 <meta name="description" content="A Progress Quest Remix character sheet, shared by its owner.">
 </head>
 <!-- A shared character sheet: sheet.html#<code>, made by File > Share
-     Character Sheet (transfer.js). Read-only: it isn't a save. -->
+     Character Sheet, or a legend's in the Hall of Legends (transfer.js).
+     Read-only: it isn't a save. -->
 <body class="sheet-view">
 
 <br>
@@ -54,19 +55,23 @@
   <div class="vbox">
     <span class="label head">Equipment</span>
     <table class="listbox sheet-table" id="SheetEquips"><tbody></tbody></table>
-    <span class="label head">Spell Book</span>
-    <table class="listbox sheet-table" id="SheetSpells">
-      <thead><tr><th>Spell</th><th>Level</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <span class="label head">Spell Book <span class="count" id="SpellCount"></span></span>
+    <div class="sheet-scroll" id="SpellScroll" tabindex="0" aria-label="Spell Book">
+      <table class="listbox sheet-table" id="SheetSpells">
+        <thead><tr><th>Spell</th><th>Level</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="vbox">
-    <span class="label head">Inventory</span>
-    <table class="listbox sheet-table" id="SheetInventory">
-      <thead><tr><th>Item</th><th>Qty</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <span class="label head">Inventory <span class="count" id="InventoryCount"></span></span>
+    <div class="sheet-scroll" id="InventoryScroll" tabindex="0" aria-label="Inventory">
+      <table class="listbox sheet-table" id="SheetInventory">
+        <thead><tr><th>Item</th><th>Qty</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <span class="label head">Plot Development</span>
     <div class="listbox sheet-box" id="SheetPlot"></div>
     <span class="label head">Quest</span>

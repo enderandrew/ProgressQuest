@@ -219,6 +219,7 @@ dialog::backdrop { background: rgba(0, 20, 80, 0.25); }
 .xp-list .where { color: var(--xp-muted); font-size: 11px; }
 .xp-list .row-actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .xp-list .row-actions .xp-button { min-width: 0; padding: 2px 8px; font-size: 11px; }
+.xp-list .row-actions .xp-button[hidden] { display: none; }
 .xp-list .row.lit { background: #fff8d6; }
 .xp-list .empty { padding: 14px; color: var(--xp-muted); font-style: italic; }
 .xp-list.dropping { outline: 2px dashed var(--xp-select); outline-offset: -4px; }

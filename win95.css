@@ -239,6 +239,19 @@ dialog.win95::backdrop { background: rgba(0, 0, 40, 0.3); }
 .sheet-view .vbox > table { display: table; }
 .sheet-view [hidden] { display: none !important; }
 #SheetEquips td:first-child { width: 80px; }
+/* The Spell Book and Inventory scroll in boxes of their own (a level 50
+   hero knows about 200 spells), with their headings kept in view */
+.sheet-scroll { overflow-y: auto; border: solid 1px black; background: #fff; margin-bottom: 4px;
+                overscroll-behavior: contain; }
+#SpellScroll { max-height: 420px; }
+#InventoryScroll { max-height: 300px; }
+.sheet-scroll .sheet-table { border: 0; margin-bottom: 0; }
+.sheet-scroll thead th { position: sticky; top: 0; z-index: 1; background: #fff; box-shadow: inset 0 -1px grey; }
+.sheet-scroll:focus-visible { outline: 1px dotted #000; outline-offset: 1px; }
+.sheet-view .label .count { font-weight: normal; color: #555; }
+@media (max-width: 699px) {
+  #SpellScroll, #InventoryScroll { max-height: 55vh; }
+}
 @media (max-width: 600px) {
   .menu-pop .menu-pop { left: 16px; top: 100%; }
 }

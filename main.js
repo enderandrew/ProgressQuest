@@ -799,7 +799,9 @@ function MakeLegend() {
     runSeed: game.runSeed || '',
     daily: game.daily ? game.daily.date : null,
     cheater: game.cheater ? game.cheater.reason : null,
-    unverified: game.unverified || null
+    unverified: game.unverified || null,
+    // their character sheet as it was (the Hall links to it: LegendSheet)
+    sheet: SharePayload(game, new Date().toISOString())
   };
 }
 

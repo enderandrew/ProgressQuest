@@ -402,6 +402,11 @@ function ShowHall(legends) {
     row.find(".best").text([l.bestequip, l.bestspell, l.beststat].filter(Boolean).join(" / "));
     row.find(".taunt").text(l.taunt ? "\u201c" + l.taunt + "\u201d (the Old Bastard\u2122, in the Prologue)" : "");
     if (l.id === hashTarget) row.addClass("lit");
+    // A link to their character sheet (sheet.html#..., like a share link)
+    var sheetLink = row.find(".sheetlink");
+    ShareCodeFor(LegendSheet(l)).then(function (code) {
+      sheetLink.attr("href", ShareUrl(code)).prop("hidden", false);
+    }, function () {});
     if (!LegendCounts(l)) {
       row.addClass("void");
       row.find(".where").append($("<span class='voided'>").text(

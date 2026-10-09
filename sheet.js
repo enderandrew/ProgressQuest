@@ -1,6 +1,11 @@
 // sheet.html: a character sheet someone shared (File > Share Character
-// Sheet). The whole sheet is in the link, after the #; see ShareCode() in
-// transfer.js. Nothing is stored, and it can't be played or imported.
+// Sheet), or a legend's from the Hall of Legends. The whole sheet is in the
+// link, after the #; see ShareCode() and LegendSheet() in transfer.js.
+// Nothing is stored, and it can't be played or imported.
+//
+// A legend's sheet has p.ret, when they retired. One retired before the
+// Hall kept sheets is partial (p.partial): just their stats, and their best
+// gear, spell and stat (p.best).
 
 function SheetRows(table, rows) {
   var body = $(table).find("tbody").first();
@@ -17,8 +22,22 @@ function SheetHours(seconds) {
   return h < 1 ? Math.round(h * 60) + " minutes" : (h < 10 ? h.toFixed(1) : Math.round(h).toLocaleString()) + " hours";
 }
 
+// "Act VI"
+function SheetRoman(n) {
+  var out = "", parts = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"],
+                         [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+  parts.forEach(function (p) { while (n >= p[0]) { out += p[1]; n -= p[0]; } });
+  return out;
+}
+
+function SheetDate(when, withTime) {
+  var d = new Date(when);
+  if (isNaN(d)) return "";
+  return d.toLocaleString([], withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
+}
+
 function ShowSheet(p) {
-  var sealed = SealOk(p);
+  var sealed = SealOk(p), partial = !!p.partial, best = p.best || [];
   document.title = p.n + " - Progress Quest Remix";
   $("#title").text("Progress Quest Remix - " + p.n);
   $("#SheetSeal").text(sealed ? "✔ Straight from the game" : "⚠ This link was edited")
@@ -32,13 +51,16 @@ function ShowSheet(p) {
   $("#SheetXP .bar").css("width", Math.min(100, 100 * xp[0] / Math.max(1, xp[1])) + "%");
   $("#SheetXP").attr("title", Math.round(100 * xp[0] / Math.max(1, xp[1])) + "% of the way to level " + (p.l + 1));
 
-  var record = [["Played", SheetHours(p.el)], ["Fights won", (p.w || 0).toLocaleString()],
-                ["Defeated", (p.d || 0).toLocaleString() + (p.d == 1 ? " time" : " times")],
-                ["Quests done", (p.qd || 0).toLocaleString()]];
+  var record = [["Played", SheetHours(p.el)]];
+  if (p.w !== undefined) record.push(["Fights won", (p.w || 0).toLocaleString()]);
+  record.push(["Defeated", (p.d || 0).toLocaleString() + (p.d == 1 ? " time" : " times")]);
+  if (p.qd !== undefined) record.push(["Quests done", (p.qd || 0).toLocaleString()]);
   if (p.fin) record.push(["Finale", "Beat the Old Bastard™ at level " + p.fin]);
+  if (p.ret) record.push(["Retired", SheetDate(p.ret) || "yes"]);
   SheetRows("#SheetRecord", record);
 
   var notes = [];
+  if (p.ret) notes.push("🏆 In the Hall of Legends");
   if (p.mode == "hardcore") notes.push("☠ Hardcore");
   if (p.mode == "plus") notes.push("New Game+");
   if (p.leg) notes.push("Legacy of " + p.leg + (p.leg == 1 ? " race or class" : " races and classes"));
@@ -52,9 +74,14 @@ function ShowSheet(p) {
   else if (p.uv) notes.push("Unverified: doesn't count for the Hall of Legends");
   $("#SheetNotes").text(notes.join(" · "));
 
-  SheetRows("#SheetEquips", K.Equips.map(function (e, i) { return [e, p.eq[i]]; }));
+  // (a partial sheet has only the best of each)
+  var notKept = "(the rest wasn't kept: they retired before the Hall kept character sheets)";
+  SheetRows("#SheetEquips", partial ? [["Best", best[0] || ""], ["", notKept]] :
+                                      K.Equips.map(function (e, i) { return [e, (p.eq || [])[i]]; }));
   var spells = p.sp || [];
-  SheetRows("#SheetSpells", spells.length ? spells.map(function (s) { return [s[0], s[1]]; }) : [["(none yet)", ""]]);
+  if (partial) SheetRows("#SheetSpells", [[best[1] || "(none recorded)", ""], [notKept, ""]]);
+  else SheetRows("#SheetSpells", spells.length ? spells.map(function (s) { return [s[0], s[1]]; }) : [["(none yet)", ""]]);
+  $("#SpellCount").text(spells.length ? "(" + spells.length + ")" : "");
   $("#SheetSpells tbody tr").each(function (i) {
     var s = spells[i];
     if (s && typeof SpellType == "function") {
@@ -63,12 +90,16 @@ function ShowSheet(p) {
       $(this).children().first().append(" ").append($("<span>").addClass("tag-" + type).text(tag));
     }
   });
-  var inv = [["Gold", (p.gold || 0).toLocaleString()]].concat((p.inv || []).map(function (r) { return [r[0], r[1]]; }));
-  SheetRows("#SheetInventory", inv);
-  $("#SheetPlot").text(p.plot || "Prologue");
-  $("#SheetQuest").text(p.quest || "Nothing yet");
-  $("#SheetFoot").text("Shared " + new Date(p.at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) +
-    " · a snapshot: the hero has kept playing since");
+  var items = p.inv || [];
+  SheetRows("#SheetInventory", partial ? [["(not kept)", ""]] :
+    [["Gold", (p.gold || 0).toLocaleString()]].concat(items.map(function (r) { return [r[0], r[1]]; })));
+  $("#InventoryCount").text(items.length ? "(" + items.length + (items.length == 1 ? " item)" : " items)") : "");
+  $("#SheetPlot").text(p.plot || (p.act ? "Act " + SheetRoman(p.act) : "Prologue"));
+  $("#SheetQuest").text(p.quest || (p.ret ? "None: retired" : "Nothing yet"));
+  $("#SheetFoot").text(p.ret ?
+    "Retired " + SheetDate(p.ret, true) + " · their character sheet as it was then, kept in the Hall of Legends" +
+      (partial ? " (only the highlights: they retired before the Hall kept whole sheets)" : "") :
+    "Shared " + SheetDate(p.at, true) + " · a snapshot: the hero has kept playing since");
   $("#SheetBody").prop("hidden", false);
 }
 
