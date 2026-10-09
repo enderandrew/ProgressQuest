@@ -1,43 +1,25 @@
 // TODO These code bits don't really belong here, but this is the only
 // shared bit of js
 
-function tabulate(list) {
-  var result = '';
-  $.each(list, function (index) {
-    if (this.length == 2) {
-      if (this[1].length)
-        result += "   " + this[0] + ": " + this[1] + "\n";
-    } else {
-      result += "   " + this + "\n";
-    }
-  });
-  return result;
-}
+// Debug mode: add ?debug to the page's address (main.html?debug#...), or
+// run localStorage.setItem("pq.debug", "1") in the console to keep it on
+// (removeItem to turn it off). The game then writes what it does to the
+// console (Log in main.js); otherwise it keeps no log at all.
+var PQDebug = (function () {
+  try {
+    if (/[?&]debug(=|&|$)/.test(String(window.location.search || ""))) return true;
+    return window.localStorage.getItem("pq.debug") === "1";
+  } catch (e) {
+    return false;
+  }
+})();
 
-
-String.prototype.escapeHtml = function () {
-  return this.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-
+// "$position/$max HP": a progress bar's hint, with its numbers filled in
+// (ProgressBar in main.js; shown with .text(), so nothing needs escaping)
 function template(tmpl, data) {
-  var brag = tmpl.replace(/\$([_A-Za-z.]+)/g, function (str, p1) {
-    var dict = data;
-    $.each(p1.split("."), function (i,v) {
-      if (!dict) return true;
-      if (v == "___") {
-        dict = tabulate(dict);
-      } else {
-        dict = dict[v.replace("_"," ")];
-        if (typeof dict == typeof "")
-          dict = dict.escapeHtml();
-      }
-      return null;
-    });
-    if (dict === undefined) dict = '';
-    return dict;
+  return tmpl.replace(/\$(\w+)/g, function (m, key) {
+    return data[key] === undefined ? '' : data[key];
   });
-  return brag;
 }
 
 // Original work copyright © 2010 Johannes Baagøe, under MIT license
@@ -177,64 +159,24 @@ function LocalStorage() {
 }
 
 
-function CookieStorage() {
-  this.getItem = function(key, callback) {
-    var result;
-    $.each(document.cookie.split(";"), function (i,cook) {
-      if (cook.split("=")[0] === key)
-        result = unescape(cook.split("=")[1]);
-    });
-    if (callback)
-      setTimeout(function () { callback(result); }, 0);
-    return result;
+// Where nothing can be stored (site data blocked): the game still plays,
+// but nothing outlives the page
+function MemoryStorage() {
+  var items = {};
+  this.getItem = function (key, callback) {
+    var value = key in items ? items[key] : null;
+    if (callback) callback(value);
   };
-
   this.setItem = function (key, value, callback) {
-    document.cookie = key + "=" + escape(value);
-    if (callback)
-      setTimeout(callback, 0);
+    items[key] = String(value);
+    if (callback) callback();
   };
-
   this.removeItem = function (key) {
-    document.cookie = key + "=; expires=Thu, 01-Jan-70 00:00:01 GMT;";
+    delete items[key];
   };
 }
 
-function SqlStorage() {
-  this.async = true;
-
-  this.db = window.openDatabase("pqr", "", "Progress Quest Remix", 2500);
-
-  this.db.transaction(function(tx) {
-    tx.executeSql("CREATE TABLE IF NOT EXISTS Storage(key TEXT UNIQUE, value TEXT)");
-  });
-
-  this.getItem = function(key, callback) {
-    this.db.transaction(function (tx) {
-      tx.executeSql("SELECT value FROM Storage WHERE key=?", [key], function(tx, rs) {
-        if (rs.rows.length)
-          callback(rs.rows.item(0).value);
-        else
-          callback();
-      });
-    });
-  };
-
-  this.setItem = function (key, value, callback) {
-    this.db.transaction(function (tx) {
-      tx.executeSql("INSERT OR REPLACE INTO Storage (key,value) VALUES (?,?)",
-                    [key, value],
-                    callback);
-    });
-  };
-
-  this.removeItem = function (key) {
-    this.db.transaction(function (tx) {
-      tx.executeSql("DELETE FROM Storage WHERE key=?", [key]);
-    });
-  };
-}
-
+// (online play: see the end of main.js)
 function UrlEncode(s) {
   return encodeURIComponent(s).replace(/%20/g, "+");
 }
@@ -256,39 +198,9 @@ function HasLocalStorage() {
   }
 }
 
-// localStorage everywhere it works. Older builds forced iOS onto WebSQL,
-// which browsers are removing; rosters saved there are copied over once
-// (see LocalStorage.getItem below).
-var storage = (HasLocalStorage() ? new LocalStorage() :
-               window.openDatabase ? new SqlStorage() :
-               new CookieStorage());
-
-if (storage instanceof LocalStorage && window.openDatabase) {
-  (function (getItem) {
-    storage.getItem = function (key, callback) {
-      var value = window.localStorage.getItem(key);
-      if (key !== 'roster' || value) return getItem.call(this, key, callback);
-      // Nothing in localStorage yet: look for a legacy WebSQL roster.
-      var done = false;
-      function finish(legacy) {
-        if (done) return;
-        done = true;
-        if (legacy) window.localStorage.setItem(key, legacy);
-        if (callback) callback(legacy || value);
-      }
-      try {
-        window.openDatabase("pqr", "", "Progress Quest Remix", 2500)
-          .readTransaction(function (tx) {
-            tx.executeSql("SELECT value FROM Storage WHERE key=?", [key],
-              function (tx, rs) { finish(rs.rows.length ? rs.rows.item(0).value : null); },
-              function () { finish(null); return false; });
-          }, function () { finish(null); });
-      } catch (e) {
-        finish(null);
-      }
-    };
-  })(storage.getItem);
-}
+// Small things (the Hall, the Codex, the Hardcore ledger...) go in
+// localStorage; heroes go in IndexedDB (see below).
+var storage = HasLocalStorage() ? new LocalStorage() : new MemoryStorage();
 
 // ---- Heroes ------------------------------------------------------------------
 //
@@ -488,11 +400,15 @@ function WithHeroes(fn) {
 
 // Heroes saved by older versions, all in one "roster" item keyed by name,
 // move to their own records, exactly as they were (seal and all). The old
-// item is removed only once every one of them is safely across.
+// item is removed only once every one of them is safely across. (Builds
+// before that kept iOS rosters in WebSQL: those come over too.)
 function MoveOldRoster(store, done) {
   storage.getItem("rosterMoved", function (moved) {
     if (moved) return done();
     storage.getItem("roster", function (value) {
+      if (value) move(value); else WebSqlRoster(move);
+    });
+    function move(value) {
       var games = ParseHero(value);
       var list = games && typeof games == "object" ?
         Object.keys(games).map(function (k) { return games[k]; }).filter(function (g) { return g && g.Traits; }) : [];
@@ -510,8 +426,24 @@ function MoveOldRoster(store, done) {
           if (ok) finish(); else done();   // try again next time
         });
       });
-    });
+    }
   });
+}
+
+// callback(the roster an old build kept in WebSQL, or null)
+function WebSqlRoster(callback) {
+  var done = false;
+  var finish = function (value) { if (!done) { done = true; callback(value || null); } };
+  if (typeof window == "undefined" || !window.openDatabase) return finish(null);
+  try {
+    window.openDatabase("pqr", "", "Progress Quest Remix", 2500).readTransaction(function (tx) {
+      tx.executeSql("SELECT value FROM Storage WHERE key=?", ["roster"],
+        function (tx, rs) { finish(rs.rows.length ? rs.rows.item(0).value : null); },
+        function () { finish(null); return false; });
+    }, function () { finish(null); });
+  } catch (e) {
+    finish(null);
+  }
 }
 
 // A page closing can't wait for IndexedDB, so its last save (saveHero's
@@ -857,7 +789,7 @@ function DecodeName(s) {
 
 // Save format version. Bump this and add an entry to SaveMigrations
 // whenever a change needs existing saves to be patched.
-var SaveVersion = 14;
+var SaveVersion = 15;
 
 // SaveMigrations[n] upgrades a save from version n to n+1. Saves made
 // before versioning existed count as version 0.
@@ -979,6 +911,11 @@ var SaveMigrations = [
   function (sheet) {
     if (!sheet.lifeId) sheet.lifeId = LifeId(sheet);
     if (sheet.replay && sheet.replay.frozen) delete sheet.replay;
+  },
+  // 14 -> 15: the character roller's leftovers (its seed and best stat)
+  // come out of the stats
+  function (sheet) {
+    if (sheet.Stats) { delete sheet.Stats.seed; delete sheet.Stats.best; }
   }
 ];
 

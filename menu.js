@@ -206,7 +206,7 @@ function ShowLegendCount(legends) {
 // ---- Resume: saved characters ----------------------------------------------
 
 function LoadRoster() {
-  if (!HasLocalStorage() && !window.openDatabase && typeof indexedDB == "undefined") {
+  if (!HasLocalStorage() && typeof indexedDB == "undefined") {
     $("#roster").html('<div class="empty"><b>Hrumph:</b> this browser will not let us save anything. ' +
       'You can still play fast and loose: your hero lives only as long as the game stays open.</div>');
     return;
@@ -507,11 +507,10 @@ $(function () {
   storage.listHeroes(function (heroes) {
     $("#resumeCount").text(heroes.length ? heroes.length : "");
   });
-  if (HasLocalStorage() || window.openDatabase)
-    storage.loadLegends(ShowLegendCount);
+  storage.loadLegends(ShowLegendCount);
   $(".finaleLevel").text(FinaleLevel());
   // The Codex, and any achievements the Hall has earned meanwhile
-  if (HasLocalStorage() || window.openDatabase) CodexStart(CodexBadge);
+  CodexStart(CodexBadge);
   WindowFromHash();
   $(window).on("hashchange", WindowFromHash);
 });

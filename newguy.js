@@ -7,16 +7,6 @@ function Roll(stat) {
   return stats[stat];
 }
 
-function Choose(n, k) {
-  var result = n;
-  var d = 1;
-  for (var i = 2; i <= k; ++i) {
-    result *= (1+n-i);
-    d = d * i;
-  }
-  return result / d;
-}
-
 var stats = {};
 var traits = {};
 var total = 0;
@@ -153,7 +143,8 @@ function sold() {
     seed: stats.seed,
     birthday: ''+new Date(),
     birthstamp: +new Date(),
-    Stats: stats,
+    // the stats alone (stats also holds the roll's seed and best stat)
+    Stats: K.Stats.reduce(function (o, s) { o[s] = stats[s]; return o; }, {}),
     beststat: stats.best + " " + stats[stats.best],
     task: "",
     tasks: 0,

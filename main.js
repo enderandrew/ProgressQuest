@@ -280,10 +280,6 @@ function LowerCase(s) {
   return s.toLowerCase();
 }
 
-function ProperCase(s) {
-  return Copy(s,1,1).toUpperCase() + Copy(s,2,10000);
-}
-
 // Price of gear of a given power (by default, gear at your level)
 function EquipPrice(power) {
   if (power === undefined) power = GetI(Traits,'Level');
@@ -470,7 +466,7 @@ function FinishFight() {
   if (!fight) return;
   HPBar.reposition(Max(0, HPBar.Position() - fight.hpLost));
   MPBar.reposition(Max(0, MPBar.Position() - fight.mpSpent));
-  $.each(fight.log, function (i, line) { Log(line); });
+  if (PQDebug) $.each(fight.log, function (i, line) { Log(line); });
 
   if (game.wounded > 0) { --game.wounded; ShowCondition(); }
   if (fight.outcome == 'win' || fight.outcome == 'close')
@@ -1808,7 +1804,7 @@ function RemoveItem(name) {
   for (var i = 1; i < game.Inventory.length; ++i) {
     if (game.Inventory[i][0] === name) {
       game.Inventory.splice(i, 1);
-      if (Inventory.box) Inventory.box.find("tr").eq(i).remove();
+      Inventory.removeUI(name);
       Put(Inventory, 'Gold', GetI(Inventory, 'Gold'));  // refresh encumbrance
       return;
     }
@@ -1979,7 +1975,7 @@ function ProgressBar(id, tmpl) {
     return this.Position() >= this.Max();
   };
 
-  this.load = function (game) {
+  this.load = function () {
     this.reposition(this.Position());
   };
 }
@@ -2081,6 +2077,14 @@ function ListBox(id, columns, fixedkeys) {
   this.box = $("tbody#_, #_ tbody".replace(/_/g, id));
   this.columns = columns;
   this.fixedkeys = fixedkeys;
+  // Two-column lists: the row for each key, so an update goes straight to it
+  // instead of searching the table (the Spell Book runs to 200 rows). The
+  // fixed lists (Traits, Stats, Equipment) start with their rows in the page.
+  this.byKey = new Map();
+  if (this.box && columns == 2) {
+    var byKey = this.byKey;
+    this.box.children("tr").each(function () { byKey.set(Key(this), $(this)); });
+  }
 
   this.AddUI = function (caption) {
     if (!this.box) return;
@@ -2095,17 +2099,16 @@ function ListBox(id, columns, fixedkeys) {
 
   this.ClearSelection = function () {
     if (this.box)
-      this.box.find("tr").removeClass("selected");
+      this.box.find("tr.selected").removeClass("selected");
   };
 
   this.PutUI = function (key, value) {
     if (!this.box) return;
-    var item = this.rows().filter(function (index) {
-      return Key(this) === key;
-    });
-    if (!item.length) {
+    var item = this.byKey.get(key);
+    if (!item) {
       item = $("<tr>").append($("<td>").text(key), $("<td>"));
       this.box.append(item);
+      this.byKey.set(key, item);
     }
 
     item.children().last().text(value);
@@ -2135,19 +2138,26 @@ function ListBox(id, columns, fixedkeys) {
     return (this.fixedkeys || game[this.id]).length;
   };
 
-  this.remove0 = function (n) {
+  // The first row (the oldest of the Quests)
+  this.remove0 = function () {
     if (game[this.id])
       game[this.id].shift();
     if (this.box)
       this.box.find("tr").first().remove();
   };
 
-  this.remove1 = function (n) {
-    var t = game[this.id].shift();
-    game[this.id].shift();
-    game[this.id].unshift(t);
-    if (this.box)
-      this.box.find("tr").eq(1).remove();
+  // The second row (the Inventory's first item, after Gold)
+  this.remove1 = function () {
+    var gone = game[this.id].splice(1, 1)[0];
+    if (gone) this.removeUI(gone[0]);
+  };
+
+  // A two-column list's row for key
+  this.removeUI = function (key) {
+    var row = this.byKey.get(key);
+    if (!row) return;
+    row.remove();
+    this.byKey.delete(key);
   };
 
 
@@ -2384,11 +2394,11 @@ function BoringItem() {
 }
 
 function WinItem() {
-  if (Max(250, Random(999)) < Inventory.length()) {
-    Add(Inventory, Pick(game.Inventory)[0], 1);
-  } else {
-    Add(Inventory, SpecialItem(), 1);
-  }
+  // (This used to give another of something already in the pack, once it
+  // held 250 kinds of thing. It never does now, but the dice are still
+  // rolled, so seeded games and replays stay the same.)
+  Random(999);
+  Add(Inventory, SpecialItem(), 1);
 }
 
 function CompleteQuest() {
@@ -2507,10 +2517,11 @@ function CompleteAct() {
 }
 
 
+// What the hero is up to, in the browser console, in debug mode only
+// (PQDebug in config.js). Nothing is kept otherwise: a game left idling for
+// months would pile up a log without end.
 function Log(line) {
-  if (game.log)
-    game.log[+new Date()] = line;
-  // TODO: and now what?
+  if (PQDebug) console.log("[task " + (game.tasks || 0) + "] " + line);
 }
 
 function Task(caption, msec) {
@@ -2524,8 +2535,8 @@ function Task(caption, msec) {
 function Add(list, key, value) {
   Put(list, key, value + GetI(list,key));
 
-  /*$IFDEF LOGGING*/
-  if (!value) return;
+  // The log line, only if anyone will see it
+  if (!PQDebug || !value) return;
   var line = (value > 0) ? "Gained" : "Lost";
   if (key == 'Gold') {
     key = "gold piece";
@@ -2534,7 +2545,6 @@ function Add(list, key, value) {
   if (value < 0) value = -value;
   line = line + ' ' + Indefinite(key, value);
   Log(line);
-  /*$ENDIF*/
 }
 
 function AddR(list, key, value) {
@@ -2609,8 +2619,6 @@ function Pos(needle, haystack) {
   return haystack.indexOf(needle) + 1;
 }
 
-var dealing = false;
-
 function Timer1Timer() {
   if (game.dead) return;   // Hardcore: it's over
   if (TaskBar.done()) {
@@ -2619,8 +2627,11 @@ function Timer1Timer() {
 
     ClearAllSelections();
 
+    // A new hero's very first task ("Loading....") is worth nothing: no
+    // XP, no plot. (It looks like leftover code, but every hero's game
+    // depends on it; take it out and every seeded game comes out different.)
     if (game.kill == 'Loading....')
-      TaskBar.reset(0);  // Not sure if this is still the ticket
+      TaskBar.reset(0);
 
     // gain XP / level up. Wins earn the monster's full worth; running away
     // or losing still teaches you something.
@@ -3070,10 +3081,6 @@ function GameSaveName() {
 }
 
 
-function InputBox(message, def) {
-  return prompt(message, def || '');
-}
-
 function ToDna(s) {
   s = s + "";
   var code = {
@@ -3215,6 +3222,23 @@ function PopOut() {
   });
 }
 
+// ---- Online play (dormant) --------------------------------------------------
+//
+// The original Progress Quest reported heroes to progressquest.com: realms,
+// guilds, mottos and the online roster. Those servers aren't there for the
+// Remix, so this is kept for a server of its own one day, not used now: the
+// Multiplayer choice on the character roller is hidden (newguy.css), so
+// game.online is never set and none of this but Brag's save ever runs.
+//
+// Pieces elsewhere: the roller's "create" call (sold() in newguy.js), the B,
+// G and M keys (FormKeyDown), the realm in GameSaveName, and RevString and
+// UrlEncode in config.js. A new server will want https (an https page can't
+// call an http one) and its own way to check heroes (see replay.js).
+
+function InputBox(message, def) {
+  return prompt(message, def || '');
+}
+
 function Navigate(url) {
   window.open(url);
 }
@@ -3242,6 +3266,8 @@ function Validator(url) {
   return IntToStr(LFSR(url, game.online.passkey));
 }
 
+// A level, an Act, the finale...: save, and (online) tell the server.
+// trigger: 's'tart, 'l'evel, 'a'ct, 'f'inale, 'b'rag, 'm'otto.
 function Brag(trigger, andSeeIt) {
   SaveGame();
 

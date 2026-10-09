@@ -94,8 +94,6 @@ function MakeDaily(date) {
   });
   stats["HP Max"] = Math.round(P * between(0.9, 1.1));
   stats["MP Max"] = Math.round(P * between(0.9, 1.1));
-  stats.seed = gameSeed;
-  stats.best = best;
 
   var equips = {}, power = {};
   K.Equips.forEach(function (slot, i) {

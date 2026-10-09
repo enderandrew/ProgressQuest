@@ -238,7 +238,8 @@ function ExpectedPool(level) {
 // Power of a piece of gear from its name: base item level plus its
 // adjectives plus any leading +N/-N. Comes out near the character's level
 // when it was bought. 0 for empty slots and unknown items.
-// (Prompt 5 replaces this with numbers stored on the item.)
+// Gear power is stored when gear is equipped (game.EquipPower; SlotPower in
+// main.js); this reads it from the names, for saves from before that.
 function GearPower(name, bases, good, bad) {
   name = (name || "").trim();
   if (!name) return 0;
@@ -266,22 +267,6 @@ function GearPower(name, bases, good, bad) {
     if (base[0] === name) return power + parseInt(base[1], 10);
   }
   return power;
-}
-
-function WeaponPower(equips) {
-  return GearPower(equips.Weapon, K.Weapons, K.OffenseAttrib, K.OffenseBad);
-}
-
-// Average power over the shield and armor slots.
-function ArmorPower(equips) {
-  var total = 0, n = 0;
-  $.each(K.Equips, function (i, slot) {
-    if (slot === "Weapon") return;
-    total += GearPower(equips[slot], slot === "Shield" ? K.Shields : K.Armors,
-                       K.DefenseAttrib, K.DefenseBad);
-    ++n;
-  });
-  return n ? total / n : 0;
 }
 
 function Show(dmg) { return Math.max(1, Math.round(dmg)); }
