@@ -1447,6 +1447,7 @@ function StartSplurge(resume, only) {
   var choices = K.Sinks.filter(function (sk) {
     if (only) return sk.key == only;
     if (sk.minLevel && level < sk.minLevel) return false;
+    if (sk.shop && HasMutator('noShop')) return false;   // (the shops won't serve Hand-me-downs)
     var have = sk.boon && !sk.boon.hours ? BoonByKey(sk.key) : null;   // bought for good already?
     return !have || (have.c || 1) < (sk.boon.stack || 1);
   });

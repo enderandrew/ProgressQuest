@@ -238,13 +238,51 @@ Tuning knobs are in K.Defeat in combat.js.
 Perks
 -----
 
-Every hero has quirks, each with a pro and a con: Pack Mule carries half
-again as much and walks half again as slowly. One is rolled with the
-stats; at levels 10, 20, 30, 40 and 50 the hero is offered three more and
-keeps one (you pick, or fate does, like an event's choice). They multiply
-together, and with any mutators. The list is K.Perks in combat.js, with
-the properties a perk can change described above it; check-events.js
-catches a misspelled one.
+Every hero has quirks, each with a pro and a con: Built Like a Shed has
+20% more HP and travels 30% slower. One is rolled with the stats; at
+levels 10, 20, 30, 40 and 50 the hero is offered three more and keeps one
+(you pick, or fate does, like an event's choice). They multiply together,
+and with any mutators. The list is K.Perks in combat.js, with the
+properties a perk can change described above it; check-events.js catches
+a misspelled one.
+
+What things are worth, from simulating heroes (test/balance.js):
+
+- Quests matter. Each completed quest pays a prize (a spell, gear a bit
+  above your level, a permanent stat point, or an item to sell), and by
+  level 30 quests have given a hero more stat points than levelling up
+  has (about 70 against 58). Quests going 40% faster means about 12%
+  higher stats.
+- XP is worth about what it says: 10% more XP is about 9% less time.
+- Damage taken matters more than it looks: losing a fight sends you to
+  the temple, and the temple is about 15% of all play time. HP, damage
+  taken and healing show up mostly as fewer defeats, which matters in
+  Hardcore.
+- Running away gives up fights that would have been won: it costs time,
+  and saves defeats.
+- Gold matters little to how fast a hero levels (gear is capped at five
+  levels above you, and most heroes can afford it), so gold perks have
+  mild cons. Carrying more means fewer trips to market but more loot to
+  lose when beaten.
+- Short tasks count in whole seconds of game time (game.elapsed), so a
+  4.6-second trip counts as 4. test/balance.js measures the time a player
+  actually waits.
+
+Every perk was played against the same 30 heroes without it, to level
+30: all of them come out within about 6% of no perk at all in time to
+level, which is within the noise that 30 heroes can tell apart (one
+perk changes how every later die falls, and that alone moves a hero's
+time by 10% or more). Some trade speed for safety: Quest Hater, Sprinter
+and Berserker lose noticeably more fights; Turtle, Built Like a Shed,
+Late Bloomer and Strategic Retreater far fewer. Miser, Big Spender
+and Trust-Fund Kid only matter to a hero rich enough to splurge (both
+their pro and con are about splurging). Natural Leader's and Gambler's
+pros are about splurging too, and their everyday cons are small enough
+not to show.
+
+    node test/balance.js                        every perk, 24 heroes, level 30
+    node test/balance.js --perks tank,coward --seeds 40 --cache bal.txt
+    node test/balance.js --sinks --levels 50     gold sinks on and off
 
 
 Gold sinks
@@ -271,9 +309,15 @@ an event (no choice: the hero has money, and no use for advice).
   Workaholic), how hard henchmen hit (Natural Leader, Lone Wolf), the
   odds at the dice tables (Gambler).
 
-Simulated heroes (seed "pq" and "alpha", to level 50): the one who
-earned the most splurged 33 times from level 30 on, under 5% of all the
-gold it earned; the poorer one 3 times, after level 40. A hero with the
+On average the sinks change little: 12 heroes played to level 50 with
+and without them came out the same (within 5%), with about 10 splurges
+each. For a hero who can't shop (the Hand-me-downs mutator) gold has no
+other use, and there they help a lot (14% faster to level 40, a quarter
+fewer defeats); the enchanter, being a shop, won't serve that hero.
+
+How often: simulated heroes splurge about 10 times on the way to level
+50, nearly all after level 30, spending a few percent of all the gold
+they earn; a poor hero may splurge only once or twice. A hero with the
 Hand-me-downs mutator (no shops) starts splurging around level 15.
 
 The list is K.Sinks at the end of events.js, and the knobs K.Sink.

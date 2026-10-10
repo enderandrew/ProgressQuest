@@ -16,6 +16,8 @@
 //   --race RACE     race, e.g. "4chan Troll"                  (default random)
 //   --class CLASS   class, e.g. "Barbarian Pretzel"           (default random)
 //   --mut KEYS      challenge mutators, e.g. noshop,glasscannon (K.Mutators)
+//   --perks KEYS    the hero's perks, e.g. packmule,miser (K.Perks), instead
+//                   of the rolled one, and no more are offered ("" for none)
 //   --daily DATE    play that day's Daily Challenge hero, e.g. 2026-10-07
 //                   (stops when the challenge is done or lost)
 //   --replay FILE   replay a saved hero (a .pqw backup) from its birth and
@@ -48,6 +50,7 @@ function parseArgs(argv) {
       case "--race":   opts.race = next(); break;
       case "--class":  opts.klass = next(); break;
       case "--mut":    opts.mut = next(); break;
+      case "--perks":  opts.perks = next().split(",").filter(Boolean); break;
       case "--daily":  opts.daily = next(); break;
       case "--replay": opts.replay = next(); break;
       case "--quiet":  opts.quiet = true; break;
@@ -153,6 +156,7 @@ function run(opts) {
   load(ctx, opts.dir, "main.js");
   if (fs.existsSync(path.join(opts.dir, "journal.js"))) load(ctx, opts.dir, "journal.js");
   load(ctx, opts.dir, "newguy.js");
+  if (opts.setup) opts.setup(ctx);   // (for tests: change the rules first)
 
   // Virtual clock
   let now = 0;
@@ -187,6 +191,14 @@ function run(opts) {
   if (!opts.daily) g("sold()");   // adds the character to the roster, sets location
   ctx.location.search = "";
   g("FormCreate()");    // loads the game from the roster and starts it
+  if (opts.perks) {
+    // these perks and no others (for comparing them: test/balance.js)
+    const unknown = opts.perks.filter((k) => !ctx.PerkByKey(k));
+    if (unknown.length) usage(`Unknown perk ${unknown.join(", ")}. Choices:\n  ` + ctx.K.Perks.map((p) => p.key).join("\n  "));
+    ctx.game.perks = opts.perks.slice();
+    ctx.K.PerkLast = 0;
+    g("RefreshPools(); RestoreHealth(); ShowPerks()");
+  }
 
   const game = () => ctx.game;
   const level = () => parseInt(game().Traits.Level, 10);

@@ -128,6 +128,52 @@ function step(name, ok, detail) {
     return seal.trim();
   });
 
+  await tryStep("a hero rolling in gold splurges (a henchman, a tavern)", async () => {
+    const r = await page.evaluate(() => {
+      CloseEventPopup();
+      const play = () => { TaskBar.reposition(TaskBar.Max()); Timer1Timer(); };
+      const settle = () => { for (let i = 0; i < 100 && (game.event || game.queue.length); ++i) play(); };
+      settle();
+      Add(Inventory, "Gold", 1000000);
+      for (const key of ["henchman", "tavern"]) {
+        StartSplurge("", key);
+        settle();
+      }
+      ShowBuffs();
+      return { boons: $("#Boons").text(), owned: $("#Owned").text(), event: $("#RecentWhere").text() + ": " + $("#RecentResult").text(),
+               popup: document.getElementById("EventDialog").open };
+    });
+    await page.evaluate(() => CloseEventPopup());
+    if (!/^Splurged: Henchman \S+ \(\d+h \d+m\)/.test(r.boons)) throw new Error("under the health bars: " + r.boons);
+    if (!/^Owns: The .*, a tavern in /.test(r.owned)) throw new Error("under the purse: " + r.owned);
+    if (!/^Money to burn: Spent \d+ gold on a tavern/.test(r.event)) throw new Error("the last event: " + r.event);
+    if (!r.popup) throw new Error("no event pop-up");
+    return r.boons + " / " + r.owned;
+  });
+
+  await tryStep("a hero rolling in gold splurges (a henchman, a tavern)", async () => {
+    const r = await page.evaluate(() => {
+      CloseEventPopup();
+      const play = () => { TaskBar.reposition(TaskBar.Max()); Timer1Timer(); };
+      const settle = () => { for (let i = 0; i < 100 && (game.event || game.queue.length); ++i) play(); };
+      settle();
+      Add(Inventory, "Gold", 1000000);
+      for (const key of ["henchman", "tavern"]) {
+        StartSplurge("", key);
+        settle();
+      }
+      ShowBuffs();
+      return { boons: $("#Boons").text(), owned: $("#Owned").text(), event: $("#RecentWhere").text() + ": " + $("#RecentResult").text(),
+               popup: document.getElementById("EventDialog").open };
+    });
+    await page.evaluate(() => CloseEventPopup());
+    if (!/^Splurged: Henchman \S+ \(\d+h \d+m\)/.test(r.boons)) throw new Error("under the health bars: " + r.boons);
+    if (!/^Owns: The .*, a tavern in /.test(r.owned)) throw new Error("under the purse: " + r.owned);
+    if (!/^Money to burn: Spent \d+ gold on a tavern/.test(r.event)) throw new Error("the last event: " + r.event);
+    if (!r.popup) throw new Error("no event pop-up");
+    return r.boons + " / " + r.owned;
+  });
+
   await tryStep("quitting lands on Resume, with the hero listed", async () => {
     await page.keyboard.press("q");
     await page.waitForURL(/index\.html#resume/);

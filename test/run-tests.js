@@ -13,6 +13,8 @@
 //   game       seeded heroes play from level 1, without the game getting
 //              stuck or crashing; the same seed plays the same game twice;
 //              a Daily Challenge hero plays; old saves still load
+//   gold sinks every one of them plays out; a hero rolling in gold splurges,
+//              and that game replays exactly too
 //   replays    a hero's game replays exactly, and an edited one doesn't
 //   balance    heroes reach level 50 in a sensible time, winning most fights
 //              (the limits are in Balance below: change them when you change
@@ -225,6 +227,106 @@ test("old saves still load (save migrations)", () => {
   note(`version 0 -> ${m.saveVersion}`);
 });
 
+// ---- gold sinks -----------------------------------------------------------------
+
+test("every gold sink plays out (K.Sinks)", () => {
+  // A hero handed a fortune, made to splurge on each sink in turn
+  let keys = null, next = 0, expired = null, henchman = false;
+  const results = {};
+  const h = play({ levels: 30, seed: "test-every-sink", onTask(ctx) {
+    const g = ctx.game;
+    keys = keys || ctx.K.Sinks.map((s) => s.key);
+    const r = g.recentEvent;
+    if (r && /^sink-/.test(r.key) && r.result && r.result.length) results[r.key.slice(5)] = r.result;
+    if (g.combat && (g.combat.log || []).some((l) => /^Henchman /.test(l))) henchman = true;
+    if (+g.Traits.Level < 6 || g.event || g.queue.length) return;
+    if (next < keys.length) {
+      ctx.Add(ctx.Inventory, "Gold", 1000000);
+      ctx.StartSplurge("", keys[next++]);
+    } else if (!expired && Object.keys(results).length == keys.length && (henchman || g.tasks > 5000)) {
+      // and once the henchman has had a fight or two, what doesn't last wears off
+      expired = g.tasks;
+      g.boons.forEach((b) => { if (b.until) b.until = g.elapsed + 1; });
+    } else if (expired && g.tasks > expired + 5 && g.tasks < expired + 7) {
+      const timed = g.boons.filter((b) => b.until);
+      if (timed.length) throw new Error("these didn't wear off: " + timed.map((b) => b.n).join(", "));
+    }
+  } });
+  const missing = (keys || []).filter((k) => !results[k] || !/^Spent \d+ gold/.test(results[k][0]));
+  check(!missing.length, "these sinks didn't play out: " + missing.join(", "));
+  check(henchman, "no henchman swung in a fight");
+  check(expired, "the timed boons were never checked");
+  const owned = (h.boons || []).map((b) => b.k).sort().join(",");
+  check(owned == "backpack,egg,statue,tavern", "owned for good afterwards: " + owned);
+  note(`${keys.length} sinks; e.g. ${results.henchman.join(" · ")}`);
+});
+
+test("a hero rolling in gold splurges, and the game replays exactly", () => {
+  // The shops won't serve a Hand-me-downs hero, so the gold piles up (unless
+  // the temple takes it: a hero who loses a lot pays a lot of tithes, so
+  // there are a few heroes to try)
+  let h;
+  for (const seed of ["hoard-1", "hoard-5", "test-sinks"]) {
+    h = play({ levels: 22, seed, mut: "noshop" });
+    check((h.mutators || []).indexOf("noshop") >= 0, "the hero has no Hand-me-downs mutator");
+    if (h.splurges > 0) break;
+  }
+  check(h.splurges > 0, "never splurged, with " + h.Inventory[0][1] + " gold in the bank");
+  const r = replayFile(tmpFile("hoard.json", h));
+  check(r.status === "match", "the replay came out " + r.status + ": " + (r.detail || ""));
+  note(`${h.Traits.Name}: ${h.splurges} splurges, ${h.goldSpent} gold`);
+});
+
+// ---- gold sinks -----------------------------------------------------------------
+
+test("every gold sink plays out (K.Sinks)", () => {
+  // A hero handed a fortune, made to splurge on each sink in turn
+  let keys = null, next = 0, expired = null, henchman = false;
+  const results = {};
+  const h = play({ levels: 30, seed: "test-every-sink", onTask(ctx) {
+    const g = ctx.game;
+    keys = keys || ctx.K.Sinks.map((s) => s.key);
+    const r = g.recentEvent;
+    if (r && /^sink-/.test(r.key) && r.result && r.result.length) results[r.key.slice(5)] = r.result;
+    if (g.combat && (g.combat.log || []).some((l) => /^Henchman /.test(l))) henchman = true;
+    if (+g.Traits.Level < 6 || g.event || g.queue.length) return;
+    if (next < keys.length) {
+      ctx.Add(ctx.Inventory, "Gold", 1000000);
+      ctx.StartSplurge("", keys[next++]);
+    } else if (!expired && Object.keys(results).length == keys.length && (henchman || g.tasks > 5000)) {
+      // and once the henchman has had a fight or two, what doesn't last wears off
+      expired = g.tasks;
+      g.boons.forEach((b) => { if (b.until) b.until = g.elapsed + 1; });
+    } else if (expired && g.tasks > expired + 5 && g.tasks < expired + 7) {
+      const timed = g.boons.filter((b) => b.until);
+      if (timed.length) throw new Error("these didn't wear off: " + timed.map((b) => b.n).join(", "));
+    }
+  } });
+  const missing = (keys || []).filter((k) => !results[k] || !/^Spent \d+ gold/.test(results[k][0]));
+  check(!missing.length, "these sinks didn't play out: " + missing.join(", "));
+  check(henchman, "no henchman swung in a fight");
+  check(expired, "the timed boons were never checked");
+  const owned = (h.boons || []).map((b) => b.k).sort().join(",");
+  check(owned == "backpack,egg,statue,tavern", "owned for good afterwards: " + owned);
+  note(`${keys.length} sinks; e.g. ${results.henchman.join(" · ")}`);
+});
+
+test("a hero rolling in gold splurges, and the game replays exactly", () => {
+  // The shops won't serve a Hand-me-downs hero, so the gold piles up (unless
+  // the temple takes it: a hero who loses a lot pays a lot of tithes, so
+  // there are a few heroes to try)
+  let h;
+  for (const seed of ["hoard-1", "hoard-5", "test-sinks"]) {
+    h = play({ levels: 22, seed, mut: "noshop" });
+    check((h.mutators || []).indexOf("noshop") >= 0, "the hero has no Hand-me-downs mutator");
+    if (h.splurges > 0) break;
+  }
+  check(h.splurges > 0, "never splurged, with " + h.Inventory[0][1] + " gold in the bank");
+  const r = replayFile(tmpFile("hoard.json", h));
+  check(r.status === "match", "the replay came out " + r.status + ": " + (r.detail || ""));
+  note(`${h.Traits.Name}: ${h.splurges} splurges, ${h.goldSpent} gold`);
+});
+
 // ---- replays -------------------------------------------------------------------
 
 test("a hero's game replays exactly, and an edited one doesn't", () => {
@@ -248,7 +350,8 @@ if (!QUICK) {
       const f = fightRates(h);
       const winRate = f.wins / Math.max(1, f.total), defeatRate = f.defeats / Math.max(1, f.total);
       note(`${h.Traits.Race} ${h.Traits.Class}: ${days.toFixed(1)} days, ${h.tasks} tasks, ` +
-           `${f.total} fights (${Math.round(winRate * 100)}% won, ${Math.round(defeatRate * 100)}% lost)`);
+           `${f.total} fights (${Math.round(winRate * 100)}% won, ${Math.round(defeatRate * 100)}% lost), ` +
+           `${h.splurges || 0} splurges`);
       check(+h.Traits.Level >= 50, "stopped at level " + h.Traits.Level);
       check(days >= Balance.daysToFifty[0] && days <= Balance.daysToFifty[1],
             `took ${days.toFixed(1)} days (expected ${Balance.daysToFifty.join("-")})`);

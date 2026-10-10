@@ -1191,10 +1191,10 @@ K.Sink = {
   AllyPower: 0.3,       // a henchman's blow, as a share of a typical hero's
   GambleOdds: 0.45,     // the dice tables pay double this often
   // Tavern names: "The {word} {thing}"
-  TavernWords: ['Prancing', 'Drunken', 'Sleepy', 'Rusty', 'Leaky', 'Gilded', 'Surly', 'Damp',
-                'Wobbly', 'Suspicious', 'Bottomless', 'Second-Best', 'Haunted', 'Itchy'],
-  TavernThings: ['Ferret', 'Goblet', 'Pony', 'Kobold', 'Flagon', 'Mimic', 'Bard', 'Tankard',
-                 'Owlbear', 'Boot', 'Gnome', 'Lich', 'Turnip', 'Sock']
+  TavernWords: ['Prancing', 'Drunken', 'Sleepy', 'Rusty', 'Leaky', 'Gilded', 'Surly', 'Damp', 'Shady', 'Flirty', 'Thirsty',
+                'Wobbly', 'Suspicious', 'Bottomless', 'Second-Best', 'Haunted', 'Itchy', 'Moist', 'Inconspicuous', 'Musty',],
+  TavernThings: ['Ferret', 'Goblet', 'Pony', 'Kobold', 'Flagon', 'Mimic', 'Bard', 'Tankard', 'Manticore', 'Hideout',
+                 'Owlbear', 'Boot', 'Gnome', 'Lich', 'Turnip', 'Sock', 'Rendevous', 'Flask', 'Retreat', 'Small-clothes', ]
 };
 
 // Each sink:
@@ -1217,18 +1217,19 @@ K.Sink = {
 //   stats       stat points gained, there and then
 //   buff        a stat buffed, as by an event
 //   gear        true: gear better than anything the shop sells
+//   shop        true: it's a shop, and the Hand-me-downs mutator's hero can't use it
 //   gamble      { win: lines, lose: lines }: double or nothing
 //   memoir      true: a ghostwritten entry in the journal
 K.Sinks = [
   { key: 'henchman', label: 'a henchman', spend: 0.35, weight: 2,
-    lines: ['A sign in {kingdom}: “Henchman for hire. Will hench. Own pointy stick”',
-            'You hire {hench} for {gold} gold, plus snacks'],
+    lines: ['A sign in {kingdom}: “Henchiest Henchman for hire. Will hench. Own pointy stick”',
+            'You hire {hench} to hench for {gold} gold, plus snacks'],
     boon: { ally: 1, name: 'Henchman {hench}', help: 'An extra attack every round', hours: 8,
             ends: 'Your henchman {hench} quits to start a podcast' } },
 
   { key: 'horse', label: 'a horse', spend: 0.25,
     lines: ['A horse trader in {kingdom} swears this one is “mostly horse”',
-            'You pay {gold} gold. It is at least sixty percent horse'],
+            'You pay {gold} gold. It is at least sixty percent horse.'],
     boon: { travelMult: 0.6, name: 'Mostly a horse', help: 'Travels 40% faster', hours: 8,
             ends: 'Your horse wanders off to find itself' } },
 
@@ -1248,7 +1249,7 @@ K.Sinks = [
             ends: 'The feast finally wears off. You could eat' } },
 
   { key: 'tutor', label: 'a private tutor', spend: 0.35,
-    lines: ['You hire a tutor from the Academy of {kingdom}',
+    lines: ['You hire a tutor from the Academy of {kingdom} to learn you good.',
             'They charge by the hour, and by the syllable: {gold} gold'],
     spells: 3 },
 
@@ -1260,7 +1261,8 @@ K.Sinks = [
   { key: 'backpack', label: 'a bigger backpack', spend: 0.3,
     lines: ['A leatherworker in {kingdom} sells you a bigger backpack for {gold} gold',
             'It has a cup holder. You will never use the cup holder'],
-    boon: { carryMult: 1.2, name: 'a bigger backpack', help: 'Carries 20% more', stack: 2 } },
+    boon: { carryMult: 1.2, lossMult: 0.85, name: 'a bigger backpack', stack: 2,
+            help: 'Carries 20% more, and loses 15% less of it when defeated (it has a lock)' } },
 
   { key: 'insurance', label: 'adventurer’s insurance', spend: 0.3,
     lines: ['An insurance salesman corners you in {kingdom}',
@@ -1269,7 +1271,7 @@ K.Sinks = [
             ends: 'Your insurance lapses. The renewal letter is written in blood' } },
 
   { key: 'taxes', label: 'taxes', spend: 0.5,
-    lines: ['The tax collector of {kingdom} has found you',
+    lines: ['The tax collector of {kingdom} has found you despite your efforts to the contrary',
             '“The Crown would like its cut,” he says, and takes {gold} gold',
             'You ask what the Crown does with it. He says “Crown stuff”'] },
 
@@ -1307,15 +1309,15 @@ K.Sinks = [
   { key: 'coin', label: 'DungeonCoin', spend: 0.5,
     lines: ['{guy} tells you about DungeonCoin. “It’s like gold, but imaginary”',
             'You invest {gold} gold. To the moon!',
-            'DungeonCoin is down one hundred percent. {guy} has left {kingdom}'] },
+            'DungeonCoin is down one hundred and one percent. {guy} has left {kingdom}'] },
 
   { key: 'egg', label: 'a dragon egg', spend: 0.2,
     lines: ['A merchant in {kingdom} sells you a genuine dragon egg for {gold} gold',
             'You keep it warm for weeks. It is a rock',
-            'You name it {rock}. You love it anyway'],
+            'You name it {rock}. You love it anyway.'],
     boon: { name: 'a pet rock named {rock}', help: 'Does nothing. Perfect in every way' } },
 
-  { key: 'enchanter', label: 'an enchanter', spend: 0.45,
+  { key: 'enchanter', label: 'an enchanter', spend: 0.45, shop: true,
     lines: ['An enchanter in {kingdom} offers to “improve” your weakest piece of gear',
             'You hand over {gold} gold. It comes back glowing, slightly'],
     gear: true },
