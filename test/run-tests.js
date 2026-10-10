@@ -43,7 +43,7 @@ const Balance = {
   daysToFifty: [3, 14],        // game time to reach level 50, in days
   minWinRate: 0.75,            // fights won (cleanly or narrowly)
   maxDefeatRate: 0.15,         // fights lost
-  maxJournalBytes: 120000      // a level 50 hero's journal
+  maxJournalBytes: 110000      // a level 50 hero's journal (K.Journal.MaxChars of text, plus a little)
 };
 
 // ---- A tiny test harness ------------------------------------------------------
@@ -276,6 +276,35 @@ test("a hero rolling in gold splurges, and the game replays exactly", () => {
   const r = replayFile(tmpFile("hoard.json", h));
   check(r.status === "match", "the replay came out " + r.status + ": " + (r.detail || ""));
   note(`${h.Traits.Name}: ${h.splurges} splurges, ${h.goldSpent} gold`);
+});
+
+// ---- the journal ----------------------------------------------------------------
+
+test("the journal starts at level 1, and keeps to its budget however long a hero idles", () => {
+  let first = null, flooded = null;
+  const h = play({ levels: 8, seed: "test-journal", onTask(ctx) {
+    const g = ctx.game;
+    if (!first && g.journal && g.journal.length) first = { level: g.journal[0].l, kind: g.journal[0].k, tasks: g.tasks };
+    if (flooded || +g.Traits.Level < 6) return;
+    // months of idling, in a moment: thousands of entries of every kind
+    const before = g.journal.slice(0, ctx.K.Journal.Keep).map((e) => e.x).join("|");
+    for (let i = 0; i < 6000; ++i) {
+      if (i % 10 == 0) ctx.JournalLevel();
+      else ctx.JournalAdd(["aside", "event", "elite", "act"][i % 4], "Something happened, at some length. ".repeat(4) + i);
+      if (i == 5000) ctx.JournalAdd("finale", "I beat the Old Bastard.");
+    }
+    const chars = g.journal.reduce((t, e) => t + e.x.length, 0);
+    flooded = { chars, entries: g.journal.length, kept: g.journal.slice(0, ctx.K.Journal.Keep).map((e) => e.x).join("|") == before,
+                finale: g.journal.some((e) => e.k == "finale"), max: ctx.K.Journal.MaxChars, maxN: ctx.K.Journal.Max };
+  } });
+  check(first && first.level == 1 && first.kind == "begin", "the first entry: " + JSON.stringify(first));
+  check(flooded, "never flooded the journal");
+  check(flooded.chars <= flooded.max && flooded.entries <= flooded.maxN,
+        `${flooded.entries} entries, ${flooded.chars} characters (budget ${flooded.maxN}, ${flooded.max})`);
+  check(flooded.kept, "the first entries didn't stay");
+  check(flooded.finale, "the finale was dropped");
+  note(`first entry at level 1 (task ${first.tasks}); flooded with 6,000 entries: ${flooded.entries} kept, ` +
+       `${Math.round(flooded.chars / 1000)}k characters`);
 });
 
 // ---- elites -------------------------------------------------------------------------

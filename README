@@ -416,21 +416,29 @@ The journal
 -----------
 
 Every hero keeps a journal (the Journal menu, or J), from their very
-first step: each level, each Act and how it ended, every random event
-(the first of each kind in full; repeats a line each, gathered into the
-next level's entry), every named elite, the choices you make yourself,
-the Old Bastard™ (with a line for your race and one for your class: the
-same ones the victory scene plays, K.FinaleRaceEndings and
-K.FinaleClassEndings in story.js), and the end. Now and then the hero
-writes something just for the reader, sure that nobody will read it.
-It has dice of its own, so it never changes how a game goes.
+first step: each level, each Act and how it ended, the first time each
+random event happens (repeats aren't kept: a hero sees about a thousand
+events by level 50, and they'd double the journal), every named elite,
+each new perk, the choices you make yourself, the Old Bastard™ (with a
+line for your race and one for your class: the same ones the victory
+scene plays, K.FinaleRaceEndings and K.FinaleClassEndings in story.js),
+the Daily Challenge, and the end. Now and then the hero writes something
+just for the reader, sure that nobody will read it. It has dice of its
+own, so it never changes how a game goes.
+
+The words are all in journal.js, as lists (one line is picked; each
+aside is used once per hero). They can use {hero} {race} {klass}
+{alignment} {level} {next} {hours} {days} {weapon} {gear} {spell} {wins}
+{deaths} {quests} {act} {kingdom} (a kingdom made up for the line), and
+some lists have more (listed above each). "{d}th" comes out as "1st",
+"2nd", "3rd" when it should.
 
 The journal is saved with the hero, and a hero can idle for months, so
 it has a budget (K.Journal in journal.js): 1,500 entries and 100,000
 characters. Over budget, the oldest of the least interesting entries go
-first (repeated events, then asides and level lines...); the first few
-entries and the finale always stay. A level 50 hero's journal comes to
-about 300 entries and 110 KB, about two thirds of the save.
+first (asides and level lines, then the rest); the first few entries and
+the finale always stay. A level 50 hero's journal comes to about 300
+entries and 70 KB.
 
 
 The desktop

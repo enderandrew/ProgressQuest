@@ -1391,7 +1391,7 @@ function AddPerk(key) {
   game.perks.push(key);
   RefreshPools();   // the pools and the pack may change size
   Log('New perk: ' + p.label);
-  if (typeof JournalAdd == "function") JournalAdd('perk', 'New perk: ' + PerkText(p));
+  if (typeof JournalPerk == "function") JournalPerk(p);
   ShowPerks();
   return true;
 }

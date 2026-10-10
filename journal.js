@@ -13,10 +13,9 @@
 // game.journal: [{ h: game seconds, l: level, k: kind, x: text }]. It's
 // saved with the hero, and a hero can idle for months, so it has a budget
 // (K.Journal.Max entries, K.Journal.MaxChars of text): past it, the oldest
-// of the least interesting entries go (K.JournalDropOrder). Repeated events
-// wait in game.journalPending and go in together, a line each, with the next
-// level ("Also since level 22: ..."). A level 50 hero's journal comes to
-// about 350 entries and 100 KB; past that, it stays at its budget.
+// of the least interesting entries go (K.JournalDropOrder). A level 50
+// hero's journal comes to about 300 entries and 70 KB; a hero idling on
+// past that stays at the budget.
 // The journal has its own dice (JournalRandom): it never touches the game's,
 // so it can't change how a hero's game goes, or a replay of it.
 //
@@ -27,14 +26,13 @@ K.Journal = {
   Max: 1500,          // entries kept, at most...
   MaxChars: 100000,   // ...and this much text, about 110 KB in the save
   AsideChance: 0.3,   // after a level or an Act, the chance of an aside
-  Keep: 3,            // the first entries, which always stay
-  BriefChars: 64      // a repeated event's line, cut to about this long
+  Keep: 3             // the first entries, which always stay
 };
 
-// When the journal is full, what goes first: repeated events, then asides
-// and level lines, then the rest; the oldest of each first. The first Keep
+// When the journal is full, what goes first: asides and level lines, then
+// the rest; the oldest of each first. The first Keep
 // entries, the finale and the end always stay.
-K.JournalDropOrder = ['again', 'aside', 'level', 'event', 'elite', 'away', 'perk', 'owned', 'act', 'fight', 'daily'];
+K.JournalDropOrder = ['aside', 'level', 'event', 'elite', 'away', 'perk', 'owned', 'act', 'fight', 'daily'];
 
 // ---- Writing ---------------------------------------------------------------
 
@@ -70,6 +68,15 @@ function JournalRandom() {
   return new Alea("journal", game.lifeId || "", game.tasks || 0, (game.journal || []).length, ++_journalDraws);
 }
 
+// A kingdom's name, made with the journal's dice (KingdomName in config.js
+// rolls the game's: they are swapped out and back)
+function JournalKingdom() {
+  if (typeof KingdomName != "function" || typeof seed == "undefined") return "the kingdom";
+  var gameDice = seed;
+  seed = JournalRandom();
+  try { return KingdomName(); } finally { seed = gameDice; }
+}
+
 function JournalPick(list) {
   return list[Math.floor(JournalRandom()() * list.length)];
 }
@@ -98,8 +105,14 @@ function JournalVars(extra) {
 }
 
 function JournalText(template, extra) {
+  if (Array.isArray(template)) template = JournalPick(template);   // (a list: one of them)
   var v = JournalVars(extra);
-  return template.replace(/\{([a-z]+)\}/g, function (m, key) { return v[key] !== undefined ? v[key] : m; });
+  if (v.kingdom === undefined && template.indexOf("{kingdom}") >= 0) v.kingdom = JournalKingdom();
+  return template.replace(/\{([a-z]+)\}/g, function (m, key) { return v[key] !== undefined ? v[key] : m; })
+    // "the {d}th time" with d = 1, 2 or 3 reads "the 1st time"...
+    .replace(/\b(\d*?)(1|2|3)th\b/g, function (m, rest, last) {
+      return /1$/.test(rest) ? m : rest + last + { 1: "st", 2: "nd", 3: "rd" }[last];
+    });
 }
 
 // Lines as prose: each one ends a sentence (the game's scene lines mostly
@@ -142,12 +155,11 @@ function JournalBegin(isNew) {
 }
 
 function JournalTally() {
-  return { level: GetI(Traits, 'Level'), quests: game.questsDone || 0, wins: game.wins || 0, deaths: game.deaths || 0,
+  return { quests: game.questsDone || 0, wins: game.wins || 0, deaths: game.deaths || 0,
            gold: game.goldEarned || 0, spells: (game.Spells || []).length };
 }
 
 function JournalLevel() {
-  JournalFlush();   // (marked with the level they happened at)
   var now = JournalTally(), was = game.journalMark || now;
   game.journalMark = now;
   var n = function (x) { return Math.max(0, x).toLocaleString(); };
@@ -172,41 +184,20 @@ function JournalActBegin() {
   JournalAside(0.5, K.JournalActAsides);
 }
 
-// An event has played out (FinishEvent). The first of each kind goes in in
-// full, and any choice you made yourself; after that, a line each.
+// An event has played out (FinishEvent). The first of each kind goes in,
+// and any choice you made yourself; repeats don't (a hero sees about a
+// thousand events by level 50, and they'd double the journal's size).
 function JournalEvent(ev, result) {
   if (ev.perk) return;   // (AddPerk writes its own line)
   var seen = game.journalEvents = game.journalEvents || {};
   var mine = ev.by == 'you';
-  if (seen[ev.key] && !mine) {
-    // with the next level's entry (JournalFlush)
-    (game.journalPending = game.journalPending || []).push(JournalBrief(ev, result));
-    return;
-  }
+  if (seen[ev.key] && !mine) return;   // (repeats would double the journal's size)
   seen[ev.key] = 1;
   var text = JournalSentences(ev.lines || []);
   if (result && result.length) text += " (" + result.join(", ") + ".)";
   JournalAdd('event', text);
   if (mine && ev.choices && ev.chosen !== undefined && ev.choices[ev.chosen])
     JournalAdd('aside', JournalText(JournalPick(K.JournalYouChose), { choice: ev.choices[ev.chosen].label }));
-}
-
-// A repeat, in a line: how it started, and what came of it
-function JournalBrief(ev, result) {
-  var line = String((ev.lines || [])[0] || "Something happened").trim().replace(/[.!]$/, "");
-  var max = K.Journal.BriefChars;
-  if (line.length > max) line = line.slice(0, line.lastIndexOf(" ", max) > max / 2 ? line.lastIndexOf(" ", max) : max) + "…";
-  var what = (result || []).join(", ");
-  return line + (what ? " (" + what + ")" : "");
-}
-
-// The repeated events since the last level, as one entry
-function JournalFlush() {
-  var p = game.journalPending;
-  if (!p || !p.length) return;
-  game.journalPending = [];
-  var since = (game.journalMark && game.journalMark.level) || GetI(Traits, 'Level');
-  JournalAdd('again', "Also, since level " + since + ": " + p.join("; ") + ".");
 }
 
 // A gold sink has played out (JournalEvent has the first of each kind). A
@@ -238,7 +229,9 @@ function JournalFirstDefeat(foe) {
 }
 
 function JournalFinale(won, tries) {
-  var text = JournalText(JournalPick(won ? K.JournalFinaleWon : K.JournalFinaleEscaped), { tries: tries });
+  var prologue = StoryFor(0);
+  var text = JournalText(won ? K.JournalFinaleWon : K.JournalFinaleEscaped,
+                         { tries: tries, taunt: (prologue && prologue.taunt) || "Thou fool" });
   // and how this race and class celebrate (story.js), as the bards tell it
   // (no game dice here: the kingdom stays "the kingdom")
   if (won && typeof FinaleEnding == "function") {
@@ -260,10 +253,14 @@ function JournalAway(seconds, lines) {
 }
 
 function JournalDaily(status) {
-  var text = { done: "Finished today's Daily Challenge: {label}.",
-               failed: "Ran out of time on today's Daily Challenge. {label}? Maybe tomorrow.",
-               died: "Died during the Daily Challenge. It was supposed to be a fun little challenge." }[status];
-  if (text) JournalAdd('daily', JournalText(text, { label: game.daily ? game.daily.label : "" }));
+  var lines = K.JournalDaily[status];
+  if (lines) JournalAdd('daily', JournalText(lines, { label: game.daily ? game.daily.label : "" }));
+}
+
+// A new perk (AddPerk in main.js): a line, and sometimes a word about it
+function JournalPerk(p) {
+  JournalAdd('perk', 'New perk: ' + PerkText(p));
+  JournalAside(K.Journal.AsideChance, K.JournalPerkAsides, { perk: p.label });
 }
 
 function JournalBrand(reason) {
@@ -271,12 +268,10 @@ function JournalBrand(reason) {
 }
 
 function JournalRetire() {
-  JournalFlush();
   JournalAdd('end', JournalText(JournalPick(K.JournalRetire)));
 }
 
 function JournalDeath(cause) {
-  JournalFlush();
   JournalAdd('end', JournalText(JournalPick(K.JournalDeath), { cause: cause }));
 }
 
@@ -345,8 +340,10 @@ function OpenJournal() {
 
 // ---- The words ---------------------------------------------------------------
 //
-// {hero} {race} {klass} {level} {next} {hours} {days} {weapon} {gear} {spell}
-// {wins} {deaths} {quests} {act}, and in some lines more (listed there).
+// {hero} {race} {klass} {alignment} {level} {next} {hours} {days} {weapon}
+// {gear} {spell} {wins} {deaths} {quests} {act} {kingdom}, and in some lists
+// more (listed there). Each list is one line picked at random; a single
+// line works too. "{d}th" and the like come out as "1st", "2nd", "3rd".
 
 K.JournalBegin = [
   "Had a dream. The Old Bastard™ was in it, sneering “{taunt}”. I don't know who he is, but he's going down. Bought this journal on the way out of town.",
@@ -373,8 +370,14 @@ K.JournalBegin = [
   "As an ostensibly {alignment} {race}, I feel the need to record my legacy in this journal. Unfortunately it starts with The Old Bastard™ calling me “{taunt}”.",
 ];
 
-K.JournalFirstAside =
-  "Note to whoever finds this: you won't. Nobody reads these. I'm writing it anyway, the way you keep a progress bar running in a tab you never look at.";
+// (A list, like most of these: one is picked. A single line works too.)
+K.JournalFirstAside = [
+  "Note to whoever finds this: you won't. Nobody reads these. I'm writing it anyway, the way you keep a progress bar running in a tab you never look at.",
+  "If you're reading this, put it back. Diaries are private. (Nobody is reading this. I can tell. The tab is in the background.)",
+  "Rule one of this journal: nobody reads it. Rule two: if you are reading it, see rule one.",
+  "I'm told heroes keep journals so historians have something to misquote. Hello, future historian. Please spell my name right: {hero}.",
+  "This journal belongs to {hero}, a {race} {klass}. If found, please return it. If not found, which is likelier, carry on."
+];
 
 K.JournalLateStart = [
   "Started keeping a journal at level {level}. Everything before this is a blur of progress bars.",
@@ -382,7 +385,7 @@ K.JournalLateStart = [
   "Why is my first entry at level {level}, {hours} into all this? Do I have amnesia from all the concussions? Off to go bash my head in more combat!",
   "Yes, I didn't start my journal until level {level}, {hours} into all this. Look, I procrastinate a bit.",
   "Maybe I didn't start my journal until level {level}, {hours} into all this. Some of us are late bloomers.",
-  "I forgot to record everything tha happened before level {level}, {hours} into all this. But it was probably boring. It will be great from here on out.",
+  "I forgot to record everything that happened before level {level}, {hours} into all this. But it was probably boring. It will be great from here on out.",
 ];
 
 // {q} quests, {w} fights won, {d} defeats, {g} gold, since the last level
@@ -399,7 +402,7 @@ K.JournalLevel = [
   "Level {level}. The game is called Progress Quest. It is pretty much expected to Progress. I will see you again for level {next}.",
   "Level {level}. Some heroes end up in the Hall of the Fallen. I am already looking forward to level {next}.",
   "Level {level}. Numbers go up. Do I have a higher purpose? Am I squandering my limited time? Or should I proceed to level {next}?",
-  "Level {level}. I made {g} gold since the last level. That came with near-death, injuries, concussions and mental trauma. But hey, I can buy new gear!.",
+  "Level {level}. I made {g} gold since the last level. That came with near-death, injuries, concussions and mental trauma. But hey, I can buy new gear!",
   "Level {level}. {w} monsters turned into paste. The local ecosystem will never financially recover from this.",
   "Level {level}. You literally left this browser tab open while getting a sandwich, but congratulations to both of us.",
   "Level {level}. Slogged through {q} quests and {w} brawls. Did I read any quest text? Absolutely not.",
@@ -473,7 +476,7 @@ K.JournalLevelHurt = [
   "Level {level}. {d} deaths. Cast {spell} in a blind panic while fleeing for my life. The local monsters now consider me an interactive snack.",
   "Level {level}. Won {w} fights, died {d} times. My {spell} was roughly as effective as throwing lukewarm wet sponges at angry bears.",
   "Level {level}. Slogged through {hours} of agony, cast {spell} until my mana ducts ruptured, and still suffered {d} trips in a body bag.",
-  "Level {level}. You left this browser tab open for {hours} while I died {d} agonizing deaths unattended. I hope your enjoyed your doomscrolling.",
+  "Level {level}. You left this browser tab open for {hours} while I died {d} agonizing deaths unattended. I hope you enjoyed your doomscrolling.",
   "Level {level}. {d} defeats while you were tabbed out looking at cat videos. My {race} ancestors watched every single one in silent horror.",
   "Level {level}. Took {w} wins, {d} brutal massacres, and {hours} on the clock. You did not push a single button to prevent any of it.",
   "Level {level}. I spent a measurable percentage of the last {days} days lying face down in a ditch because of {d} failed encounters. Thanks for checking in.",
@@ -496,7 +499,23 @@ K.JournalLevelAsides = {
   30: "Level 30. Someone once told me the game plays itself. I'm the one playing it. You're just the one who left the tab open.",
   42: "Level 42. I was told this would mean something.",
   49: "One level to go. I've been thinking about what I'll say to the Old Bastard™. It's mostly swearing.",
-  50: "Level 50. If this were a normal game there would be fireworks. Here there's a progress bar, and then another one."
+  50: "Level 50. If this were a normal game there would be fireworks. Here there's a progress bar, and then another one.",
+  // (and for anyone who keeps going: the game does)
+  5: "Level 5. I have a weapon, a grudge and a journal. Statistically, two of those will get me killed.",
+  15: "Level 15. I've stopped counting the rats. The rats have not stopped counting me.",
+  25: "Halfway to fifty. If this were a mortgage, I'd be celebrating. It is not a mortgage. It is so much worse.",
+  33: "Level 33. A third of the way to 100, which is not a level anyone has told me about, but I can feel it out there. Watching.",
+  40: "Level 40. My knees are making the noise the monsters make.",
+  45: "Level 45. The Old Bastard™ is close. I can smell him. He smells like a waiting room.",
+  51: "Level 51. The quest is over and the bars keep filling. Nobody told me what happens after the ending. It turns out the answer is: more.",
+  55: "Level 55. I've started a second journal just to complain about this one.",
+  60: "Level 60. Everyone I ever fought at level 1 is a footnote. Some of them were very small footnotes.",
+  69: "Level 69. Nice. (I'm told I have to write that. It's in the contract.)",
+  75: "Level 75. If you're still running this tab, I want you to know I respect you, and I'm worried about you.",
+  80: "Level 80. I asked the progress bar if it ever gets tired. It filled up, which I'm taking as a no.",
+  90: "Level 90. Somewhere a developer assumed nobody would get this far. Hello, developer. Bet you didn't write anything for level 91.",
+  99: "Level 99. The old Progress Quest hall of fame had heroes at this level. They're legends. They also never went outside.",
+  100: "Level 100. Three digits. I've run out of fingers, toes, and patience. Yours, apparently, is infinite."
 };
 
 K.JournalActAsides = [
@@ -555,7 +574,7 @@ K.JournalAsides = [
   "Somewhere a server is keeping track of all this. I hope it's warm.",
   "I've been a {klass} for {hours} now. I still don't know what a {klass} is supposed to do. Nobody has complained.",
   "The monsters never write journals. That's how you know we're the good guys. Probably.",
-  "I tried explaining the concept of free will to a bartender. He poured a ale and said, “Your progress bar for drinking is at 40%.” I drank in silence.",
+  "I tried explaining the concept of free will to a bartender. He poured an ale and said, “Your progress bar for drinking is at 40%.” I drank in silence.",
   "Look at me: a level {level} {race} {klass}, armed with {weapon}, clad in {gear}, utterly dependent on a single JavaScript thread.",
   "You know what's truly terrifying? Every triumph and tragedy of my life was predetermined by a pseudorandom number generator seeded with a timestamp.",
   "I tried to refuse a quest once. My legs just walked over to the objective anyway. My nervous system belongs to the script now.",
@@ -570,7 +589,7 @@ K.JournalAsides = [
   "A wild boar dropped {gear} today. Why was a four-legged swine carrying {gear}? Where was it keeping it? These are questions a wise {klass} does not ask.",
   "My inventory is 80% animal spleens, 15% broken gardening tools, and 5% pure existential dread. Actually, strike the dread; make it 85% spleens.",
   "I've spent {hours} hacking through local wildlife. If environmental protection agencies existed in {kingdom}, I would be considered an extinction event.",
-  "Every single treasure chest contains loot scaled precisely to my current level. It's almost as if the dungeon dungeon-master remodeled twenty minutes before I arrived.",
+  "Every single treasure chest contains loot scaled precisely to my current level. It's almost as if the dungeon master remodeled twenty minutes before I arrived.",
   "My {gear} squeaks violently with every step. Stealth is an illusion. Fortunately, the monsters have the situational awareness of a damp turnip.",
   "According to my character sheet, my alignment is {alignment}. In practice, my alignment is 'whatever direction the pathfinding algorithm shoves me.'",
   "As a proud {race}, I was raised on ancient tales of glory. Nowhere in those legends did it mention spending {days} days looking for a stolen spatula.",
@@ -586,7 +605,12 @@ K.JournalAsides = [
 K.JournalYouChose = [
   "A voice from the sky told me to “{choice}”. It's never spoken up before. I listened. Was that you?",
   "Went with “{choice}”. Not my idea. Someone was actually paying attention for once.",
-  "“{choice}”. Chosen by a mysterious presence I'm choosing to call the Reader. Hi, Reader."
+  "“{choice}”. Chosen by a mysterious presence I'm choosing to call the Reader. Hi, Reader.",
+  "My hand moved on its own and I chose “{choice}”. Either I'm possessed or someone clicked a button. Both are unsettling.",
+  "“{choice}”, said the heavens. The heavens have never had an opinion before. I hope they keep it up. (They won't.)",
+  "Somebody out there picked “{choice}” for me. I'd like to thank them, and also ask where they've been for the last {hours}.",
+  "Chose “{choice}”. Felt very decisive about it, which is suspicious, because I don't usually get a say.",
+  "The Reader chose “{choice}”. I'd have picked the same. Probably. I wasn't consulted. I never am."
 ];
 
 K.JournalSplurgeAsides = [
@@ -641,53 +665,123 @@ K.JournalGhostwriter = [
 K.JournalEliteWon = [
   "Slew {elite}, an elite {kind}. They had a name and a title and everything. Took {item} off them; it's my {slot} now.",
   "{elite} is no more. Somebody will have to update the local signage. I've got {item} now.",
-  "Fought {elite}, a {kind} with a reputation. The reputation lost. Kept {item} as a souvenir."
+  "Fought {elite}, a {kind} with a reputation. The reputation lost. Kept {item} as a souvenir.",
+  "Beat {elite}. Their title is vacant, if anyone's interested. The pay is bad and a hero shows up eventually. I'm wearing their {slot}: {item}.",
+  "{elite} gave a speech before the fight. I didn't. I think that was the difference. Took {item}.",
+  "I've always wanted a {slot} with a backstory. {item} has one: it used to belong to {elite}, until about ten minutes ago.",
+  "They'll write songs about {elite}. Short ones, ending with me. I've got their {slot}, {item}, and it still smells like them.",
+  "{elite}, an elite {kind}, is defeated. I checked their pockets, because that's what heroes do now. Found {item}."
 ];
 
 K.JournalEliteFled = [
   "Ran into {elite}, an elite {kind}, and ran right back out. Strategic. Very strategic.",
-  "Met {elite}. Decided I had somewhere else to be. Anywhere else."
+  "Met {elite}. Decided I had somewhere else to be. Anywhere else.",
+  "{elite} and I had a frank exchange of views. Their view was a very large {kind}. Mine was the exit.",
+  "Ran from {elite}. Not away from, exactly. More like toward somewhere that wasn't them, very quickly.",
+  "I'll be back for you, {elite}. Not soon. Possibly never. But it's important to say these things."
 ];
 
 K.JournalEliteLost = [
   "{elite}, an elite {kind}, handed me my own backside. It had a title. I see why.",
-  "Lost to {elite}. In my defense, they had a name. Monsters with names cheat."
+  "Lost to {elite}. In my defense, they had a name. Monsters with names cheat.",
+  "{elite} beat me. Somewhere, a bard is already writing it down, and I am not the hero of that song.",
+  "Woke up at the temple. The priest asked who did it. I said “{elite}” and he nodded like that explained everything. It does.",
+  "Note to self: when a {kind} has a title, a hometown and a business card, maybe don't."
 ];
 
-K.JournalEliteAside =
-  "If you're reading this: no, I didn't make {elite} up. They had a nameplate. I have their {slot}. That's proof. That's science.";
+K.JournalEliteAside = [
+  "If you're reading this: no, I didn't make {elite} up. They had a nameplate. I have their {slot}. That's proof. That's science.",
+  "My first named elite. I'm told the Codex has a page for this now. I'm in a book! Well, my loot is. Close enough.",
+  "Do you think {elite} kept a journal? Do you think anyone read it? I'm asking for a friend. The friend is me."
+];
 
-K.JournalFirstDefeatLine =
-  "Lost a fight for the first time, to {foe}. Somebody dragged me to a temple, and the temple charged me for it. Heroism has fees.";
+K.JournalFirstDefeatLine = [
+  "Lost a fight for the first time, to {foe}. Somebody dragged me to a temple, and the temple charged me for it. Heroism has fees.",
+  "First defeat, at the hands of {foe}. The temple patched me up and gave me a loyalty card. That feels like a prediction.",
+  "{foe} beat me. My first loss. I'd like it noted that I was winning right up until the part where I wasn't.",
+  "Lost to {foe} today. Nobody warned me that being the hero doesn't mean you win. Somebody should put that on the box."
+];
 
 K.JournalFinaleWon = [
   "I beat the Old Bastard™. It took {tries} tries. He was older and slower than in my dreams, and so, frankly, am I.",
-  "The Old Bastard™ is beaten. {tries} attempts. I said all the things I'd been saving up. Most of them were swearing."
+  "The Old Bastard™ is beaten. {tries} attempts. I said all the things I'd been saving up. Most of them were swearing.",
+  "It's done. The Old Bastard™ is beaten (attempt {tries}). I always thought I'd feel different. I feel like a {race} who needs a nap.",
+  "Beat the Old Bastard™ on try number {tries}. He called me “{taunt}” one last time, out of habit. I let it slide. I'm a legend now; legends let things slide.",
+  "Victory over the Old Bastard™, after {tries} tries and {hours}. I'd like to thank my {weapon}, my {gear}, and you, for leaving the tab open."
 ];
 
 K.JournalFinaleEscaped = [
   "Fought the Old Bastard™ (attempt {tries}). He ran. Of course he ran.",
-  "Attempt {tries} on the Old Bastard™. He got away. He's getting older every time, which is cold comfort."
+  "Attempt {tries} on the Old Bastard™. He got away. He's getting older every time, which is cold comfort.",
+  "Attempt {tries}. The Old Bastard™ got away through a door I swear wasn't there a minute ago. He's had a long time to plan his exits.",
+  "The Old Bastard™ escaped again (attempt {tries}). He threw “{taunt}” over his shoulder on the way out. He is running low on new material.",
+  "Lost the Old Bastard™ again. Attempt {tries}. I'm not saying I'm obsessed, but I've started drawing him in the margins."
 ];
 
-K.JournalFinaleAside =
-  "So that's it. The thing I set out to do is done. If you've been reading along this whole time, I'm a little embarrassed about the swearing.";
+K.JournalFinaleAside = [
+  "So that's it. The thing I set out to do is done. If you've been reading along this whole time, I'm a little embarrassed about the swearing.",
+  "The credits should roll now. There are no credits. There's another progress bar. There's always another progress bar.",
+  "I did it. You watched. Well, the tab watched. I'll take it.",
+  "The Old Bastard™ is beaten and the world is exactly the same, except for him. I think that's how most quests end, honestly."
+];
 
-K.JournalAwayAside =
-  "You were gone, so I kept going. I always keep going. I'm not mad. I just think you should know I noticed.";
+K.JournalAwayAside = [
+  "You were gone, so I kept going. I always keep going. I'm not mad. I just think you should know I noticed.",
+  "While you were away, I did all of that on my own. Then I wrote it down so you could skim it. You're welcome.",
+  "You closed the tab and the world kept turning. Mostly it turned toward me with a sword. I handled it.",
+  "Welcome back. I'd tell you what you missed, but the summary's right there, and frankly I've been talking to myself enough."
+];
 
-K.JournalBrandLine =
-  "They say I cheated ({reason}). I would like it on record that I was not consulted.";
+K.JournalBrandLine = [
+  "They say I cheated ({reason}). I would like it on record that I was not consulted.",
+  "Branded a cheater ({reason}). I didn't do anything. Somebody did something to me. That's the whole problem with being a save file.",
+  "Apparently I'm a cheater now ({reason}). I'd argue, but my lawyer is a progress bar."
+];
 
-K.JournalOpenedAside =
-  "Wait. Someone actually opened this. Okay. Act natural. Everything in here is fine and normal and heroic.";
+K.JournalOpenedAside = [
+  "Wait. Someone actually opened this. Okay. Act natural. Everything in here is fine and normal and heroic.",
+  "Someone opened the journal. I'm not saying it's you. I'm saying the only other person here is a {race} with a {weapon}, and it isn't me.",
+  "Oh no. You read it. All of it? The part about the pants? Forget the part about the pants.",
+  "You opened my journal. Bold. I'll be writing more carefully from now on. (I won't.)"
+];
 
 K.JournalRetire = [
   "Hanging up my {weapon}. Retiring to the Hall of Legends at level {level}, after {hours} of this. Somebody else can fill the bars now.",
-  "Last entry. I'm retiring. {wins} fights, {quests} quests, one Old Bastard™. If you read all of this, you're the real legend. (You didn't, though.)"
+  "Last entry. I'm retiring. {wins} fights, {quests} quests, one Old Bastard™. If you read all of this, you're the real legend. (You didn't, though.)",
+  "Retiring. I'm told the Hall of Legends has a nice view and terrible food. Can't be worse than {days} days of trail rations.",
+  "This is {hero}, {alignment} {race} {klass}, signing off at level {level}. The next hero gets my legacy. They can't have my {gear}; I'm being buried in it.",
+  "I'm done. {wins} fights won, {deaths} lost, {quests} quests, {hours}. If anyone asks, tell them I went out on top of a progress bar."
 ];
 
 K.JournalDeath = [
   "{cause}. If anyone finds this journal: it was going really well right up until it wasn't.",
-  "Final entry, probably: {cause}. Tell the Reader I said hi. They never read these anyway."
+  "Final entry, probably: {cause}. Tell the Reader I said hi. They never read these anyway.",
+  "{cause}. Hardcore, they said. One life, they said. I thought they were being dramatic.",
+  "Writing this fast: {cause}. Level {level}, {hours} in. Please bury me with my {weapon}. Or sell it. Honestly, sell it.",
+  "{cause}. The Hall of the Fallen gets a {race} {klass} today. Make sure they spell {hero} right on the stone."
+];
+
+// The Daily Challenge, as it ends ({label}: the goal)
+K.JournalDaily = {
+  done: [
+    "Finished today's Daily Challenge: {label}.",
+    "Daily Challenge done: {label}. Same time tomorrow? (Same time tomorrow.)",
+    "Did the Daily: {label}. Somewhere, a leaderboard I'll never see just moved a little."
+  ],
+  failed: [
+    "Ran out of time on today's Daily Challenge. {label}? Maybe tomorrow.",
+    "The Daily Challenge ({label}) beat me. It's a new one tomorrow. So am I, technically."
+  ],
+  died: [
+    "Died during the Daily Challenge. It was supposed to be a fun little challenge.",
+    "The Daily Challenge was “{label}”. Not “die”. I'd like that noted."
+  ]
+};
+
+// A new perk ({perk}: what it's called), now and then
+K.JournalPerkAsides = [
+  "Turns out I'm a {perk} now. I don't remember applying. These things just happen to people, I suppose.",
+  "New perk: {perk}. Every ten levels I become slightly more of a person. At this rate I'll be fully realized around level 400.",
+  "Somebody picked {perk} for me. I've decided it was destiny. It's cheaper than therapy.",
+  "I am a {perk}. It's who I am now. I'm going to lean into it. I'm going to lean into it so hard."
 ];
