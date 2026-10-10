@@ -323,6 +323,32 @@ Hand-me-downs mutator (no shops) starts splurging around level 15.
 The list is K.Sinks at the end of events.js, and the knobs K.Sink.
 
 
+Named elites and uniques
+------------------------
+
+About 1 fight in 500 (K.Elite in combat.js) the monster is a named elite:
+"Grimbold the Unwashed, Terror of Frakfield", a monster of the kind the
+hero was about to fight, as tough as that fight, with twice the health and
+no giving up. The hero sees it coming and goes in at full HP and MP. Beat
+it for three times the XP and a unique: gear named for it ("Grimbold's
+Unwashed Mace"), 4 to 6 levels above you, for your weakest slot, starred
+in the equipment list (hover for where it came from). Lose, and it was
+just a bad day with a name attached.
+
+- Whether a fight is an elite comes from the fight's own seed, so heroes
+  who never meet one play exactly as before; an elite fight gets a seed
+  of its own.
+- The journal records every elite, won, lost or fled. The Codex has a
+  Uniques page (every unique your heroes have taken, the newest 500), and
+  the Bestiary marks the kinds you've slain (✔) and the kinds you've slain
+  an elite of (★). The shared character sheet lists the hero's uniques.
+- Measured on 6 heroes to level 40 (about 35 elites each): they won 89%
+  of elite fights, against 92% of the same monsters unnamed.
+- With elites, 16 heroes reached level 40 about 4% sooner than the same
+  heroes without (within the noise: test/balance.js --elites), and lost a
+  few percent fewer fights, thanks to the gear.
+
+
 Watching
 --------
 

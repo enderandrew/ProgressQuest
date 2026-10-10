@@ -608,3 +608,7 @@ div.profile#DailyLine:empty { display: none; }
   }
   #LinkBar a { padding: 2px 0; }
 }
+
+/* Gear taken from a named elite (WinUnique in main.js) */
+#Equips tr.unique td:last-child { color: #8a5a00; font-weight: bold; }
+#Equips tr.unique td:last-child::before { content: "\2605 "; }

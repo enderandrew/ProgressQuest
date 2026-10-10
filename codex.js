@@ -7,6 +7,8 @@
 //              known it at, and who learned it first
 //   Journal    every event in K.Events: how often it happened, how it first
 //              went, and which way each choice was decided
+//   Uniques    every unique piece of gear taken from a named elite (K.Elite
+//              in combat.js): no list to fill in, since every one is new
 //   Achievements (K.Achievements below), unlocked once for good
 //
 // Heroes branded cheaters add nothing. The Codex is sealed like a save; if
@@ -110,6 +112,12 @@ K.Achievements = [
     value: function (c) { return c.spells; }, goal: 100 },
   { key: "spells200", icon: "🧙", label: "Archmage (Self-Certified)", help: "Learn 200 different spells.",
     value: function (c) { return c.spells; }, goal: 200 },
+  { key: "elite1", icon: "👑", label: "Big Game Hunter", help: "Slay a named elite.",
+    value: function (c) { return c.totals.elites || 0; }, goal: 1 },
+  { key: "elite10", icon: "👑", label: "Rogues' Gallery", help: "Slay 10 named elites, all heroes together.",
+    value: function (c) { return c.totals.elites || 0; }, goal: 10 },
+  { key: "uniques25", icon: "🗡", label: "One of a Kind (Times 25)", help: "Collect 25 uniques in the Codex.",
+    value: function (c) { return c.uniques; }, goal: 25 },
   { key: "events25", icon: "📰", label: "Eventful", help: "Witness 25 different events.",
     value: function (c) { return c.events; }, goal: 25 },
   { key: "eventsall", icon: "📰", label: "Seen It All", help: "Witness every event in the Journal.",
@@ -137,7 +145,7 @@ function AchievementGoal(a) {
 // ---- Storage -----------------------------------------------------------------
 
 function CodexEmpty() {
-  return { monsters: {}, spells: {}, events: {}, achievements: {}, totals: {}, best: {}, flags: {} };
+  return { monsters: {}, spells: {}, events: {}, uniques: {}, achievements: {}, totals: {}, best: {}, flags: {} };
 }
 
 // The text this page last stored (or found sealed and untouched): no need
@@ -176,6 +184,7 @@ function CodexMerge(into, d) {
     var to = into.monsters[k] = into.monsters[k] || {}, from = d.monsters[k];
     to.k = (to.k || 0) + (from.k || 0);
     to.l = (to.l || 0) + (from.l || 0);
+    if (from.e) to.e = (to.e || 0) + from.e;
     first(to, from);
   });
   Object.keys(d.spells).forEach(function (k) {
@@ -197,6 +206,10 @@ function CodexMerge(into, d) {
     }
     first(to, from);
   });
+  Object.keys(d.uniques || {}).forEach(function (k) {
+    if (!into.uniques[k]) into.uniques[k] = d.uniques[k];
+  });
+  CodexTrimUniques(into);
   Object.keys(d.achievements).forEach(function (k) {
     if (!into.achievements[k]) into.achievements[k] = d.achievements[k];
   });
@@ -204,6 +217,16 @@ function CodexMerge(into, d) {
   Object.keys(d.best).forEach(function (k) { into.best[k] = Math.max(into.best[k] || 0, d.best[k]); });
   Object.keys(d.flags).forEach(function (k) { into.flags[k] = into.flags[k] || d.flags[k]; });
   return into;
+}
+
+// The Codex keeps the newest CodexUniquesMax uniques (every hero finds dozens,
+// and the Codex lives in the browser's small storage)
+var CodexUniquesMax = 500;
+function CodexTrimUniques(book) {
+  var names = Object.keys(book.uniques || {});
+  if (names.length <= CodexUniquesMax) return;
+  names.sort(function (a, b) { return String(book.uniques[b].at).localeCompare(String(book.uniques[a].at)); })
+    .slice(CodexUniquesMax).forEach(function (n) { delete book.uniques[n]; });
 }
 
 // Combine a backup with a book: the larger of each count, so restoring the
@@ -214,6 +237,7 @@ function CodexUnion(into, other) {
   Object.keys(other.monsters || {}).forEach(function (k) {
     var to = into.monsters[k] = into.monsters[k] || {}, from = other.monsters[k];
     to.k = max(to.k, from.k); to.l = max(to.l, from.l); first(to, from);
+    if (from.e) to.e = max(to.e, from.e);
   });
   Object.keys(other.spells || {}).forEach(function (k) {
     var to = into.spells[k] = into.spells[k] || {}, from = other.spells[k];
@@ -233,9 +257,10 @@ function CodexUnion(into, other) {
   ["totals", "best"].forEach(function (part) {
     Object.keys(other[part] || {}).forEach(function (k) { into[part][k] = max(into[part][k], other[part][k]); });
   });
-  ["achievements", "flags"].forEach(function (part) {
+  ["uniques", "achievements", "flags"].forEach(function (part) {
     Object.keys(other[part] || {}).forEach(function (k) { if (!into[part][k]) into[part][k] = other[part][k]; });
   });
+  CodexTrimUniques(into);
   return into;
 }
 
@@ -327,6 +352,21 @@ function CodexEvent(key, line) {
   });
 }
 
+// A named elite slain, and the unique it gave up
+function CodexElite(e, item, level) {
+  if (!CodexOn() || !e) return;
+  var who = CodexWho();
+  CodexApply(function (b) {
+    var m = b.monsters[e.kind] = b.monsters[e.kind] || {};
+    m.e = (m.e || 0) + 1;
+    if (item && !b.uniques[item.name])
+      b.uniques[item.name] = { slot: item.slot, power: item.power, from: e.name, kind: e.kind,
+                               lv: level, by: who.by, at: who.at };
+    b.totals.elites = (b.totals.elites || 0) + 1;
+  });
+  CheckAchievements();
+}
+
 function CodexChoice(key, pick, by) {
   if (!CodexOn() || !key) return;
   CodexApply(function (b) {
@@ -385,6 +425,7 @@ function CodexContext() {
     });
     Codex.counts = {
       monsters: slain, spells: Object.keys(b.spells).length, events: Object.keys(b.events).length,
+      uniques: Object.keys(b.uniques || {}).length,
       bossMutators: mutators, icons: icons, sinks: sinks,
       legends: legends.length, races: hall.races.length, klasses: hall.klasses.length,
       fallen: (CodexExtra.fallen || []).length, dailies: dailies
@@ -510,7 +551,8 @@ function CodexTabCounts() {
     achievements: got + "/" + K.Achievements.length,
     bestiary: c.monsters + "/" + K.Monsters.length,
     spellbook: c.spells + "/" + K.Spells.length,
-    journal: c.events + "/" + (K.Events ? K.Events.length : 0)
+    journal: c.events + "/" + (K.Events ? K.Events.length : 0),
+    uniques: String(c.uniques)
   };
 }
 
@@ -527,9 +569,11 @@ function ShowCodex(tab) {
   var b = Codex.book || CodexEmpty();
   var summary = {
     achievements: "Unlocked once, for good, by any of your heroes.",
-    bestiary: "Every kind of monster on the Killing Fields™, weakest first. Passing NPCs and the Old Bastard™ aren't listed.",
+    bestiary: "Every kind of monster on the Killing Fields™, weakest first: ✔ slain, ★ a named elite of its kind slain too. Passing NPCs and the Old Bastard™ aren't listed.",
     spellbook: "Every spell, in the order they come within reach: a level-up teaches one whose number is below your WIS plus your level.",
-    journal: "Every random event, and how its choices have gone."
+    journal: "Every random event, and how its choices have gone.",
+    uniques: "Gear taken from named elites, about one fight in " + (K.Elite ? K.Elite.Odds : 500) +
+             ". Every one is different, so there's no list to complete: only a trophy shelf."
   }[codexTab];
   $("#codexSummary").text(summary + (b.edited ? " ⚠ This Codex was edited outside the game." : ""))
     .toggleClass("edited", !!b.edited);
@@ -542,7 +586,7 @@ function ShowCodex(tab) {
     return true;
   };
   ({ achievements: CodexAchievementsPane, bestiary: CodexBestiaryPane,
-     spellbook: CodexSpellbookPane, journal: CodexJournalPane })[codexTab](pane, b, keep);
+     spellbook: CodexSpellbookPane, journal: CodexJournalPane, uniques: CodexUniquesPane })[codexTab](pane, b, keep);
 }
 
 function CodexAchievementsPane(pane, b) {
@@ -591,7 +635,7 @@ function CodexRow(body, cells, found) {
 }
 
 function CodexBestiaryPane(pane, b, keep) {
-  var body = CodexTable(pane, ["Monster", "Level", "Drops", "Slain", "Beat you", "First slain by"]);
+  var body = CodexTable(pane, ["", "Monster", "Level", "Drops", "Slain", "Beat you", "First slain by"]);
   var list = K.Monsters.map(function (m, i) {
     var f = m.split("|");
     return { name: f[0], level: +f[1], loot: f[2], i: i };
@@ -602,11 +646,29 @@ function CodexBestiaryPane(pane, b, keep) {
     var found = !!e.k;
     if (!keep(found, m.name + " " + m.loot)) return;
     shown++;
+    // ✔ slain; ★ an elite of its kind slain too
+    var mark = !found ? "" : e.e ? { text: "★", cls: "elite", title: (e.e == 1 ? "An elite" : e.e + " elites") + " of this kind slain" }
+                                 : { text: "✔", cls: "slain", title: "Slain" };
     CodexRow(body, found ?
-      [m.name, m.level, m.loot == "*" ? "" : m.loot, (e.k || 0).toLocaleString(), (e.l || 0).toLocaleString(), CodexWhen(e)] :
-      [e.l ? { text: "??? (beat you " + e.l + "×, never slain)", cls: "met" } : "???", m.level, "", "", e.l ? e.l : "", ""], found);
+      [mark, m.name, m.level, m.loot == "*" ? "" : m.loot, (e.k || 0).toLocaleString(), (e.l || 0).toLocaleString(), CodexWhen(e)] :
+      ["", e.l ? { text: "??? (beat you " + e.l + "×, never slain)", cls: "met" } : "???", m.level, "", "", e.l ? e.l : "", ""], found);
   });
   if (!shown) pane.append($("<p class=codex-empty>").text("Nothing here yet."));
+}
+
+function CodexUniquesPane(pane, b, keep) {
+  var list = Object.keys(b.uniques || {}).map(function (name) { return Object.assign({ name: name }, b.uniques[name]); })
+    .sort(function (x, y) { return String(y.at).localeCompare(String(x.at)) || (y.power || 0) - (x.power || 0); });
+  var body = CodexTable(pane, ["Unique", "Slot", "Power", "Taken from", "Found by"]);
+  var shown = 0;
+  list.forEach(function (u) {
+    if (!keep(true, [u.name, u.slot, u.from, u.kind].join(" "))) return;
+    shown++;
+    CodexRow(body, [{ text: u.name, cls: "unique" }, u.slot, u.power,
+                    { text: u.from, title: "An elite " + u.kind + (u.lv ? ", level " + u.lv : "") }, CodexWhen(u)], true);
+  });
+  if (!shown) pane.append($("<p class=codex-empty>").text(list.length ? "Nothing matches." :
+    "No uniques yet. Somewhere out there, about one fight in " + (K.Elite ? K.Elite.Odds : 500) + ", something named is waiting."));
 }
 
 function CodexSpellbookPane(pane, b, keep) {

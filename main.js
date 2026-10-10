@@ -314,6 +314,7 @@ function Dequeue() {
       // the Bestiary: the kind of monster (not a passing NPC), won or lost
       if (Split(game.task,3) != '*' && game.combat && game.combat.outcome != 'flee')
         CodexMonster(Split(game.task,1), FightWon());
+      if (game.combat && game.combat.elite && !game.dead) EliteFought(game.combat);
       if (FightWon()) MaybeEvent('field', game.task);
     } else if (game.task == 'rest' || game.task == 'heal') {
       if (game.task == 'heal') PayTemple();
@@ -426,21 +427,105 @@ function Dequeue() {
       nn = Math.floor((2 * InventoryLabelAlsoGameStyleTag * t.level * 1000) / nn);
       // The fight is settled now; the task bar just plays it out. Harder
       // fights (more rounds) take longer to watch.
+      var seed = Random(0x7fffffff);
+      var elite = EliteFor(t, seed);   // now and then, a named elite (K.Elite)
+      if (elite) {
+        RestoreHealth();               // (seen coming: the hero steels themselves)
+        // and a fresh seed for the fight: the one that picked an elite is
+        // a rare one, and the fight's dice would lean the same way
+        seed = Random(0x7fffffff);
+      }
       var hero = HeroSnapshot();
-      var fight = ResolveCombat(hero, t.foe, Random(0x7fffffff));
+      if (elite) nn = Math.floor(nn * elite.level / Max(1, t.level));
+      var fight = ResolveCombat(hero, elite ? elite.foe : t.foe, seed);
       fight.wounded = hero.wounded;   // (for Hardcore's death roll)
-      fight.foe = t.foe.name;
-      fight.foeLevel = t.foe.level;
-      fight.qty = t.foe.qty;
+      fight.foe = elite ? elite.name : t.foe.name;
+      fight.foeLevel = elite ? elite.level : t.foe.level;
+      fight.qty = elite ? 1 : t.foe.qty;
       fight.xp = nn / 1000 * (Tactic('fights').xp || 1) * MutatorProduct('xp');   // tactics pay for risk
+      if (elite) {
+        fight.xp *= K.Elite.XP;
+        fight.elite = { name: elite.name, kind: elite.kind, epithet: elite.epithet, level: elite.level };
+      }
       game.combat = fight;
-      Task('Executing ' + t.description, Math.round(nn * FightLength(fight)));
+      Task('Executing ' + (elite ? elite.name + ', an elite ' + elite.kind : t.description),
+           Math.round(nn * FightLength(fight)));
     }
   }
 }
 
 
 // ---- Combat glue ------------------------------------------------------
+
+// ---- Elites and their uniques (K.Elite in combat.js) ------------------------
+
+// Is this fight an elite? From the fight's seed (no dice of the game's): 1
+// in K.Elite.Odds. Never a passing NPC, a group, or a low-level
+// hero. Returns { name, kind, epithet, level, foe } or null.
+function EliteFor(t, seed) {
+  if (!K.Elite || new Alea("elite", seed)() * K.Elite.Odds >= 1) return null;
+  if (Split(game.task,3) == '*' || GetI(Traits,'Level') < K.Elite.MinLevel) return null;
+  var kind = Split(game.task,1);
+  // as tough as the fight the hero picked (a group's worth, for a group),
+  // plus K.Elite.LevelsAbove
+  var level = (t.foe.qty > 1 ? Min(t.level, GetI(Traits,'Level')) : t.foe.level) + K.Elite.LevelsAbove;
+  var epithet = Pick(K.Elite.Epithets);
+  var name = GenerateName() + ' the ' + epithet + ', ' + Pick(K.Elite.Titles) + ' of ' + KingdomName();
+  return { name: name, kind: kind, epithet: epithet, level: level,
+           foe: { name: name, level: level, qty: 1, hpMult: K.Elite.HP, elite: true,
+                  maxRounds: Math.round(K.Combat.MaxRounds * K.Elite.HP) } };
+}
+
+// An elite fight is over (won, lost or fled): a win takes its unique
+function EliteFought(fight) {
+  var e = fight.elite;
+  if (fight.eliteDone) return;
+  fight.eliteDone = true;
+  var won = fight.outcome == 'win' || fight.outcome == 'close';
+  var item = won ? WinUnique(e) : null;
+  game.elites = (game.elites || 0) + (won ? 1 : 0);
+  Log((won ? 'Slew ' : 'Fought ') + e.name + (item ? ' and took ' + item.name : ''));
+  if (won) CodexElite(e, item, fight.foeLevel);
+  if (typeof JournalElite == "function") JournalElite(fight, item);
+  // Shown like an event: it's news
+  game.recentEvent = { key: 'elite', where: 'elite', at: game.elapsed || 0,
+    lines: [e.name + ', an elite ' + e.kind + ', ' + (won ? 'falls before you' : fight.outcome == 'flee' ? 'chases you off' : 'beats you senseless')],
+    result: item ? ['Took ' + item.name + ' (' + item.slot + ', power ' + item.power + ')'] : [] };
+  ShowRecentEvent();
+  ShowEventPopup(true);
+}
+
+// The elite's unique: gear named for it, better than anything the shop
+// sells, for your weakest slot. game.uniques remembers the ones won.
+function WinUnique(e) {
+  var weakest = [], low = Infinity;
+  $.each(K.Equips, function (i, slot) {
+    var p = SlotPower(slot);
+    if (p < low) { low = p; weakest = [i]; }
+    else if (p == low) weakest.push(i);
+  });
+  var posn = Pick(weakest), slot = K.Equips[posn];
+  var power = Max(GetI(Traits,'Level') + K.Elite.GearBonus + Random(K.Elite.GearSpread), low + 1);
+  var stuff = !posn ? K.Weapons : posn == 1 ? K.Shields : K.Armors;
+  var owner = Split(e.name, 0, ' ');
+  var name = owner + (/s$/.test(owner) ? "'" : "'s") + ' ' + e.epithet + ' ' + Split(LPick(stuff, power), 0);
+  if (!game.EquipPower) game.EquipPower = {};
+  game.EquipPower[slot] = power;
+  Put(Equips, posn, name);
+  game.bestequip = name + (posn > 1 ? ' ' + Equips.label(posn) : '');
+  var item = { name: name, slot: slot, power: power, from: e.name, kind: e.kind, level: GetI(Traits,'Level') };
+  game.uniques = (game.uniques || []).concat([item]).slice(-50);
+  ShowGearPower();
+  return item;
+}
+
+// Is this the unique still worn in that slot?
+function UniqueIn(slot) {
+  var worn = Get(Equips, slot), list = game.uniques || [];
+  for (var i = list.length - 1; i >= 0; --i)
+    if (list[i].slot == slot && list[i].name == worn) return list[i];
+  return null;
+}
 
 // Snapshot of the character for ResolveCombat().
 function HeroSnapshot() {
@@ -1803,7 +1888,7 @@ function ShowBoons(now) {
 // ---- Event pop-up and "Last event" box -------------------------------------
 
 K.EventWhere = { perk: 'A new perk', rest: 'While resting', road: 'On the road', town: 'In town',
-                 field: 'On the Killing Fields™', splurge: 'Money to burn' };
+                 field: 'On the Killing Fields™', splurge: 'Money to burn', elite: 'An elite!' };
 
 // Called as each line of an event starts: remember what has been shown so
 // far, and show it.
@@ -2679,6 +2764,12 @@ function WinEquip(power, shopping) {
 
 function ShowGearPower() {
   if (!document) return;
+  $.each(K.Equips, function (i, slot) {
+    var u = UniqueIn(slot), row = Equips.byKey.get(slot);
+    if (row) row.toggleClass("unique", !!u)
+      .attr("title", u ? "Unique: taken from " + u.from + " (an elite " + u.kind + ") at level " + u.level +
+                         ". Power " + u.power + "." : null);
+  });
   $("#GearPower").text("Weapon power " + SlotPower('Weapon') +
                        " \u00b7 Armor power " + ArmorPowerAvg().toFixed(1));
 }

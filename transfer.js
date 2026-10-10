@@ -452,6 +452,7 @@ function SharePayload(g, end) {
     fin: g.finale && g.finale.state == "won" ? g.finale.wonLevel : 0,
     daily: g.daily ? g.daily.date : "", ch: g.cheater ? g.cheater.reason : "", uv: g.unverified || "",
     pk: g.perks || [],
+    un: (g.uniques || []).slice(-20).map(function (u) { return u.name; }),
     ow: (g.boons || []).filter(function (b) { return !b.until; }).map(function (b) {
       return b.n + ((b.c || 1) > 1 ? " (" + b.c + ")" : "");
     }),

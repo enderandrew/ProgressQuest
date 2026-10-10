@@ -72,6 +72,7 @@ function ShowSheet(p) {
   var perks = (p.pk || []).map(function (k) { return typeof PerkByKey == "function" && PerkByKey(k); }).filter(Boolean);
   if (perks.length) notes.push("Perks: " + perks.map(function (x) { return x.label; }).join(", "));
   if ((p.ow || []).length) notes.push("Owns " + p.ow.join("; "));
+  if ((p.un || []).length) notes.push("★ Uniques: " + p.un.join("; "));
   (p.mut || []).forEach(function (k) {
     var m = (K.Mutators || []).filter(function (x) { return x.key == k; })[0];
     if (m) notes.push(m.label);
