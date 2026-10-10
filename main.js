@@ -393,6 +393,11 @@ function Dequeue() {
       }
     }
 
+    // a word from the entourage, maybe (only for show)
+    var outcome = game.combat && Split(game.task,0) == 'kill' ? game.combat.outcome : null;
+    CompanyChatter(outcome || (/^(heading|rest|market|sell|buying)$/.test(game.task) && !game.event &&
+                               !game.queue.length ? 'idle' : null), game.combat);
+
     if (game.dead) return;   // Hardcore: nothing more to do
     var old = game.task;
     if (Split(old,0) == 'event') old = game.eventResume || '';
@@ -1081,7 +1086,8 @@ function MaybeEvent(where, resume) {
   var choices = K.Events.filter(function (e) {
     return e.where.indexOf(where) >= 0 &&
       (!e.minLevel || level >= e.minLevel) && (!e.maxLevel || level <= e.maxLevel) &&
-      (!e.race || e.race == Get(Traits,'Race')) && (!e.klass || e.klass == Get(Traits,'Class'));
+      (!e.race || e.race == Get(Traits,'Race')) && (!e.klass || e.klass == Get(Traits,'Class')) &&
+      (!e.sink || !!LiveBoon(e.sink));   // (only with what the gold bought: K.SinkCompany)
   });
   if (!choices.length) return;
   var total = 0;
@@ -1095,6 +1101,7 @@ function MaybeEvent(where, resume) {
   // Fill in the details now, so the lines and the effect agree
   var effect = event.effect || {};
   var vars = StoryVars();
+  if (event.sink) vars.who = BoonWho(LiveBoon(event.sink));
   var instance = EventAmounts(effect, level, { key: event.key, effect: effect });
   if (instance.gold) vars.gold = instance.gold;
   if (instance.loot) vars.loot = Indefinite(instance.loot, 1);
@@ -1621,6 +1628,8 @@ function StartSplurge(resume, only) {
   ev.lines = lines.map(function (line) { return EventLine(line, vars); });
   if (sink.boon) {
     ev.boon = StoryText(sink.boon.name, vars).replace(/\|/g, '/');   // (as written: "a bigger backpack")
+    var company = K.SinkCompany && K.SinkCompany[sink.key];
+    if (company && company.who) ev.who = StoryText(company.who, vars).replace(/\|/g, '/');
     if (sink.boon.ends) ev.ends = EventLine(sink.boon.ends, vars);
   }
   game.event = ev;
@@ -1675,14 +1684,14 @@ function AddBoon(sink, ev) {
   if (!b.hours) {
     // for good
     if (have) have.c = (have.c || 1) + 1;
-    else boons.push({ k: sink.key, n: ev.boon, until: 0, c: 1 });
+    else boons.push({ k: sink.key, n: ev.boon, until: 0, c: 1, w: ev.who });
     said = 'Now owns ' + ev.boon + (have ? ' (' + have.c + ')' : '') + help;
     ShowOwned();
   } else {
     // for a while (again: the new one replaces the old)
     var seconds = Math.round(b.hours * 3600 * MutatorProduct('boonMult'));
     if (have) boons.splice(boons.indexOf(have), 1);
-    boons.push({ k: sink.key, n: ev.boon, until: (game.elapsed || 0) + seconds, c: 1, e: ev.ends });
+    boons.push({ k: sink.key, n: ev.boon, until: (game.elapsed || 0) + seconds, c: 1, e: ev.ends, w: ev.who });
     said = ev.boon + ' for ' + RoughTime(seconds) + help;
   }
   game.boons = boons;
@@ -1695,6 +1704,26 @@ function BoonByKey(key) {
   var boons = game.boons || [];
   for (var i = 0; i < boons.length; ++i) if (boons[i].k == key) return boons[i];
   return null;
+}
+
+// Still going (not yet worn off)?
+function BoonLive(b) {
+  return !!b && (!b.until || b.until > (game.elapsed || 0));
+}
+
+// The boon from that sink, if it's still going
+function LiveBoon(key) {
+  var b = BoonByKey(key);
+  return BoonLive(b) ? b : null;
+}
+
+// Who a boon is ("Grub", "The Leaky Ferret"): for {who} (K.SinkCompany).
+// Boons bought before they kept a name get one from what they're called.
+function BoonWho(b) {
+  if (!b) return 'someone';
+  if (b.w) return b.w;
+  var m = /named (.+)$/.exec(b.n) || /^(.+?), a tavern/.exec(b.n) || /^(?:Henchman|Professor|Coach|Ghostwriter) (.+)$/.exec(b.n);
+  return m ? m[1] : b.n;
 }
 
 // The boons, as modifiers: a sink's boon properties, once per time bought
@@ -1734,10 +1763,58 @@ function Henchman() {
   var boons = game.boons || [];
   for (var i = 0; i < boons.length; ++i) {
     var sink = SinkByKey(boons[i].k);
-    if (sink && sink.boon && sink.boon.ally && (!boons[i].until || boons[i].until > (game.elapsed || 0)))
+    if (sink && sink.boon && sink.boon.ally && BoonLive(boons[i]))
       return { name: boons[i].n, power: K.Sink.AllyPower * sink.boon.ally * MutatorProduct('allyPower') };
   }
   return null;
+}
+
+// ---- The entourage (K.SinkCompany in events.js) ------------------------------
+//
+// Now and then, what the gold bought has a word to say: a henchman after a
+// fight, a tutor's notes on it, the pet rock being a rock. Shown under the
+// fight line (and after the fight in the combat log). Only for show: its
+// own dice (Math.random), nothing saved, and never while catching up.
+// kind: 'win', 'close', 'flee' or 'defeat' after a fight, 'idle' after
+// anything else, or null just to tidy up.
+var _company = { at: -1, k: null };
+function CompanyChatter(kind, fight) {
+  if (!document || !K.SinkCompany || !K.Sink.Chatter) return;
+  var C = K.Sink.Chatter, now = game.tasks || 0;
+  // a word goes when its speaker does, or after a while
+  if (_company.k && (!LiveBoon(_company.k) || now - _company.at > C.Linger)) {
+    $("#Company").text("").attr("title", null);
+    _company.k = null;
+  }
+  if (!kind || _catchingUp || game.dead || !ChatterOn()) return;
+  if (kind == 'idle' && _company.at >= 0 && now - _company.at < C.Quiet) return;
+  if (Math.random() >= (kind == 'idle' ? C.Idle : C.Fight)) return;
+  var options = [];
+  (game.boons || []).forEach(function (b) {
+    var talk = BoonLive(b) && K.SinkCompany[b.k];
+    var lines = talk && (talk[kind] || (kind == 'close' && talk.win));
+    if (lines && lines.length) options.push({ b: b, lines: lines });
+  });
+  if (!options.length) return;
+  var o = options[Math.floor(Math.random() * options.length)];
+  var text = CompanyLine(o.lines[Math.floor(Math.random() * o.lines.length)], o.b, kind == 'idle' ? null : fight);
+  _company = { at: now, k: o.b.k };
+  $("#Company").text(text).attr("title", "From " + o.b.n);
+  if (kind != 'idle' && fight === game.combat) {
+    $("<div class='fight-aside'>").text(text).appendTo("#CombatLog");
+    var log = $("#CombatLog")[0];
+    if (log) log.scrollTop = log.scrollHeight;
+  }
+}
+
+function CompanyLine(line, b, fight) {
+  var rounds = fight ? fight.rounds + (fight.rounds == 1 ? " round" : " rounds") : "";
+  var vars = { who: BoonWho(b), hero: Get(Traits,'Name'), klass: Get(Traits,'Class'), level: GetI(Traits,'Level'),
+               weapon: Get(Equips,'Weapon') || "your bare hands",
+               spell: (game.bestspell || "").trim() || "a spell", foe: fight ? fight.foe || "the foe" : "the foe",
+               rounds: rounds };
+  var text = StoryText(line, vars);
+  return text.charAt(0).toUpperCase() + text.slice(1) + (/[.!?”]$/.test(text) ? "" : ".");
 }
 
 // "Owns: The Leaky Ferret, a tavern in Dunkirk; a bigger backpack (2)"

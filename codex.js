@@ -691,6 +691,12 @@ function CodexSpellbookPane(pane, b, keep) {
 
 var CodexWhere = { rest: "while resting", road: "on the road", town: "in town", field: "after a fight" };
 
+// "a henchman": what a hero needs to have bought for a sink's event (K.Sinks)
+function CodexSinkLabel(key) {
+  var sk = (K.Sinks || []).filter(function (s) { return s.key == key; })[0];
+  return sk ? sk.label : key;
+}
+
 function CodexJournalPane(pane, b, keep) {
   var shown = 0;
   (K.Events || []).forEach(function (ev) {
@@ -706,6 +712,7 @@ function CodexJournalPane(pane, b, keep) {
       (ev.minLevel ? " · from level " + ev.minLevel : "") +
       (ev.race ? " · " + ev.race + " heroes only" : "") +
       (ev.klass ? " · " + ev.klass + " heroes only" : "") +
+      (ev.sink ? " · only with " + CodexSinkLabel(ev.sink) : "") +
       (found ? " · " + e.n.toLocaleString() + (e.n == 1 ? " time" : " times") + " · first: " + CodexWhen(e) : "")));
     card.append(head);
     if (ev.choices && ev.choices.length) {

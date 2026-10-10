@@ -26,6 +26,7 @@ K.Journal = {
   Max: 1500,          // entries kept, at most...
   MaxChars: 100000,   // ...and this much text, about 110 KB in the save
   AsideChance: 0.3,   // after a level or an Act, the chance of an aside
+  GhostNoteChance: 0.6,   // ...or of a ghostwriter's footnote, while one's on retainer
   Keep: 3             // the first entries, which always stay
 };
 
@@ -170,6 +171,8 @@ function JournalLevel() {
   JournalAdd('level', JournalText(JournalPick(lines), vars));
   var special = K.JournalLevelAsides[GetI(Traits, 'Level')];
   if (special) JournalAdd('aside', JournalText(special));
+  else if (typeof LiveBoon == "function" && LiveBoon('memoir'))
+    JournalAside(K.Journal.GhostNoteChance, K.JournalGhostNotes, { who: BoonWho(LiveBoon('memoir')) });   // (the ghostwriter's still about)
   else JournalAside();
 }
 
@@ -651,6 +654,19 @@ K.JournalSplurgeAsides = [
   "If anyone asks where that {gold} gold went, tell them a dragon stole it. Do not tell them I traded it for {thing}.",
   "Dropped {gold} gold on {thing}. At this rate, I won't need to defeat the Old Bastard™—I will simply bankrupt him through aggressive local inflation.",
   "Dropped {gold} gold on {thing} because the devs felt we needed gold sinks to balance the game. So there you have it.",
+];
+
+// While the ghostwriter is on retainer (8 game hours), a level-up may get a
+// footnote from them instead of an aside. {who}: the ghostwriter.
+K.JournalGhostNotes = [
+  "[Footnote, from {who}, your ghostwriter: level {level}. I have described it as “hard-won”. It was won at about the usual rate.]",
+  "[{who} here. I've cut the part where you counted your gold for an hour. You're welcome.]",
+  "[Note from {who}: the hero wants it known that {wins} monsters have fallen to them. I have rounded up.]",
+  "[{who}, ghostwriter: I asked how level {level} feels. The answer was “about the same as the last one”. I've written “transcendent”.]",
+  "[A note from {who}: I have added a rival, a prophecy and a mysterious stranger. Please play along if anyone asks.]",
+  "[{who} again. Some editorial advice for the hero: fewer entries about soup.]",
+  "[Footnote by {who}: the {weapon} is now “ancestral”. It was bought at a market. Don't tell anyone.]",
+  "[{who}: for legal reasons, all of the monsters in this journal are fictional. They weren't. But for legal reasons.]"
 ];
 
 // A ghostwriter's work (the memoir sink). The reader is told, again, that

@@ -13,8 +13,9 @@
 //   game       seeded heroes play from level 1, without the game getting
 //              stuck or crashing; the same seed plays the same game twice;
 //              a Daily Challenge hero plays; old saves still load
-//   gold sinks every one of them plays out; a hero rolling in gold splurges,
-//              and that game replays exactly too
+//   gold sinks every one of them plays out; their own events wait for them;
+//              a hero rolling in gold splurges, and that game replays
+//              exactly too
 //   elites     named elites turn up and give up uniques
 //   replays    a hero's game replays exactly, and an edited one doesn't
 //   balance    heroes reach level 50 in a sensible time, winning most fights
@@ -260,6 +261,44 @@ test("every gold sink plays out (K.Sinks)", () => {
   const owned = (h.boons || []).filter((b) => !b.until).map((b) => b.k).sort().join(",");
   check(owned == "backpack,egg,statue,tavern", "owned for good afterwards: " + owned);
   note(`${keys.length} sinks; e.g. ${results.henchman.join(" · ")}`);
+});
+
+test("the entourage's own events wait for them, and name who's there (K.SinkCompany)", () => {
+  // Only the sinks' own events, every time there's a chance of one
+  const force = (ctx, where) => {
+    const all = ctx.K.Events, chance = ctx.K.EventChance;
+    ctx.K.Events = all.filter((e) => e.sink);
+    ctx.K.EventChance = { rest: 1, road: 1, town: 1, field: 1 };
+    ctx.game.lastEvent = -1e9;
+    try { ctx.MaybeEvent(where, where); } finally { ctx.K.Events = all; ctx.K.EventChance = chance; }
+    return ctx.game.event;
+  };
+  let before = "untried", tutor = null;
+  const seen = [];
+  play({ levels: 9, seed: "test-company", onTask(ctx) {
+    const g = ctx.game;
+    if (g.event || g.queue.length) return;
+    if (before == "untried" && +g.Traits.Level >= 2) before = force(ctx, "rest");   // (nothing bought yet)
+    else if (!tutor && +g.Traits.Level >= 6) {
+      ctx.Add(ctx.Inventory, "Gold", 1000000);
+      ctx.StartSplurge("", "tutor");
+      tutor = true;
+    } else if (tutor === true && ctx.LiveBoon("tutor")) {
+      tutor = ctx.LiveBoon("tutor");
+      ["rest", "rest", "rest", "town"].forEach((w) => {
+        const ev = force(ctx, w);
+        if (ev) { seen.push(ev); g.event = null; g.queue = []; }
+      });
+    }
+  } });
+  check(!before, "a sink's event happened with nothing bought: " + (before && before.key));
+  check(tutor && /^Professor [A-Z]\w+$/.test(tutor.w || "") && tutor.n == tutor.w, "the tutor on retainer: " + JSON.stringify(tutor));
+  check(seen.length >= 3, "only " + seen.length + " of the tutor's events happened at rest");
+  const wrong = seen.filter((ev) => !/^tutor-/.test(ev.key));
+  check(!wrong.length, "events for what wasn't bought: " + wrong.map((ev) => ev.key).join(", "));
+  const quiz = seen.find((ev) => ev.key == "tutor-quiz");
+  check(!quiz || quiz.lines[0].indexOf(tutor.w) >= 0, "the tutor isn't named: " + (quiz && quiz.lines[0]));
+  note(`${tutor.n}: "${seen[0].lines[0]}"`);
 });
 
 test("a hero rolling in gold splurges, and the game replays exactly", () => {

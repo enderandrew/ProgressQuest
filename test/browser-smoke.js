@@ -162,6 +162,30 @@ function step(name, ok, detail) {
     return heard.bars + " progress bars";
   });
 
+  await tryStep("the entourage has a word: a pet rock idles, a tutor grades the fight", async () => {
+    const said = await page.evaluate(() => {
+      const chance = K.Sink.Chatter, boons = game.boons;
+      K.Sink.Chatter = Object.assign({}, chance, { Idle: 1, Fight: 1, Quiet: 0 });
+      try {
+        game.boons = [{ k: "egg", n: "a pet rock named Pebbles", until: 0, c: 1, w: "Pebbles" }];
+        CompanyChatter("idle");
+        const idle = $("#Company").text();
+        game.boons = [{ k: "tutor", n: "Professor Snodgrass", until: game.elapsed + 3600, c: 1, w: "Professor Snodgrass" }];
+        const fight = game.combat || { foe: "the Giant Orc", rounds: 7, outcome: "win" };
+        CompanyChatter("win", fight);
+        const win = $("#Company").text();
+        game.boons = [];
+        CompanyChatter(null);   // the tutor's gone: so is the word
+        const gone = $("#Company").text();
+        return { idle, win, gone };
+      } finally { K.Sink.Chatter = chance; game.boons = boons; }
+    });
+    if (!/Pebbles|rock/.test(said.idle)) throw new Error("the rock said " + JSON.stringify(said.idle));
+    if (!/Snodgrass/.test(said.win) || /\{/.test(said.win)) throw new Error("the tutor said " + JSON.stringify(said.win));
+    if (said.gone) throw new Error("the word stayed after the tutor left: " + said.gone);
+    return said.win;
+  });
+
   await tryStep("time lost with the game open (a throttled tab) is played through", async () => {
     const r = await page.evaluate(() => new Promise((done) => {
       CloseEventPopup();

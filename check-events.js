@@ -75,7 +75,7 @@ function checkHoles(name, list, what) {
     if (!(i in list)) error(`${name}: ${what} has an empty entry after item ${i} (a doubled comma?)`);
 }
 
-function checkLines(name, lines, what) {
+function checkLines(name, lines, what, extra) {
   if (!Array.isArray(lines)) { error(`${name}: ${what} should be a list of lines`); return []; }
   checkHoles(name, lines, what);
   const used = [];
@@ -86,8 +86,9 @@ function checkLines(name, lines, what) {
     (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
       const key = p.slice(1, -1);
       used.push(key);
-      if (PLACEHOLDERS.indexOf(key) < 0)
-        error(`${name}: unknown placeholder ${p} (known: ${PLACEHOLDERS.map((k) => "{" + k + "}").join(" ")})`);
+      const known = PLACEHOLDERS.concat(extra || []);
+      if (known.indexOf(key) < 0)
+        error(`${name}: unknown placeholder ${p} (known: ${known.map((k) => "{" + k + "}").join(" ")})`);
     });
     if (/[{}]/.test(line.replace(/\{[^}]*\}/g, ""))) error(`${name}: ${what} line ${i + 1} has an unmatched { or }`);
   });
@@ -128,7 +129,8 @@ events.forEach((e, n) => {
   if (e.race) racial[e.race] = (racial[e.race] || 0) + 1;
   if (e.klass) racial["class:" + e.klass] = (racial["class:" + e.klass] || 0) + 1;
 
-  const used = checkLines(name, e.lines || [], "lines");
+  const extra = e.sink ? ["who"] : [];   // (a sink's event: who's talking)
+  const used = checkLines(name, e.lines || [], "lines", extra);
   if (!e.lines || !e.lines.length) warn(`${name}: no lines`);
   const fx = checkEffect(name, e.effect);
   let anyGold = "gold" in fx, anyItem = "item" in fx;
@@ -141,7 +143,7 @@ events.forEach((e, n) => {
       e.choices.forEach((c, i) => {
         const cname = `${name} choice ${i + 1}`;
         if (!c || !c.label) { error(`${cname} has no label`); return; }
-        checkLines(cname, c.lines || [], "lines").forEach((k) => {
+        checkLines(cname, c.lines || [], "lines", extra).forEach((k) => {
           if (k == "gold" && !(c.effect && "gold" in c.effect) && !("gold" in fx)) warn(`${cname} says {gold} but gives none`);
           if (k == "loot" && !(c.effect && "item" in c.effect) && !("item" in fx)) warn(`${cname} says {loot} but gives no item`);
         });
@@ -205,6 +207,44 @@ const sinkKeys = {};
 });
 if (K.Sinks && !K.Sink) error("events.js has K.Sinks but no K.Sink settings");
 
+// 2c. The entourage (K.SinkCompany) and the events only they bring about
+const sinkByKey = {};
+(K.Sinks || []).forEach((sk) => { if (sk && sk.key) sinkByKey[sk.key] = sk; });
+events.forEach((e) => {
+  if (!e || !e.sink) return;
+  if (!sinkByKey[e.sink]) error(`event "${e.key}": sink "${e.sink}" isn't in K.Sinks`);
+  else if (!sinkByKey[e.sink].boon) error(`event "${e.key}": sink "${e.sink}" has no boon, so nothing lasts for the event to need`);
+});
+const COMPANY_KINDS = ["who", "idle", "win", "close", "flee", "defeat"];
+const COMPANY_WORDS = ["who", "hero", "klass", "weapon", "spell", "level", "foe", "rounds"];
+Object.keys(K.SinkCompany || {}).forEach((key) => {
+  const c = K.SinkCompany[key], name = `K.SinkCompany.${key}`;
+  if (!sinkByKey[key]) { error(`${name}: there's no gold sink "${key}"`); return; }
+  if (!sinkByKey[key].boon) error(`${name}: the sink has no boon, so it's never around to talk`);
+  Object.keys(c).forEach((k) => { if (COMPANY_KINDS.indexOf(k) < 0) error(`${name}: unknown "${k}" (known: ${COMPANY_KINDS.join(", ")})`); });
+  if (c.who !== undefined) {
+    if (typeof c.who !== "string") error(`${name}: who should be text`);
+    else (c.who.match(/\{[^}]*\}/g) || []).forEach((p) => {
+      if (SINK_WORDS.indexOf(p.slice(1, -1)) < 0) error(`${name}: unknown placeholder ${p} in who`);
+    });
+  }
+  COMPANY_KINDS.slice(1).forEach((kind) => {
+    if (c[kind] === undefined) return;
+    const lines = c[kind];
+    if (!Array.isArray(lines) || !lines.length) { error(`${name}.${kind} should be a list of lines`); return; }
+    checkHoles(`${name}.${kind}`, lines, "lines");
+    lines.forEach((line) => {
+      if (typeof line !== "string") { error(`${name}.${kind}: a line isn't text`); return; }
+      (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+        const w = p.slice(1, -1);
+        if (COMPANY_WORDS.indexOf(w) < 0) error(`${name}.${kind}: unknown placeholder ${p} (known: ${COMPANY_WORDS.map((k) => "{" + k + "}").join(" ")})`);
+        if (kind == "idle" && (w == "foe" || w == "rounds")) error(`${name}.idle: ${p} only means something after a fight`);
+        if (w == "who" && !c.who) error(`${name}.${kind}: says {who} but there's no who`);
+      });
+    });
+  });
+});
+
 (K.Races || []).forEach((r) => { r = r.split("|")[0]; if (!racial[r]) warn(`the ${r} race has no event of its own`); });
 (K.Klasses || []).forEach((c) => { c = c.split("|")[0]; if (!racial["class:" + c]) warn(`the ${c} class has no event of its own`); });
 
@@ -261,7 +301,8 @@ Object.keys(K).forEach((k) => { if (Array.isArray(K[k])) checkHoles(`K.${k}`, K[
 
 console.log(`\n${storyCount} stories (${Object.keys(K.RaceStories || {}).length} races, ` +
             `${Object.keys(K.ClassStories || {}).length} classes, ${(K.Stories || []).length} others).`);
-console.log(`\n${(K.Perks || []).length} perks, ${(K.Sinks || []).length} gold sinks.`);
+console.log(`\n${(K.Perks || []).length} perks, ${(K.Sinks || []).length} gold sinks, ` +
+            `${Object.keys(K.SinkCompany || {}).length} with a word to say and ${events.filter((e) => e.sink).length} events of their own.`);
 console.log(`\n${events.length} events, ${withChoices} with choices` +
             ` (${Math.round(withChoices / Math.max(1, events.length) * 100)}%).` +
             ` ${errors} error(s), ${warnings} warning(s).`);

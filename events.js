@@ -1207,7 +1207,9 @@ K.Sink = {
 //               occasion; the story placeholders work too ({kingdom}...)
 //   boon        something that lasts: the perk properties it gives (see
 //               K.Perks in combat.js; ally: a henchman, see K.Combat.AllyHit),
-//               shown under the health bars, or under the purse if for good
+//               shown under the health bars, or under the purse if for good;
+//               without any, it's someone on retainer, who's there to
+//               talk (K.SinkCompany) and bring about events of their own
 //     name      what it's called ('Henchman {hench}')
 //     help      what it does
 //     hours     how long it lasts, in game hours; without: it's for good,
@@ -1242,12 +1244,16 @@ K.Sinks = [
   { key: 'tutor', label: 'a private tutor', spend: 0.35,
     lines: ['You hire a tutor from the Academy of {kingdom} to learn you good.',
             'They charge by the hour, and by the syllable: {gold} gold'],
-    spells: 3 },
+    spells: 3,
+    boon: { name: 'Professor {hench}', help: 'A tutor on retainer, with notes on every fight', hours: 6,
+            ends: 'Professor {hench} hands back your final grade (C plus) and leaves for a sabbatical' } },
 
   { key: 'trainer', label: 'a personal trainer', spend: 0.4,
     lines: ['A personal trainer in {kingdom} promises “results”',
             'You pay {gold} gold to be yelled at. It works, a little'],
-    stats: 2 },
+    stats: 2,
+    boon: { name: 'Coach {hench}', help: 'A personal trainer on retainer, yelling', hours: 4,
+            ends: 'Coach {hench} says you’re ready. You are not. Coach {hench} has another client' } },
 
   { key: 'backpack', label: 'a bigger backpack', spend: 0.3,
     lines: ['A leatherworker in {kingdom} sells you a bigger backpack for {gold} gold',
@@ -1295,7 +1301,9 @@ K.Sinks = [
   { key: 'memoir', label: 'a ghostwriter', spend: 0.25,
     lines: ['You hire a ghostwriter to punch up your journal',
             'They read it, sigh, and ask for {gold} gold up front'],
-    memoir: true },
+    memoir: true,
+    boon: { name: 'Ghostwriter {hench}', help: 'Follows you around, taking notes, and adds footnotes to the journal', hours: 8,
+            ends: '{hench} the ghostwriter has enough material. Too much, frankly' } },
 
   { key: 'coin', label: 'DungeonCoin', spend: 0.5,
     lines: ['{guy} tells you about DungeonCoin. “It’s like gold, but imaginary”',
@@ -1380,3 +1388,299 @@ K.Sinks = [
             help: 'Rests 25% faster through weaponized inner peace',
             ends: 'Your petty everyday anxieties return. The silence is broken' } }
 ];
+
+// ---- The entourage: what the gold bought gets up to --------------------------------
+//
+// While a sink's boon lasts (and for good, for those bought for good), it
+// has something to say for itself now and then: a line under the fight
+// line (CompanyChatter in main.js), after a fight or on the way between
+// tasks. It's for show: it changes nothing, uses its own dice, and isn't
+// saved. Each entry, keyed like K.Sinks:
+//
+//   who      who's talking, made up when bought: {hench} or {rock} (the
+//            names the sink's lines use), {tavern}, or plain words
+//   idle     on the road, at rest, at market
+//   win, close, flee, defeat   after a fight that ended that way ("close":
+//            barely won; without close lines, win's do)
+//
+// The lines can say {who}, {hero}, {klass}, {weapon}, {spell} and {level}, and
+// after a fight {foe} ("the Giant Orc") and {rounds} ("7 rounds").
+// K.Sink.Chatter says how often.
+K.Sink.Chatter = {
+  Fight: 0.3,    // the chance of a word after a fight
+  Idle: 0.12,    // ...and after anything else
+  Quiet: 4,      // tasks, at least, between two idle words
+  Linger: 20     // tasks a word stays up
+};
+
+K.SinkCompany = {
+  henchman: { who: '{hench}',
+    idle: ['{who} sharpens the pointy stick. Then sharpens it again, in case it heard',
+           '{who} asks if henching includes dental. It does not',
+           '{who} practices a menacing laugh. It needs work',
+           '{who} carries your bags, mostly. One is missing. {who} looks at the sky',
+           '{who} asks if there’s a henchman’s union. You change the subject',
+           '{who} has eaten the snacks. All of the snacks. Including the ones for later',
+           '{who} introduces you to strangers as “the boss”, with air quotes'],
+    win: ['{who} pokes {foe} with the stick, to make sure. It was sure',
+          '“I softened it up for you,” says {who}, who was behind a tree',
+          '{who} takes a trophy from {foe}. It’s a shoe. {foe} didn’t wear shoes',
+          '{who} high-fives you. You weren’t ready. Nobody is ever ready for {who}',
+          '{who} counts the blows on their fingers. Runs out at ten. Starts again on the toes'],
+    close: ['“That was a tactical near-death,” says {who}. “Very tactical”',
+            '{who} offers you a bandage. It’s used. It’s {who}’s'],
+    flee: ['{who} was already running before you were. Good instincts, at least',
+           '“Same time tomorrow?” asks {who}, out of breath'],
+    defeat: ['{who} drags you back to town by one foot, and bills you for the other',
+             '{who} tells the temple you fell down some stairs. There were no stairs'] },
+
+  horse: { who: 'your horse',
+    idle: ['{who} stops to eat a hedge. The whole hedge',
+           '{who} makes a noise no horse should make. It is, after all, only sixty percent horse',
+           '{who} walks sideways for a mile. You let it. You aren’t sure which end is the front',
+           'Someone asks what breed {who} is. You say “yes”',
+           '{who} stares at a cow for an hour. You think they might be related'],
+    win: ['{who} kicks {foe} on the way past, just to be involved'],
+    flee: ['{who} gets you out of there at a speed that is at least sixty percent gallop',
+           '{who} was faster than {foe}. {who} was faster than you, too, and had to come back'] },
+
+  temple: { who: 'the temple',
+    idle: ['A pigeon from the temple brings a newsletter. It asks for more',
+           'You feel blessed. Mostly around the shoulders'],
+    win: ['A faint choir sings as {foe} falls. Slightly off key. You paid for the cheaper choir'],
+    defeat: ['Your blessing took the edge off. The edge was most of it'] },
+
+  tutor: { who: 'Professor {hench}',
+    idle: ['{who} assigns homework: an essay, “Why I Hit Things”, two thousand words',
+           '{who} pronounces the name of every spell you know, correctly, at length',
+           '{who} asks what you’d do if {spell} didn’t work. You say “run”. {who} writes that down',
+           '{who} draws a diagram of a sword. You know what a sword looks like. {who} keeps going'],
+    win: ['{who} grades the fight with {foe}: B minus. “You telegraphed every swing”',
+          '“{rounds}?” says {who}. “I’d have done it in three. On paper”',
+          '{who} notes you held {weapon} by the right end, this time. A gold star',
+          '{who} writes “See me” in the margin of your victory over {foe}',
+          '{who} says a real {klass} would have opened with {spell}. You are a real {klass}. {who} sighs'],
+    close: ['“A close fight is a sign of poor preparation,” says {who}, who prepared nothing',
+            '{who} suggests using {spell} sooner. Or at all',
+            '“Cutting it fine,” says {who}. “I charge extra for funerals”'],
+    flee: ['“Retreat is a valid strategy,” says {who}. “It’s in chapter nine. You haven’t got to chapter nine”',
+           '{who} gives you an incomplete for {foe}. You can retake it'],
+    defeat: ['{who}: “Lesson one: be bigger than the monster. We’ll revisit lesson one”',
+             '{who} gives you a detention. You’re still unconscious, so it counts as served',
+             '“And what have we learned?” asks {who}. You have learned that {foe} hits hard'] },
+
+  trainer: { who: 'Coach {hench}',
+    idle: ['{who} counts your steps to market out loud. All of them',
+           '{who} makes you carry a rock up a hill. Then back down. “For the knees”',
+           '{who} says breakfast is for the weak. You’re weak. You have breakfast'],
+    win: ['“THAT’S ONE REP!” yells {who}. “NINE MORE! WHERE ARE THE OTHER NINE?”',
+          '{who} times your fight with {foe}: {rounds}. “My grandmother does it in four”',
+          '{who} makes you stretch over the remains of {foe}. It’s a lot to ask'],
+    close: ['“PAIN IS WEAKNESS LEAVING THE BODY,” yells {who}. Quite a lot of it left'],
+    flee: ['{who} calls it “cardio”, approvingly'],
+    defeat: ['{who} calls it a rest day. You didn’t choose it'] },
+
+  backpack: {
+    idle: ['You find a pocket in your bigger backpack that you didn’t know it had. It has a snack in it',
+           'The cup holder of your backpack holds a cup, for the first time. You’re oddly moved',
+           'You lock your backpack. You lose the key. You keep the key in the backpack'] },
+
+  insurance: { who: 'your insurer',
+    idle: ['A letter from {who}: your premium has gone up. Due to “heroics”',
+           'A letter from {who} asks whether you’ve considered a less dangerous career, such as bard'],
+    defeat: ['{who} sends a claims adjuster. He photographs the bruises and leaves',
+             'You fill in a claim form. “Was the attacker an act of a god?” You tick “maybe”'] },
+
+  tavern: { who: '{tavern}',
+    idle: ['A report from {who}: profits are up. Also, someone set fire to the bard',
+           'Word from {who}: a regular drank the place dry, then the well',
+           'Your manager at {who} writes: “All fine. Do not visit. Everything is fine”',
+           '{who} has been voted the third best tavern in a field of two',
+           '{who} has a new house special. Nobody will say what’s in it, including the cook'],
+    win: ['{who} names a stew after your fight with {foe}. It’s mostly {foe}'] },
+
+  statue: { who: 'your statue',
+    idle: ['Pigeons have claimed {who}. It’s more popular than you’ve ever been',
+           'Someone put a hat on {who}. It looks better than you do',
+           'Tourists ask {who} for directions. It’s about as helpful as you',
+           'Someone has carved their initials into {who}’s shin. You feel it, somehow'],
+    win: ['{foe} saw {who} once. It shows'] },
+
+  memoir: { who: '{hench}',
+    idle: ['{who} asks what you were feeling just then. You say “hungry”. {who} writes “a terrible hunger, for justice”',
+           '{who} follows you around, muttering adjectives',
+           '{who} asks if you had a tragic childhood. You didn’t. {who} gives you one',
+           '{who} wonders aloud whether you could have a love interest. You say no. {who} writes one in'],
+    win: ['{who} writes up the fight with {foe}. It’s now a duel at dawn, in the rain, with your father’s sword',
+          '{who} asks if {foe} said anything memorable at the end. They said “urk”. {who} writes it down',
+          '{who} changes {weapon} to “a blade forged from starlight”. You’ll never live up to it'],
+    flee: ['“So, a bold repositioning,” says {who}, writing'],
+    defeat: ['{who} writes “a tactical retreat into unconsciousness”',
+             '{who} skips this bit. “Readers don’t want to see that.” There are no readers'] },
+
+  egg: { who: '{rock}',
+    idle: ['{who} sits in your pack, being a rock. You are proud of {who}',
+           'You tell {who} about your day. {who} listens. {who} always listens',
+           '{who} hasn’t moved since you last checked. Good rock',
+           'You polish {who}. {who} doesn’t say thank you. {who} doesn’t have to',
+           'A child asks why you carry a rock. “This is {who},” you say, and the child apologizes',
+           'You leave {who} in the sun for a bit. {who} seems happier. You can tell'],
+    win: ['{who} saw the whole fight with {foe}. {who} is unimpressed. {who} is a rock',
+          'You show {who} the spoils. {who} doesn’t care about money. Be more like {who}'],
+    flee: ['You run from {foe}, carrying {who}. You would never leave {who} behind'],
+    defeat: ['{who} came through the beating without a scratch. Rocks are like that',
+             '{foe} took your gold but left {who}. They didn’t know what they had'] },
+
+  seminar: {
+    idle: ['You repeat today’s affirmation: “I am the protagonist.” A passing goat agrees',
+           'You make a vision board. It’s a picture of the Old Bastard™, with a cross through it'],
+    win: ['You could have used habit two just then. You never got to habit two'] },
+
+  ballad: {
+    idle: ['Children in the street sing your ballad. They get the words wrong, and your name',
+           'You hum your own ballad. A stranger asks you to stop. You hum louder'],
+    win: ['A bard adds a verse about {foe}. It doesn’t scan, but it rhymes'] },
+
+  feast: {
+    idle: ['You’re still full from the feast. Your armor is unhappy about it',
+           'You eat the leftovers from the feast. Still good. Mostly'] },
+
+  crossfit: {
+    idle: ['You tell a stranger about your workout. They didn’t ask',
+           'You flip a cart, for fun. The cart was full'],
+    win: ['You flex over the remains of {foe}. Nobody is watching. You flex anyway'] },
+
+  parkour: {
+    idle: ['You vault a fence you could have walked around',
+           'You roll on landing, for no reason, in a puddle'],
+    flee: ['You get away from {foe} with a triple roll. The roll was unnecessary. The getting away wasn’t'] },
+
+  cryospa: {
+    idle: ['Your skin still glows faintly from the volcanic muck',
+           'You find a leech behind your ear. It’s artisanal. You leave it be'],
+    defeat: ['You feel numb. Not numb enough'] },
+
+  symposium: {
+    idle: ['You explain the trade deficits of gelatinous cubes to a passerby. They pay you to stop',
+           'You use the word “paradigm” in conversation. Twice'],
+    win: ['You noticed that {foe} had a predictable attack cycle. Also, you hit it'] },
+
+  mindfulness: {
+    idle: ['You are present in the moment. The moment smells of goblin',
+           'You let go of all attachment. Then you go back for your pack'],
+    defeat: ['You accept the defeat with total equanimity. Then you cry a bit'] }
+};
+
+// Events that only happen while a sink's boon lasts (or with what was bought
+// for good): as in K.Events, plus sink: the sink's key. {who} is who's
+// talking (K.SinkCompany). They're in K.Events, for the Codex and the rest.
+K.Events = K.Events.concat([
+  { key: 'hench-heist', sink: 'henchman', where: ['town'], weight: 6,
+    lines: ['{who} comes back from the market with {gold} gold and won’t say where it came from',
+            'There’s a wanted poster in {kingdom} with {who}’s face on it',
+            'It’s a good likeness, at least'],
+    effect: { gold: 2 } },
+
+  { key: 'hench-raise', sink: 'henchman', where: ['rest'], weight: 5,
+    lines: ['{who} clears their throat. “About my compensation”',
+            '{who} has drawn a chart. It’s a chart of snacks'],
+    ask: 'What do you tell {who}?',
+    choices: [
+      { label: 'Pay up', effect: { gold: -1 },
+        lines: ['You hand over {gold} gold. {who} buys more snacks, and a better stick'] },
+      { label: 'Promote {who} instead',
+        lines: ['{who} is now Senior Henchman. It pays the same. {who} is thrilled'],
+        effect: { stat: 'CHA' } } ] },
+
+  { key: 'horse-hedge', sink: 'horse', where: ['road'], weight: 6,
+    lines: ['Your horse refuses to go any further until it has eaten one particular hedge',
+            'It is a long way back to the particular hedge',
+            'The hedge belonged to a wizard. You both feel slightly enchanted'],
+    effect: { stat: 'random' } },
+
+  { key: 'horse-race', sink: 'horse', where: ['town'], weight: 6,
+    lines: ['There’s a horse race in {kingdom}. You enter your mostly-horse',
+            'It comes fourth, out of three',
+            'The judges are so confused they give you {gold} gold to go away'],
+    effect: { gold: 1 } },
+
+  { key: 'rock-missing', sink: 'egg', where: ['rest'], weight: 1,
+    lines: ['You wake up and your pet rock is gone',
+            'Panic. Searching. Tears. You turn the camp upside down',
+            'It was under your pillow. It was always under your pillow. You sleep better than ever'],
+    effect: { heal: true } },
+
+  { key: 'rock-hatch', sink: 'egg', where: ['rest'], weight: 1,
+    lines: ['In the night, your pet rock makes a small cracking sound',
+            'It’s hatching! It’s not. It’s the cold',
+            'You’re relieved, honestly. You couldn’t afford a dragon'],
+    effect: { stat: 'WIS' } },
+
+  { key: 'tavern-brawl', sink: 'tavern', where: ['town'], weight: 2,
+    lines: ['A brawl breaks out at {who} while you’re checking the books',
+            'You end it by being the largest brawler',
+            'The damages come to {gold} gold, in your favor, somehow'],
+    effect: { gold: 3 } },
+
+  { key: 'tavern-taxman', sink: 'tavern', where: ['town'], weight: 2,
+    lines: ['The tax collector of {kingdom} has heard you own {who}',
+            'You pay {gold} gold in back taxes. He drinks for free, too. He drinks a lot'],
+    effect: { gold: -2 } },
+
+  { key: 'statue-scrub', sink: 'statue', where: ['town'], weight: 2,
+    lines: ['The council of {kingdom} asks you to do something about the pigeons on your statue',
+            'You spend the afternoon scrubbing your own face',
+            'A pilgrim mistakes you for the statue and leaves an offering: {loot}'],
+    effect: { item: 'boring' } },
+
+  { key: 'tutor-quiz', sink: 'tutor', where: ['rest'], weight: 6,
+    lines: ['{who} springs a pop quiz on you',
+            'Question one: “What is a sword?” You get it right',
+            'Question two is about a spell you don’t have. You pass, barely. It still counts'],
+    effect: { xp: 0.05 } },
+
+  { key: 'tutor-fieldtrip', sink: 'tutor', where: ['field'], weight: 2,
+    lines: ['{who} makes the fight a teaching moment',
+            'The teaching moment goes on for forty minutes. The monster has long since left',
+            'You learn something, despite yourself'],
+    effect: { stat: 'INT' } },
+
+  { key: 'coach-cheatday', sink: 'trainer', where: ['rest'], weight: 6,
+    lines: ['{who} declares a cheat day',
+            'You eat an entire wheel of cheese. {who} eats two',
+            'Neither of you speaks of it again'],
+    effect: { heal: true } },
+
+  { key: 'ghost-interview', sink: 'memoir', where: ['rest'], weight: 5,
+    lines: ['{who} interviews you for the memoir',
+            'You describe your childhood. {who} replaces it with a better one',
+            'You feel strangely inspired by your new past'],
+    effect: { stat: 'CHA' } },
+
+  { key: 'ghost-reading', sink: 'memoir', where: ['town'], weight: 5,
+    lines: ['{who} has booked you a reading in {kingdom}',
+            'Nobody comes. Then one {race-one} comes, by mistake',
+            'They buy a copy for {gold} gold and ask you to sign it to {guy}'],
+    effect: { gold: 1 } },
+
+  { key: 'insurance-payout', sink: 'insurance', where: ['rest'], weight: 5,
+    lines: ['{who} pays out on an old claim. You forgot you made it',
+            'It’s {gold} gold, minus the fee, minus the fee for the fee'],
+    effect: { gold: 1 } },
+
+  { key: 'ballad-fan', sink: 'ballad', where: ['road'], weight: 6,
+    lines: ['A fan of “The Ballad of {hero}” stops you for an autograph',
+            'You sign. They look at the signature, then at you, then at the signature',
+            'They give you {loot} as tribute anyway. It may be stolen'],
+    effect: { item: 'boring' } },
+
+  { key: 'blessed-sunbeam', sink: 'temple', where: ['rest'], weight: 5,
+    lines: ['A shaft of light falls on you as you rest',
+            'It’s just the sun. But you feel better anyway'],
+    effect: { heal: true } },
+
+  { key: 'backpack-pocket', sink: 'backpack', where: ['rest'], weight: 1,
+    lines: ['You find a pocket in your bigger backpack that you have never seen before',
+            'In it: {loot}, and a note in your own handwriting that says “don’t”'],
+    effect: { item: 'special' } }
+]);

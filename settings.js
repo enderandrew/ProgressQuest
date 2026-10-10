@@ -41,6 +41,9 @@ function EventPopupLinger() {
 // Read what happens out to screen readers (Announce in main.js)?
 function ScreenReaderOn() { return SettingGet("announce", "1") !== "0"; }
 
+// A word now and then from what the gold bought (CompanyChatter in main.js)?
+function ChatterOn() { return SettingGet("chatter", "1") !== "0"; }
+
 // Flash the tab's title while a choice waits?
 function ChoiceAlertOn() { return SettingGet("choicealert", "1") !== "0"; }
 
@@ -78,6 +81,9 @@ function SettingsList() {
       get: function () { return $("body").hasClass("show-log"); }, set: function (on) { if (on != $("body").hasClass("show-log")) ToggleCombatLog(); } },
     { section: "Display", label: "Desktop icons", kind: "check",
       get: function () { return !DesktopIconsHidden(); }, set: function (on) { if (on == DesktopIconsHidden()) ToggleDesktopIcons(); } },
+    { section: "Display", label: "Your entourage has a word now and then", kind: "check",
+      get: ChatterOn, set: function (on) { SettingSet("chatter", on ? "1" : "0"); if (!on) $("#Company").text(""); },
+      help: "What your henchman, tutor or pet rock makes of it all, under the fight line. Only for show." },
 
     { section: "Accessibility", label: "Read out what happens, for screen readers", kind: "check",
       get: ScreenReaderOn, set: function (on) { SettingSet("announce", on ? "1" : "0"); },
@@ -94,7 +100,8 @@ function SettingsList() {
 
 // Defaults: what Reset puts back
 var SettingsDefaults = { narrate: null, voice: null, rate: null, volume: null, eventpopup: null,
-                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null };
+                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null,
+                         chatter: null };
 
 function OpenSettings(tab) {
   if (!document) return;

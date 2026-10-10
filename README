@@ -322,6 +322,27 @@ Hand-me-downs mutator (no shops) starts splurging around level 15.
 
 The list is K.Sinks at the end of events.js, and the knobs K.Sink.
 
+What the gold bought has a life of its own (K.SinkCompany, after K.Sinks):
+
+- Now and then it has a word to say, in a line under the fight line: the
+  henchman pokes the body with a stick, the tutor grades the fight ("B
+  minus. You telegraphed every swing"), the ghostwriter turns a goblin
+  into a duel at dawn, the pet rock is a rock. After a fight (3 in 10)
+  the word fits how it went, and goes in the combat log too; otherwise
+  it's what they're up to on the road, at rest or at market. It's only
+  for show: it uses its own dice, changes nothing, isn't saved, and
+  Settings > Display turns it off.
+- The tutor, the personal trainer and the ghostwriter stay on retainer
+  for a few hours (6, 4 and 8), under the health bars with the others.
+  While the ghostwriter is about, a level-up may get their footnote in
+  the journal instead of an aside.
+- 18 events happen only with the right company (an event with sink:
+  its key): the henchman asks for a raise, the horse needs one
+  particular hedge, the pet rock goes missing, the tavern has a brawl,
+  the tutor springs a pop quiz. {who} in their lines is who's there. They
+  are about 4% of all events, so a hire usually gets one, and the Codex
+  says what each one needs.
+
 
 Named elites and uniques
 ------------------------

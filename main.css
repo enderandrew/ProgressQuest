@@ -292,6 +292,17 @@ tr { height: auto; min-height: 15px; }
   text-overflow: ellipsis;
 }
 #FightLine.defeat { color: #b33; font-weight: bold; }
+/* a word from the entourage (CompanyChatter in main.js) */
+#Company {
+  color: #444;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 1.2em;
+}
+#Company:empty { min-height: 0; }
+#CombatLog .fight-aside { color: #555; font-style: italic; }
 #LogToggle, #NarrateToggle, #EventPopupToggle, #RetireLink, #TacticsLink, #CodexLink, #ShareLink, #ExportLink { color: #008; cursor: pointer; text-decoration: underline; white-space: nowrap; }
 #CombatLog {
   display: none;
