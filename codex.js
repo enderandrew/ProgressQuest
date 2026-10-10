@@ -482,6 +482,7 @@ function NextToast() {
   if (!a) return;
   var toast = document.createElement("div");
   toast.className = "achievement-toast";
+  toast.setAttribute("role", "status");   // (read out: "Achievement unlocked: ...")
   toast.setAttribute("role", "status");
   var icon = document.createElement("div");
   icon.className = "ach-icon";

@@ -38,6 +38,9 @@ function EventPopupLinger() {
   return isNaN(v) ? K.EventPopupLinger : v;
 }
 
+// Read what happens out to screen readers (Announce in main.js)?
+function ScreenReaderOn() { return SettingGet("announce", "1") !== "0"; }
+
 // Flash the tab's title while a choice waits?
 function ChoiceAlertOn() { return SettingGet("choicealert", "1") !== "0"; }
 
@@ -76,6 +79,11 @@ function SettingsList() {
     { section: "Display", label: "Desktop icons", kind: "check",
       get: function () { return !DesktopIconsHidden(); }, set: function (on) { if (on == DesktopIconsHidden()) ToggleDesktopIcons(); } },
 
+    { section: "Accessibility", label: "Read out what happens, for screen readers", kind: "check",
+      get: ScreenReaderOn, set: function (on) { SettingSet("announce", on ? "1" : "0"); },
+      help: "Story scenes, events and level-ups as they happen; choices and deaths straight away. " +
+            "Nothing is read while the game catches up on time away (the summary says what happened)." },
+
     { section: "Advanced", label: "Debug mode", kind: "check",
       get: function () { return SettingGet("debug", "") === "1"; },
       set: function (on) { SettingSet("debug", on ? "1" : null); },
@@ -86,7 +94,7 @@ function SettingsList() {
 
 // Defaults: what Reset puts back
 var SettingsDefaults = { narrate: null, voice: null, rate: null, volume: null, eventpopup: null,
-                         popuplinger: null, choicealert: null, icons: null, debug: null };
+                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null };
 
 function OpenSettings(tab) {
   if (!document) return;
@@ -94,7 +102,7 @@ function OpenSettings(tab) {
   box.className = "settings";
   var tabs = $("<div class='settings-tabs' role='tablist'>").appendTo(box);
   var panes = $("<div class='settings-panes'>").appendTo(box);
-  var sections = ["Narration", "Events", "Display", "Advanced", "Keyboard"];
+  var sections = ["Narration", "Events", "Display", "Accessibility", "Advanced", "Keyboard"];
   var show = function (name) {
     tabs.children().each(function () {
       var on = $(this).data("tab") == name;
@@ -142,6 +150,10 @@ function OpenSettings(tab) {
         window.speechSynthesis.cancel();
         SpeakLine("This is " + Get(Traits, 'Name') + ", narrating. Progress continues.");
       })).appendTo(nar);
+    var a11y = panes.children().filter(function () { return $(this).data("tab") == "Accessibility"; });
+    $("<p class='settings-help'>").text("More time for a choice: P pauses the game, and the clock a choice waits on with it. " +
+      "Every menu works from the keyboard (Alt + its letter, or F10), and the Keyboard Shortcuts tab lists the rest. " +
+      "If your system asks for less motion, the game has none.").appendTo(a11y);
     var adv = panes.children().filter(function () { return $(this).data("tab") == "Advanced"; });
     $("<div class='settings-row'>").append($("<button type='button'>").text("Reload the page now").on("click", function () {
       SaveGame(function () { window.location.reload(); }, true);

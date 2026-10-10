@@ -41,25 +41,25 @@
 <body>
 
 <!-- ---- The main menu ------------------------------------------------------ -->
-<section class="xp-window" id="menuwin" aria-labelledby="menutitle">
+<section class="xp-window" id="menuwin" role="main" aria-labelledby="menutitle">
   <div class="xp-titlebar">
     <img src="swords.gif" alt="">
-    <span id="menutitle">Progress Quest Remix</span>
+    <span id="menutitle" role="heading" aria-level="1">Progress Quest Remix</span>
   </div>
   <div class="xp-body">
     <img id="logo" src="pq.gif" width="512" height="451"
          alt="Progress Quest Remix"
          title="Progress Quest Remix is the breakfast of not-quite champions who sleep in and let their game idle">
     <p class="tagline">The breakfast of not-quite champions who sleep in and let their game idle.</p>
-    <nav id="menu">
-      <button class="xp-button big" data-open="dlgNew"><span class="ico">&#x2694;</span>New Game</button>
-      <button class="xp-button big" data-open="dlgResume"><span class="ico">&#x25B6;</span>Resume<span class="count" id="resumeCount"></span></button>
-      <button class="xp-button big" data-open="dlgPlus"><span class="ico">&#x2795;</span>New Game+<span class="count gold" id="plusCount"></span><span class="soon" id="plusLocked">locked</span></button>
-      <button class="xp-button big" data-open="dlgHall"><span class="ico">&#x1F3C6;</span>Hall of Legends<span class="count gold" id="hallCount"></span></button>
-      <button class="xp-button big" data-open="dlgChallenge"><span class="ico">&#x1F3B2;</span>Challenge Modes</button>
-      <button class="xp-button big" data-open="dlgCodex"><span class="ico">&#x1F4D6;</span>Codex<span class="count" id="codexCount"></span></button>
-      <button class="xp-button big" data-open="dlgFaq"><span class="ico">&#x2753;</span>FAQ</button>
-      <button class="xp-button big" data-open="dlgGitHub"><span class="ico">&#x1F4BB;</span>GitHub</button>
+    <nav id="menu" aria-label="Main menu">
+      <button class="xp-button big" data-open="dlgNew"><span class="ico" aria-hidden="true">&#x2694;</span>New Game</button>
+      <button class="xp-button big" data-open="dlgResume"><span class="ico" aria-hidden="true">&#x25B6;</span>Resume<span class="count" id="resumeCount"></span></button>
+      <button class="xp-button big" data-open="dlgPlus"><span class="ico" aria-hidden="true">&#x2795;</span>New Game+<span class="count gold" id="plusCount"></span><span class="soon" id="plusLocked">locked</span></button>
+      <button class="xp-button big" data-open="dlgHall"><span class="ico" aria-hidden="true">&#x1F3C6;</span>Hall of Legends<span class="count gold" id="hallCount"></span></button>
+      <button class="xp-button big" data-open="dlgChallenge"><span class="ico" aria-hidden="true">&#x1F3B2;</span>Challenge Modes</button>
+      <button class="xp-button big" data-open="dlgCodex"><span class="ico" aria-hidden="true">&#x1F4D6;</span>Codex<span class="count" id="codexCount"></span></button>
+      <button class="xp-button big" data-open="dlgFaq"><span class="ico" aria-hidden="true">&#x2753;</span>FAQ</button>
+      <button class="xp-button big" data-open="dlgGitHub"><span class="ico" aria-hidden="true">&#x1F4BB;</span>GitHub</button>
     </nav>
   </div>
 </section>
@@ -123,11 +123,11 @@
   <div class="xp-body">
     <p id="hallSummary"></p>
     <div class="xp-list" id="legends"></div>
-    <h3 class="hall-head">Races honored <span id="raceCount"></span></h3>
+    <h2 class="hall-head">Races honored <span id="raceCount"></span></h2>
     <div class="chips" id="raceChips"></div>
-    <h3 class="hall-head">Classes honored <span id="klassCount"></span></h3>
+    <h2 class="hall-head">Classes honored <span id="klassCount"></span></h2>
     <div class="chips" id="klassChips"></div>
-    <h3 class="hall-head" id="fallenHead">&#x2620; Hall of the Fallen <span id="fallenCount"></span></h3>
+    <h2 class="hall-head" id="fallenHead"><span aria-hidden="true">&#x2620;</span> Hall of the Fallen <span id="fallenCount"></span></h2>
     <div class="xp-list" id="fallen"></div>
     <div class="xp-actions">
       <button class="xp-button" id="hallBackup" title="Download the Hall as a file">Back up Hall</button>
@@ -163,7 +163,7 @@
           <option value="missing">Not yet</option>
         </select>
       </div>
-      <div id="codexPane"></div>
+      <div id="codexPane" tabindex="0" aria-label="Codex entries"></div>
     </div>
     <div class="xp-actions">
       <button class="xp-button" id="codexBackup" title="Download the Codex and achievements as a file">Back up Codex</button>
@@ -182,7 +182,7 @@
   </div>
   <div class="xp-body">
     <div class="mode-card daily">
-      <h2>&#x1F4C5; Daily Challenge <small id="dailyDate"></small></h2>
+      <h2><span aria-hidden="true">&#x1F4C5;</span> Daily Challenge <small id="dailyDate"></small></h2>
       <p>Everyone in the world gets the same hero today: same race, class, level,
          stats, gear and spells, the same twist, and the same dice for every roll.
          You get one try and <span class="dailyHours">24</span> hours to reach the goal.
@@ -196,7 +196,7 @@
       <div id="dailyPast"></div>
     </div>
     <div class="mode-card custom">
-      <h2>&#x1F527; Custom Run</h2>
+      <h2><span aria-hidden="true">&#x1F527;</span> Custom Run</h2>
       <p>Roll a hero your way. A <b>seed</b> fixes the stats and every roll after,
          so two people with the same seed (and the same choices) play the same game.
          <b>Mutators</b> are bad ideas you can opt into.</p>
@@ -217,7 +217,7 @@
         <button class="xp-button default" id="customStart">Roll a custom hero</button></div>
     </div>
     <div class="mode-card">
-      <h2>&#x2620; Hardcore</h2>
+      <h2><span aria-hidden="true">&#x2620;</span> Hardcore</h2>
       <p>One life. Every defeat has a small chance to be your hero's last: more while
          Wounded, more against tougher monsters, and much more against the Old
          Bastard&trade;. When they fall, they stay fallen, and the Hall of the Fallen

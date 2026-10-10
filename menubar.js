@@ -319,6 +319,7 @@ function BuildMenu(items) {
   ul.className = "menu-pop";
   ul.setAttribute("role", "menu");
   items.forEach(function (item) {
+    // (each item is its <li>: role menuitem, or separator)
     var li = document.createElement("li");
     if (item == "-") {
       li.className = "menu-sep";
@@ -419,9 +420,11 @@ function SetUpMenuBar() {
   MenuBar.forEach(function (menu) {
     var top = document.createElement("li");
     top.className = "menu";
+    top.setAttribute("role", "none");   // (the button is the menu item)
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "menu-top";
+    btn.setAttribute("role", "menuitem");
     btn.setAttribute("aria-haspopup", "true");
     btn.setAttribute("aria-expanded", "false");
     top.dataset.key = MenuLabel(btn, menu.label);

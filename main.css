@@ -217,10 +217,10 @@ div.progress-container#MPBar > div.bar { background-color: #7cb0e9; }
   margin-left: 4px;
 }
 #Spells tr.spell-damage td:first-child::after { content: "dmg";    color: #b33; }
-#Spells tr.spell-heal   td:first-child::after { content: "heal";   color: #393; }
+#Spells tr.spell-heal   td:first-child::after { content: "heal";   color: #2a7a2a; }
 #Spells tr.spell-buff   td:first-child::after { content: "buff";   color: #36b; }
-#Spells tr.spell-debuff td:first-child::after { content: "debuff"; color: #a5a; }
-#Spells tr.spell-cc     td:first-child::after { content: "cc";     color: #b80; }
+#Spells tr.spell-debuff td:first-child::after { content: "debuff"; color: #8a3f8a; }
+#Spells tr.spell-cc     td:first-child::after { content: "cc";     color: #8a6400; }
 
 div.profile#GearPower, div.profile#Purse { margin-bottom: 2px; }
 

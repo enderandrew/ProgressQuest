@@ -31,12 +31,12 @@ input, button { display: inline; }
 
 <br>
 
-<div class="vbox window" id="newguy">
+<div class="vbox window" id="newguy" role="main" aria-label="New character">
 
   <div id="titlebar">
     <img src="swords.gif" alt="Progress Quest Remix Logo">
-    <span>Progress Quest Remix - New Character</span>
-    <a id="quit"><img src="closeup.png" alt="Close button"></a>
+    <span role="heading" aria-level="1">Progress Quest Remix - New Character</span>
+    <a id="quit" href="#" role="button" title="Close"><img src="closeup.png" alt="Close"></a>
   </div>
 
   <div class="client">
@@ -72,7 +72,7 @@ input, button { display: inline; }
             <tr> <th> INT <td id="INT">12</tr>
             <tr> <th> WIS <td id="WIS">4</tr>
             <tr> <th> CHA <td id="CHA">12</tr>
-            <tr> <th colspan=2> &nbsp; </tr>
+            <tr> <th colspan=2> <span class="sr-only">Stats</span>&nbsp; </tr>
             <tr> <th> Total <td id="Total">48</tr>
           </table>
           <div id="Profile" class="profile"></div>

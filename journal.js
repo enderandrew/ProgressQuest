@@ -318,6 +318,8 @@ function OpenJournal() {
   if (!document || !game || !game.Traits) return;
   var box = document.createElement("div");
   box.className = "journal";
+  box.tabIndex = 0;   // (scrollable: the keyboard can reach it)
+  box.setAttribute("aria-label", "Journal entries");
   (game.journal || []).forEach(function (e) {
     var row = document.createElement("div");
     row.className = "journal-entry journal-" + e.k;

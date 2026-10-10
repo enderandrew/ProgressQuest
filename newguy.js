@@ -120,7 +120,7 @@ function NewGuyFormLoad() {
     $("#Unroll").on("click", UnrollClick);
     $("#RandomName").on("click", GenClick);
     $('#Sold').on("click", sold);
-    $('#quit').on("click", cancel);
+    $('#quit').on("click", function (e) { e.preventDefault(); cancel(); });
     if (Embedded()) $("html").addClass("embedded");
     $("#races, #classes").on("change", "input[type=radio]", ShowNewGuyProfile);
     ShowNewGuyProfile();

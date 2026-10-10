@@ -20,7 +20,18 @@ blockquote, q { quotes: none; }
 blockquote:before, blockquote:after, q:before, q:after { 
   content: ''; content: none; 
 }
-:focus { outline: 0; }
+:focus:not(:focus-visible) { outline: 0; }
+/* Keyboard focus shows, the Windows way: a dotted box (the reset above, and
+   this file once, switched it off everywhere) */
+:focus-visible { outline: 1px dotted #000; outline-offset: 1px; }
+/* Text only a screen reader gets */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+           clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+/* Less motion, for those who ask their system for it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important;
+                           animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
 ins { text-decoration: none; }
 del { text-decoration: line-through; }
 table { border-collapse: collapse; border-spacing: 0; }

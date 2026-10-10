@@ -413,7 +413,7 @@ function Dequeue() {
         }
         Task(s, n * 1000);
         if (a == 'heal') game.task = 'heal';
-        if (a == 'scene') Narrate(s);
+        if (a == 'scene') { Narrate(s); Announce(s); }
         if (last == 'ev' || last == 'event') RevealEventLine();
         if (last == 'event') game.task = 'event';
         if (last == 'victory') ShowFinaleDialog();
@@ -516,6 +516,8 @@ function EliteFought(fight) {
   Log((won ? 'Slew ' : 'Fought ') + e.name + (item ? ' and took ' + item.name : ''));
   if (won) CodexElite(e, item, fight.foeLevel);
   if (typeof JournalElite == "function") JournalElite(fight, item);
+  Announce("An elite! " + e.name + ", an elite " + e.kind + ", " + (won ? "falls. You take " + item.name + "." :
+           fight.outcome == 'flee' ? "chases you off." : "beats you."), true);
   // Shown like an event: it's news
   game.recentEvent = { key: 'elite', where: 'elite', at: game.elapsed || 0,
     lines: [e.name + ', an elite ' + e.kind + ', ' + (won ? 'falls before you' : fight.outcome == 'flee' ? 'chases you off' : 'beats you senseless')],
@@ -661,6 +663,7 @@ function Percent(p) {
 function Die(fight) {
   var obit = MakeObituary(fight);
   if (typeof JournalDeath == "function") JournalDeath(obit.cause);   // (the tombstone has a Journal button)
+  Announce("Your hero has died: " + obit.cause + ".", true);
   game.dead = obit;
   game.queue.length = 0;
   if (game.daily && !game.daily.status) SettleDaily('died');
@@ -996,6 +999,18 @@ function NarrationOn() {
   try { return window.localStorage.getItem("pq.narrate") !== "0"; } catch (e) { return true; }
 }
 
+// For screen readers: read a line out (the live regions in main.html).
+// urgent: interrupt (a choice waiting, a death). Not while catching up: that's
+// hours of it at once, summed up at the end.
+function Announce(text, urgent) {
+  if (!document || _catchingUp || !text) return;
+  if (typeof ScreenReaderOn == "function" && !ScreenReaderOn()) return;
+  var el = document.getElementById(urgent ? "A11yAlert" : "A11yStatus");
+  if (!el) return;
+  el.textContent = "";   // (so the same words twice are read twice)
+  setTimeout(function () { el.textContent = String(text).replace(/\u2122/g, ""); }, 30);
+}
+
 function Narrate(text) {
   if (!document || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
   if (_catchingUp) return;   // hours of it, all at once: no
@@ -1231,6 +1246,8 @@ function BeginChoice(seconds, caption) {
   SyncRecentEvent();
   ShowEventPopup(false);
   Narrate("Decision time! " + caption + " " + OptionsSentence(ev.choices) + "?");
+  Announce("Decision time: " + caption + " " + ev.choices.map(function (c, i) { return (i + 1) + ": " + c.label; }).join(". ") +
+           ". Press a number, or fate decides in " + seconds + " seconds. P pauses the clock.", true);
   StartChoiceAlert();
 }
 
@@ -2579,7 +2596,7 @@ function ListBox(id, columns, fixedkeys) {
   this.AddUI = function (caption) {
     if (!this.box) return;
     var tr = $("<tr>").append(
-      $("<td>").append($("<input>", { type: "checkbox", disabled: true }),
+      $("<td>").append($("<input>", { type: "checkbox", disabled: true, "aria-label": caption }),
                        document.createTextNode(" " + caption)));
     tr.appendTo(this.box);
     tr.each(function () { ScrollIntoList(this); });
@@ -3102,6 +3119,7 @@ function LevelUp() {
   // A new perk on offer every K.PerkEvery levels (OfferPerk, between tasks)
   var lv = GetI(Traits,'Level');
   if (lv % K.PerkEvery == 0 && lv <= K.PerkLast) game.perkDue = (game.perkDue || 0) + 1;
+  Announce("Level " + lv + ".");
   Brag('l');
   CheckForCheating();
 }
@@ -3236,7 +3254,7 @@ function FormCreate() {
   if (document) {
     Kill = $("#Kill");
 
-    $("#quit").on("click", quit);
+    $("#quit").on("click", function (e) { e.preventDefault(); quit(); });
     $("#LogToggle").on("click", function (e) {
       e.preventDefault();
       ToggleCombatLog();

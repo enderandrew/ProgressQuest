@@ -138,6 +138,30 @@ function step(name, ok, detail) {
     return keys + " shortcuts listed";
   });
 
+  await tryStep("screen readers hear scenes and level-ups, unless turned off in Settings", async () => {
+    const heard = await page.evaluate(async () => {
+      const wait = () => new Promise((r) => setTimeout(r, 80));
+      const el = document.getElementById("A11yStatus");
+      Announce("Level 99.");
+      await wait();
+      const on = el.textContent;
+      SettingSet("announce", "0");
+      el.textContent = "";
+      Announce("Level 100.");
+      await wait();
+      const off = el.textContent;
+      SettingSet("announce", null);
+      const bars = document.querySelectorAll("[role=progressbar][aria-valuenow]").length;
+      const named = [...document.querySelectorAll("input[type=checkbox]")].every((c) => c.getAttribute("aria-label") || c.labels.length);
+      return { on, off, bars, named, main: !!document.querySelector("[role=main]") };
+    });
+    if (heard.on != "Level 99.") throw new Error("the live region said " + JSON.stringify(heard.on));
+    if (heard.off) throw new Error("it still spoke with announcements off");
+    if (!heard.named) throw new Error("a checkbox has no name");
+    if (!heard.main || heard.bars < 4) throw new Error("landmarks or progress bars are missing");
+    return heard.bars + " progress bars";
+  });
+
   await tryStep("time lost with the game open (a throttled tab) is played through", async () => {
     const r = await page.evaluate(() => new Promise((done) => {
       CloseEventPopup();

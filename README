@@ -718,6 +718,33 @@ Settings live in the browser (localStorage, "pq.*"), for every hero, and
 never in a save: they change how you watch, not how the game goes.
 
 
+Accessibility
+-------------
+
+The game can be played from the keyboard and with a screen reader:
+
+- Everything that takes a click takes a key too: the menu bar (Alt or
+  F10), the dialogs (Tab, Enter, Esc), the close boxes, and an event's
+  choices (1-9). P pauses the game, an event's clock included, so
+  there's time to hear the options. A focused control shows a dotted
+  outline (for keyboard focus only, so a mouse click leaves none).
+- Every progress bar is a labelled progressbar with its value as text,
+  and every list's checkbox is named after its line.
+- Two hidden live regions in main.html (#A11yStatus, #A11yAlert) speak
+  what a watcher would notice: a story scene, a level-up, a named elite
+  fight, a death, and an event's choices with the time left (Announce in
+  main.js). They stay quiet while time away is caught up, and Settings >
+  Accessibility turns them off.
+- Each window has a main landmark and a level-one heading; the journal
+  and the Codex scroll from the keyboard; decorative icons are hidden
+  from screen readers; text colors meet WCAG AA contrast.
+- With the system's "reduce motion" on, transitions and animations are
+  switched off.
+
+axe-core reports no issues on the menu and its windows, the game, the
+journal, Settings, Tactics, an event pop-up, or the character sheet.
+
+
 The menu bar
 ------------
 

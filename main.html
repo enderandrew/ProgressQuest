@@ -30,12 +30,12 @@
 
 <br>
 
-<div class="vbox window" id="main">
+<div class="vbox window" id="main" role="main">
 
 <div id="titlebar">
   <img src="swords.gif" alt="Progress Quest Remix Logo">
-  <span id="title">Progress Quest Remix</span>
-  <a id="quit"><img src="closeup.png" alt="Close button"></a>
+  <span id="title" role="heading" aria-level="1">Progress Quest Remix</span>
+  <a id="quit" href="#" role="button" title="Save and quit to the main menu (Q)"><img src="closeup.png" alt="Close"></a>
 </div>
 <div id="MenuRow">
   <ul id="MenuBar" role="menubar" aria-label="Menu"></ul>
@@ -397,6 +397,9 @@
 </div>
 
 <div id="paused"><br>PAUSED</div>
+<!-- For screen readers: what's happening, read out (Announce in main.js) -->
+<div id="A11yStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="A11yAlert" class="sr-only" role="alert" aria-atomic="true"></div>
 
 </body>
 
