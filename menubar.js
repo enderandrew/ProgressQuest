@@ -214,9 +214,11 @@ var MenuBar = [
     { label: "&Find…", action: function () { Joke("find", "Find"); } },
     { label: "R&eplace…", action: function () { Joke("replace", "Replace"); } },
     "-",
-    { label: "Prefere&nces…", action: function () { Joke("preferences", "Preferences"); } }
+    { label: "Prefere&nces…", key: "O", action: function () { OpenSettings(); } }
   ] },
   { label: "&View", items: [
+    { label: "&Settings…", key: "O", action: function () { OpenSettings(); } },
+    "-",
     { label: "&Narration", key: "N", checked: NarrationOn, action: ToggleNarration },
     { label: "&Event Pop-ups", key: "E", checked: EventPopupsOn, action: ToggleEventPopups },
     { label: "&Combat Log", key: "C", checked: function () { return $("body").hasClass("show-log"); }, action: ToggleCombatLog },
@@ -265,6 +267,7 @@ var MenuBar = [
   ] },
   { label: "&Help", items: [
     { label: "&Help Topics", key: "F1", action: function () { OpenLink("faq.html"); } },
+    { label: "&Keyboard Shortcuts", key: "?", action: function () { ShowShortcuts(); } },
     { label: "&Tip of the Day…", action: TipOfTheDay },
     "-",
     { label: "Progress Quest &Website", link: "http://progressquest.com/" },

@@ -687,6 +687,21 @@ No server, so a link carries everything:
   edited, as the share page does.
 
 
+Settings
+--------
+
+View > Settings (or O, or Edit > Preferences) opens the Settings window:
+narration (on or off, the voice, speed and volume, and a button to hear
+it), events (pop-ups, how long a finished one stays up, whether the tab's
+title flashes while a choice waits), the display (combat log, desktop
+icons), and debug mode. Its last tab, also Help > Keyboard Shortcuts (or
+?), lists every key; K.Shortcuts in settings.js is that list, so a new
+key in FormKeyDown (main.js) or MenuKey (menubar.js) belongs there too.
+
+Settings live in the browser (localStorage, "pq.*"), for every hero, and
+never in a save: they change how you watch, not how the game goes.
+
+
 The menu bar
 ------------
 

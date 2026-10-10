@@ -24,7 +24,7 @@ const warn = (msg) => { warnings++; console.log("warning " + msg); };
 
 // 1. Does every script parse?
 const scripts = ["config.js", "story.js", "combat.js", "events.js", "daily.js", "codex.js", "transfer.js", "replay.js", "menubar.js", "sheet.js",
-                 "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js"];
+                 "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js", "journal.js", "settings.js"];
 for (const file of scripts) {
   const full = path.join(dir, file);
   if (!fs.existsSync(full)) continue;

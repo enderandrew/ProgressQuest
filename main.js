@@ -978,6 +978,7 @@ function Narrate(text) {
     .replace(/[\u201c\u201d]/g, '"');
   var u = new SpeechSynthesisUtterance(speech);
   u.rate = 1;
+  if (typeof ApplyVoice == "function") ApplyVoice(u);   // (the voice, speed and volume from Settings)
   u.onend = function () { _narrationQueued = Max(0, _narrationQueued - 1); };
   u.onerror = function (e) {
     _narrationQueued = Max(0, _narrationQueued - 1);
@@ -1255,6 +1256,7 @@ function ResolveChoice() {
 var _titleAlert = null, _titleSaved = null;
 function StartChoiceAlert() {
   if (!document || _catchingUp) return;
+  if (typeof ChoiceAlertOn == "function" && !ChoiceAlertOn()) return;   // (Settings)
   StopChoiceAlert();
   _titleSaved = document.title;
   var on = false;
@@ -2018,7 +2020,8 @@ function ShowEventPopup(finished) {
   ShowChoiceTimer();
   if (!dlg.open) dlg.showModal();
   clearTimeout(_popupTimer);
-  if (finished) _popupTimer = setTimeout(PopupTimeout, K.EventPopupLinger * 1000);
+  var linger = typeof EventPopupLinger == "function" ? EventPopupLinger() : K.EventPopupLinger;
+  if (finished && linger > 0) _popupTimer = setTimeout(PopupTimeout, linger * 1000);   // (0: until closed)
 }
 
 function PopupTimeout() {
@@ -3889,6 +3892,14 @@ function FormKeyDown(e) {
 
   if (e.key === 'w') {
     PopOut();
+  }
+
+  if (e.key === 'o' && typeof OpenSettings == "function") {
+    OpenSettings();
+  }
+
+  if (e.key === '?' && typeof ShowShortcuts == "function") {
+    ShowShortcuts();
   }
 
   /*

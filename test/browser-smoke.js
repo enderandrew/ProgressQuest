@@ -123,6 +123,21 @@ function step(name, ok, detail) {
     return "first entry: " + first.trim();
   });
 
+  await tryStep("Settings opens from the menu, and keeps a setting", async () => {
+    await page.locator("#MenuBar .menu-top", { hasText: "View" }).click();
+    await page.locator("#MenuBar .menu-pop:visible li", { hasText: "Settings" }).click();
+    await page.waitForSelector("dialog.win95[open] .settings");
+    await page.click("dialog.win95[open] .settings-tabs button[data-tab=Events]");
+    await page.selectOption("dialog.win95[open] .settings-pane[data-tab=Events] select", "30");
+    await page.click("dialog.win95[open] .settings-tabs button[data-tab=Keyboard]");
+    const keys = await page.$$eval("dialog.win95[open] .shortcuts kbd", (k) => k.length);
+    await page.click("dialog.win95[open] .win95-buttons button.primary");
+    const linger = await page.evaluate(() => EventPopupLinger());
+    if (linger != 30) throw new Error("the pop-up time came back as " + linger);
+    if (keys < 10) throw new Error("only " + keys + " shortcuts listed");
+    return keys + " shortcuts listed";
+  });
+
   await tryStep("a backup downloads and the hero saves", async () => {
     const [dl] = await Promise.all([page.waitForEvent("download"), page.evaluate(() => ExportHero())]);
     return dl.suggestedFilename();
