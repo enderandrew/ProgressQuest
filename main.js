@@ -2412,10 +2412,20 @@ function Put(list, key, value) {
 }
 
 
+// What a screen reader calls each bar (role="progressbar")
+var ProgressBarLabels = { ExpBar: "Experience", PlotBar: "Plot", QuestBar: "Quest", TaskBar: "Current task",
+                          HPBar: "Health", MPBar: "Mana", EncumBar: "Encumbrance" };
+
 function ProgressBar(id, tmpl) {
   this.id = id;
   this.bar = $("#"+ id + " > .bar");
   this.tmpl = tmpl;
+  // For screen readers: a progress bar, 0 to 100, with the hint as its text
+  this.box = $("#" + id);
+  if (this.box && this.box.attr)
+    this.box.attr({ role: "progressbar", "aria-label": ProgressBarLabels[id] || id,
+                    "aria-valuemin": 0, "aria-valuemax": 100 });
+  this.shown = { now: null, text: null };
 
   this.Max = function () { return game[this.id].max; };
   this.Position = function () { return game[this.id].position; };
@@ -2439,6 +2449,11 @@ function ProgressBar(id, tmpl) {
       var p = this.Max() ? 100 * this.Position() / this.Max() : 0;
       this.bar.css("width", p + "%");
       this.bar.parent().find(".hint").text(game[this.id].hint);
+      // (the ARIA values only when they change: the task bar moves every tick)
+      var now = Math.floor(p), text = game[this.id].hint;
+      if (this.id == "TaskBar" && game.kill) text = game.kill.replace(/\.\.\.$/, "") + ": " + now + "%";
+      if (now !== this.shown.now) { this.box.attr("aria-valuenow", now); this.shown.now = now; }
+      if (text !== this.shown.text) { this.box.attr("aria-valuetext", text); this.shown.text = text; }
     }
   };
 
