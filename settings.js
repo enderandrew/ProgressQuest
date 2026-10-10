@@ -212,6 +212,7 @@ K.Shortcuts = [
     ["T", "Tactics"],
     ["J", "The journal"],
     ["C", "Combat log"],
+    ["R", "Scrollr, the realm's gossip (or Equipment again)"],
     ["N", "Narration on or off"],
     ["E", "Event pop-ups on or off"],
     ["O", "Settings"],

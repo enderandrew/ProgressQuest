@@ -186,6 +186,29 @@ function step(name, ok, detail) {
     return said.win;
   });
 
+  await tryStep("Scrollr: R opens the feed, newest first, and clears the count", async () => {
+    await page.evaluate(() => {
+      ToggleFeed(false);
+      ["realm", "town"].forEach((key, i) => GossipPost(GossipDice("smoke" + i), key, K.GossipPools[key]));
+    });
+    const badge = await page.$eval("#FeedNew", (e) => e.textContent);
+    await page.keyboard.press("r");
+    const seen = await page.evaluate(() => ({
+      open: !$("#Feed").prop("hidden") && $("#GearPane").prop("hidden"),
+      posts: $("#Feed .post").length, first: $("#Feed .post-text").first().text(),
+      newest: game.feed[game.feed.length - 1].x, badge: $("#FeedNew").text(),
+      selected: $("#TabFeed").attr("aria-selected")
+    }));
+    await page.keyboard.press("r");
+    const back = await page.evaluate(() => !$("#GearPane").prop("hidden"));
+    if (!/\(\d+\)/.test(badge)) throw new Error("no count of new posts: " + JSON.stringify(badge));
+    if (!seen.open || seen.selected != "true") throw new Error("R didn't open the feed");
+    if (!seen.posts || seen.first != seen.newest) throw new Error("the newest post isn't first: " + seen.first);
+    if (seen.badge) throw new Error("the count stayed: " + seen.badge);
+    if (!back) throw new Error("R again didn't go back to Equipment");
+    return seen.posts + " posts; newest: " + seen.first;
+  });
+
   await tryStep("time lost with the game open (a throttled tab) is played through", async () => {
     const r = await page.evaluate(() => new Promise((done) => {
       CloseEventPopup();

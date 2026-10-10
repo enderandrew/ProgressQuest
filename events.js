@@ -1415,7 +1415,7 @@ K.Sink.Chatter = {
 
 K.SinkCompany = {
   henchman: { who: '{hench}',
-    idle: ['{who} sharpens the pointy stick. Then sharpens it again, in case it heard',
+    idle: ['{who} sharpens the pointy stick. Then sharpens it again, to be more henchy',
            '{who} asks if henching includes dental. It does not',
            '{who} practices a menacing laugh. It needs work',
            '{who} carries your bags, mostly. One is missing. {who} looks at the sky',
@@ -1435,7 +1435,7 @@ K.SinkCompany = {
              '{who} tells the temple you fell down some stairs. There were no stairs'] },
 
   horse: { who: 'your horse',
-    idle: ['{who} stops to eat a hedge. The whole hedge',
+    idle: ['{who} stops to eat a hedge. The whole hedge, and a bit of cobblestone as well.',
            '{who} makes a noise no horse should make. It is, after all, only sixty percent horse',
            '{who} walks sideways for a mile. You let it. You aren’t sure which end is the front',
            'Someone asks what breed {who} is. You say “yes”',
@@ -1462,11 +1462,12 @@ K.SinkCompany = {
           '{who} says a real {klass} would have opened with {spell}. You are a real {klass}. {who} sighs'],
     close: ['“A close fight is a sign of poor preparation,” says {who}, who prepared nothing',
             '{who} suggests using {spell} sooner. Or at all',
-            '“Cutting it fine,” says {who}. “I charge extra for funerals”'],
+            '“Cutting it close is fine,” says {who}. “But I charge extra for funerals”'],
     flee: ['“Retreat is a valid strategy,” says {who}. “It’s in chapter nine. You haven’t got to chapter nine”',
            '{who} gives you an incomplete for {foe}. You can retake it'],
     defeat: ['{who}: “Lesson one: be bigger than the monster. We’ll revisit lesson one”',
              '{who} gives you a detention. You’re still unconscious, so it counts as served',
+			 '{who} suggests you suck less next combat, and not get hit so much.',
              '“And what have we learned?” asks {who}. You have learned that {foe} hits hard'] },
 
   trainer: { who: 'Coach {hench}',
@@ -1483,6 +1484,8 @@ K.SinkCompany = {
   backpack: {
     idle: ['You find a pocket in your bigger backpack that you didn’t know it had. It has a snack in it',
            'The cup holder of your backpack holds a cup, for the first time. You’re oddly moved',
+		   'Dora the Explorer comes out of nowhere to sing a song about your backpack',
+		   'Your backpack informs you with a note that despites its name, you do not have to wear it exclusively on your back',
            'You lock your backpack. You lose the key. You keep the key in the backpack'] },
 
   insurance: { who: 'your insurer',
@@ -1497,11 +1500,12 @@ K.SinkCompany = {
            'Your manager at {who} writes: “All fine. Do not visit. Everything is fine”',
            '{who} has been voted the third best tavern in a field of two',
            '{who} has a new house special. Nobody will say what’s in it, including the cook'],
-    win: ['{who} names a stew after your fight with {foe}. It’s mostly {foe}'] },
+    win: ['{who} names a stew after your fight with {foe}. It’s mostly chunks of {foe}'] },
 
   statue: { who: 'your statue',
     idle: ['Pigeons have claimed {who}. It’s more popular than you’ve ever been',
            'Someone put a hat on {who}. It looks better than you do',
+		   'Someone attaches a plaque to your statue that lists the taunt from Old Bastard™.',
            'Tourists ask {who} for directions. It’s about as helpful as you',
            'Someone has carved their initials into {who}’s shin. You feel it, somehow'],
     win: ['{foe} saw {who} once. It shows'] },
@@ -1522,6 +1526,7 @@ K.SinkCompany = {
     idle: ['{who} sits in your pack, being a rock. You are proud of {who}',
            'You tell {who} about your day. {who} listens. {who} always listens',
            '{who} hasn’t moved since you last checked. Good rock',
+		   '{who} feels reassuring in your hand. You sincerely feel less alone.',
            'You polish {who}. {who} doesn’t say thank you. {who} doesn’t have to',
            'A child asks why you carry a rock. “This is {who},” you say, and the child apologizes',
            'You leave {who} in the sun for a bit. {who} seems happier. You can tell'],
@@ -1538,12 +1543,14 @@ K.SinkCompany = {
 
   ballad: {
     idle: ['Children in the street sing your ballad. They get the words wrong, and your name',
-           'You hum your own ballad. A stranger asks you to stop. You hum louder'],
+           'People add a verse to your ballad with the taunt from the Old Bastard™. People really seem to like to sing that bit.',
+		   'You hum your own ballad. A stranger asks you to stop. You hum louder'],
     win: ['A bard adds a verse about {foe}. It doesn’t scan, but it rhymes'] },
 
   feast: {
     idle: ['You’re still full from the feast. Your armor is unhappy about it',
-           'You eat the leftovers from the feast. Still good. Mostly'] },
+           'Some of the food from the feast must have dribbled into bits of your armor. You find surprise left-overs.',
+		   'You eat the leftovers from the feast. Still good. Mostly'] },
 
   crossfit: {
     idle: ['You tell a stranger about your workout. They didn’t ask',
@@ -1567,7 +1574,12 @@ K.SinkCompany = {
 
   mindfulness: {
     idle: ['You are present in the moment. The moment smells of goblin',
-           'You let go of all attachment. Then you go back for your pack'],
+           'You reflect on the tenets of non-judgement. You wish the Old Bastard™ would do the same. Instead they taunt you a second time.',
+		   'You reflect on the tenets of patience, but you do not have much time for it and must get back to your quest.',
+		   'You let go of all attachment. Then you go back for your pack'],
+    win: ['You thank {foe} for their contribution to that encounter. Their contribution was mostly dying.',
+          'You tell {foe} about mindfulness and keeping an open mind. They have an open mind now that you smashed their skull.',
+		  'You tell {foe} about mindfulness and letting go. They let go of their mortal coil.'],
     defeat: ['You accept the defeat with total equanimity. Then you cry a bit'] }
 };
 
@@ -1635,8 +1647,8 @@ K.Events = K.Events.concat([
 
   { key: 'tutor-quiz', sink: 'tutor', where: ['rest'], weight: 6,
     lines: ['{who} springs a pop quiz on you',
-            'Question one: “What is a sword?” You get it right',
-            'Question two is about a spell you don’t have. You pass, barely. It still counts'],
+            'Question one: “Where is the pointy bit on a sword?” You get it mostly right',
+            'Question two is about a spell you don’t have. You pass gas and the test.'],
     effect: { xp: 0.05 } },
 
   { key: 'tutor-fieldtrip', sink: 'tutor', where: ['field'], weight: 2,

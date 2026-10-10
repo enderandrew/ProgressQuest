@@ -22,6 +22,7 @@
 //              (the limits are in Balance below: change them when you change
 //              the balance on purpose)
 //   journal    it stays small
+//   Scrollr    the feed never changes the game, never repeats, stays small
 //
 // Exits with 1 if anything failed, which turns the GitHub check red.
 
@@ -44,7 +45,8 @@ const Balance = {
   daysToFifty: [3, 14],        // game time to reach level 50, in days
   minWinRate: 0.75,            // fights won (cleanly or narrowly)
   maxDefeatRate: 0.15,         // fights lost
-  maxJournalBytes: 110000      // a level 50 hero's journal (K.Journal.MaxChars of text, plus a little)
+  maxJournalBytes: 110000,     // a level 50 hero's journal (K.Journal.MaxChars of text, plus a little)
+  maxFeedBytes: 32000          // ...and Scrollr's posts (K.Gossip.MaxChars, plus the lines used)
 };
 
 // ---- A tiny test harness ------------------------------------------------------
@@ -108,11 +110,11 @@ function tmpFile(name, data) {
 // The parts of a save that are the game itself (not when it was saved, or
 // random IDs)
 function gameOf(s) {
-  // (and not the journal: its asides have their own dice, seeded by the
-  // hero's random life ID, and never touch the game's)
+  // (and not the journal or Scrollr: they have their own dice, seeded by
+  // the hero's random life ID, and never touch the game's)
   const skip = new Set(["date", "stamp", "seal", "birthday", "birthstamp", "lifeId", "replay", "daily"]);
   const out = {};
-  Object.keys(s).sort().forEach((k) => { if (!skip.has(k) && !/^journal/.test(k)) out[k] = s[k]; });
+  Object.keys(s).sort().forEach((k) => { if (!skip.has(k) && !/^(journal|feed)/.test(k)) out[k] = s[k]; });
   return JSON.stringify(out);
 }
 
@@ -346,6 +348,40 @@ test("the journal starts at level 1, and keeps to its budget however long a hero
        `${Math.round(flooded.chars / 1000)}k characters`);
 });
 
+// ---- Scrollr --------------------------------------------------------------------
+
+test("Scrollr posts without changing the game, never twice, within its budget (gossip.js)", () => {
+  const fingerprint = (h) => JSON.stringify([h.tasks, h.elapsed, h.Traits, h.Stats, h.Equips, h.Inventory, h.Spells, h.boons]);
+  const withFeed = play({ levels: 22, seed: "test-gossip" });
+  const without = play({ levels: 22, seed: "test-gossip", setup(ctx) { ctx.Gossip = undefined; } });
+  check(!without.feed, "Gossip was still called");
+  check(fingerprint(withFeed) == fingerprint(without), "the hero's game came out different with Scrollr");
+  const feed = withFeed.feed || [];
+  check(feed.length >= 20, "only " + feed.length + " posts by level 22");
+  const used = withFeed.feedUsed || [];
+  check(new Set(used).size == used.length, "a line was used twice");
+  const texts = feed.map((p) => p.x);
+  check(new Set(texts).size == texts.length, "a post was repeated");
+  check(!texts.some((t) => /\{[a-z0-9-]+\}/.test(t)), "a placeholder wasn't filled in: " + texts.find((t) => /\{/.test(t)));
+  const kinds = {};
+  feed.forEach((p) => { kinds[p.w] = (kinds[p.w] || 0) + 1; });
+  check(kinds.s && kinds.c && kinds.m, "posters missing: " + JSON.stringify(kinds));
+  // and a flood keeps to the budget
+  let flooded = null;
+  play({ levels: 3, seed: "test-gossip-flood", onTask(ctx) {
+    if (flooded) return;
+    const g = ctx.game;
+    ctx.K.Gossip.Gap = 0; ctx.K.Gossip.GapGrowth = 0; ctx.K.Gossip.OtherChance = 1;
+    // (made-up lines, so there's no running out)
+    for (let i = 0; i < 2000; ++i) ctx.GossipPost(ctx.GossipDice("flood" + i), "flood", { who: "crier", lines: ["Flood " + i + ". ".repeat(60)] });
+    flooded = { n: g.feed.length, chars: JSON.stringify(g.feed).length, max: ctx.K.Gossip.Max };
+  } });
+  check(flooded && flooded.n <= flooded.max, "kept " + (flooded && flooded.n) + " posts");
+  check(flooded && flooded.chars <= Balance.maxFeedBytes, "the flooded feed is " + (flooded && flooded.chars) + " bytes");
+  note(`${feed.length} posts by level 22 (${Object.keys(kinds).map((k) => k + " " + kinds[k]).join(", ")}); ` +
+       `e.g. ${feed[feed.length - 1].b}: "${feed[feed.length - 1].x}"`);
+});
+
 // ---- elites -------------------------------------------------------------------------
 
 test("named elites turn up, and give up uniques (K.Elite)", () => {
@@ -393,6 +429,11 @@ if (!QUICK) {
         const bytes = JSON.stringify(h.journal).length;
         note(`journal: ${h.journal.length} entries, ${Math.round(bytes / 1024)} KB`);
         check(bytes <= Balance.maxJournalBytes, `the journal grew to ${bytes} bytes`);
+      }
+      if (h.feed) {
+        const bytes = JSON.stringify([h.feed, h.feedUsed]).length;
+        note(`Scrollr: ${h.feedN} posts, ${h.feed.length} kept, ${Math.round(bytes / 1024)} KB`);
+        check(bytes <= Balance.maxFeedBytes, `Scrollr grew to ${bytes} bytes`);
       }
     });
   });

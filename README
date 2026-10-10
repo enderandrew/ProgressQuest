@@ -462,6 +462,40 @@ the finale always stay. A level 50 hero's journal comes to about 300
 entries and 70 KB.
 
 
+Scrollr
+-------
+
+The realm has a social feed, Scrollr, on a tab beside Equipment (click
+it, press R, or View > Scrollr; the tab counts the posts you haven't
+seen). Sir Spreddit, the realm's town crier, posts the big news to s/all:
+levels (every fifth, and now and then another), the end of an Act, a
+named elite, a choice you made (or fate made for you), the Old Bastard™,
+a death. His assistant criers, the Sub-Spreddits, post the local news of
+the Act's kingdom to s/<kingdom>, including what you just splurged on.
+And everyone else has an account too:
+
+- monsters complain about the hero (on arriving at the Killing Fields™,
+  after losing, after the hero runs) or gloat (after winning),
+- the Act's quest giver gets passive-aggressive about the quest under
+  way, and thanks you (eventually) when one's done,
+- merchants brag about their markup right after a splurge,
+- the Act's nemesis taunts, a named elite who wins brags,
+- and the townsfolk reply.
+
+Like the journal, it's kept with the hero and never changes how the game
+goes: its dice are its own (the game's are swapped out while it makes up
+a name), so a replay is unaffected. To keep it small, no line is ever
+posted twice (it keeps a short hash of each one used), the everyday
+chatter slows down as the feed grows (3 game minutes apart at first, up
+to an hour), and only the newest 120 posts, or 20,000 characters, are
+kept. A level 50 hero sees about 200 posts; the save holds about 22 KB of
+them. Once a kind of post has used all its lines, that kind goes quiet.
+
+The lines, who posts them and when are in gossip.js (K.GossipPools,
+K.GossipSinks for each gold sink, K.GossipReplies); check-events.js checks
+their placeholders.
+
+
 The desktop
 -----------
 

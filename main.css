@@ -317,6 +317,35 @@ body.show-log #CombatLog { display: block; }
 #CombatLog .fight-head { font-weight: bold; margin-top: 3px; }
 #CombatLog .fight-result { font-style: italic; color: #555; margin-bottom: 2px; }
 
+/* ---- Equipment | Scrollr tabs (gossip.js) ------------------------------- */
+.feed-tabs { display: flex; gap: 2px; margin: 0 0 -1px 0; position: relative; z-index: 1; }
+.feed-tabs [role=tab] {
+  font: inherit;
+  font-size: 8pt;
+  padding: 1px 8px 2px;
+  background: #d4d0c8;
+  color: #000;
+  border: 1px solid #808080;
+  border-bottom-color: #000;
+  border-radius: 3px 3px 0 0;
+  cursor: pointer;
+}
+.feed-tabs [role=tab][aria-selected=true] { background: #fff; border-color: #000; border-bottom-color: #fff; font-weight: bold; }
+.feed-tabs [role=tab]:focus-visible { outline: 1px dotted #000; outline-offset: -3px; }
+#FeedNew { color: #a00000; font-weight: bold; }
+#Feed { height: 200px; width: auto; padding: 0 4px; font-size: 8pt; }
+#Feed[hidden], #GearPane[hidden] { display: none; }
+#Feed .post { padding: 4px 0 3px; border-bottom: 1px solid #ddd; }
+#Feed .post-head { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#Feed .post-icon { margin-right: 3px; }
+#Feed .post-sub, #Feed .post-foot { color: #5a5a5a; }
+#Feed .post-text { margin: 1px 0 1px 1.6em; }
+#Feed .post-reply { margin: 2px 0 1px 2.4em; padding-left: 4px; border-left: 2px solid #ccc; color: #333; }
+#Feed .post-foot { margin-left: 1.6em; font-size: 7pt; }
+#Feed .post-s .post-head b { color: #00007a; }
+#Feed .post-m .post-head b, #Feed .post-e .post-head b, #Feed .post-n .post-head b { color: #8a0000; }
+#Feed .feed-empty { color: #5a5a5a; padding: 8px 2px; font-style: italic; }
+
 /* (The layouts for other screen sizes are at the end of this file.) */
 #Spells table, #Inventory table, #Plots table, #Quests table { width: 100%; }
 #main td { height: 15px; line-height: 1.2; }

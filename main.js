@@ -344,13 +344,18 @@ function Dequeue() {
       if (Split(game.task,3) != '*' && game.combat && game.combat.outcome != 'flee')
         CodexMonster(Split(game.task,1), FightWon());
       if (game.combat && game.combat.elite && !game.dead) EliteFought(game.combat);
+      if (game.combat && !game.dead && typeof Gossip == "function")
+        Gossip('fight', { outcome: game.combat.outcome, rounds: game.combat.rounds, elite: game.combat.elite,
+                          kind: Split(game.task,1), loot: Split(game.task,3) == '*' ? '' : Split(game.task,3) });
       if (FightWon()) MaybeEvent('field', game.task);
     } else if (game.task == 'rest' || game.task == 'heal') {
       if (game.task == 'heal') PayTemple();
       RestoreHealth();
       if (game.task == 'rest') MaybeEvent('rest', 'rest');
+      if (game.task == 'rest' && typeof Gossip == "function") Gossip('rest');
     } else if (game.task == 'heading') {
       MaybeEvent('road', 'heading');
+      if (typeof Gossip == "function") Gossip('arrive');
     } else if (Split(game.task,0) == 'event') {
       FinishEvent();
     } else if (game.task == 'choice') {
@@ -373,6 +378,7 @@ function Dequeue() {
         BankPurse();
         game.shopped = false;
         MaybeEvent('town', 'market');
+        if (typeof Gossip == "function") Gossip('town');
       }
       if (game.task == 'sell') {
         var amt = GetI(Inventory, 1) * GetI(Traits,'Level');
@@ -521,6 +527,7 @@ function EliteFought(fight) {
   Log((won ? 'Slew ' : 'Fought ') + e.name + (item ? ' and took ' + item.name : ''));
   if (won) CodexElite(e, item, fight.foeLevel);
   if (typeof JournalElite == "function") JournalElite(fight, item);
+  if (typeof Gossip == "function") Gossip('elite', { elite: e, item: item });
   Announce("An elite! " + e.name + ", an elite " + e.kind + ", " + (won ? "falls. You take " + item.name + "." :
            fight.outcome == 'flee' ? "chases you off." : "beats you."), true);
   // Shown like an event: it's news
@@ -668,6 +675,7 @@ function Percent(p) {
 function Die(fight) {
   var obit = MakeObituary(fight);
   if (typeof JournalDeath == "function") JournalDeath(obit.cause);   // (the tombstone has a Journal button)
+  if (typeof Gossip == "function") Gossip('death', { cause: obit.cause });
   Announce("Your hero has died: " + obit.cause + ".", true);
   game.dead = obit;
   game.queue.length = 0;
@@ -830,6 +838,7 @@ function FinishBoss() {
     f.wonLevel = GetI(Traits,'Level');
     Log('Defeated the Old Bastard\u2122 after ' + f.tries + (f.tries == 1 ? ' try' : ' tries'));
     if (typeof JournalFinale == "function") JournalFinale(true, f.tries);
+    if (typeof Gossip == "function") Gossip('finale', { won: true });
     CodexFlag('boss');
     if (f.tries == 1) CodexFlag('bossfirst');
     if (game.mode == 'hardcore') CodexFlag('bosshc');
@@ -840,6 +849,7 @@ function FinishBoss() {
   } else {
     f.nextTry = (game.elapsed || 0) + K.Boss.RetryMinutes * 60;
     if (typeof JournalFinale == "function") JournalFinale(false, f.tries);
+    if (typeof Gossip == "function") Gossip('finale', { won: false });
     QueueFinale('escape');
   }
 }
@@ -1350,6 +1360,11 @@ function FinishEvent() {
   Log('Event: ' + ev.key);
   if (typeof JournalEvent == "function") JournalEvent(ev, result);
   if (ev.sink && typeof JournalSplurge == "function") JournalSplurge(ev);
+  if (typeof Gossip == "function" && !ev.perk) {
+    var bought = ev.sink ? SinkByKey(ev.sink) : null;
+    if (ev.sink) Gossip('splurge', { sink: ev.sink, thing: bought ? bought.label : 'something', gold: ev.gold });
+    else Gossip('event', ev);
+  }
 
   var shown = game.recentEvent;
   if (!shown || shown.key != ev.key || shown.result.length)
@@ -2995,6 +3010,7 @@ function WinItem() {
 function CompleteQuest() {
   QuestBar.reset(50 + Random(100));
   if (Quests.length()) {
+    if (typeof Gossip == "function") Gossip('quest', { done: game.bestquest });
     game.questsDone = (game.questsDone || 0) + 1;
     Log('Quest completed: ' + game.bestquest);
     Quests.CheckAll();
@@ -3093,6 +3109,7 @@ function toArabic(s) {
 }
 
 function CompleteAct() {
+  if (typeof Gossip == "function") Gossip('act', { act: ActCaption(game.act) });
   Plots.CheckAll();
   game.act += 1;
   PlotBar.reset(60 * 60 * (1 + 5 * game.act)); // 1 hr + 5/act
@@ -3193,6 +3210,7 @@ function LevelUp() {
   RestoreHealth();  // a new level, a fresh start
   ExpBar.reset(LevelUpTime(GetI(Traits,'Level')));
   if (typeof JournalLevel == "function") JournalLevel();
+  if (typeof Gossip == "function") Gossip('level');
   // A new perk on offer every K.PerkEvery levels (OfferPerk, between tasks)
   var lv = GetI(Traits,'Level');
   if (lv % K.PerkEvery == 0 && lv <= K.PerkLast) game.perkDue = (game.perkDue || 0) + 1;
@@ -3348,6 +3366,7 @@ function FormCreate() {
     ShowEventPopupToggle();
     $("#TacticsLink").on("click", function (e) { e.preventDefault(); OpenTactics(); });
     SetUpPanels();
+    if (typeof SetUpFeed == "function") SetUpFeed();
     $("#CodexLink").on("click", function (e) {
       e.preventDefault();
       CodexFlush(function () { window.open("index.html#codex", "pq-codex"); });
@@ -3865,6 +3884,7 @@ function LoadGame(sheet) {
   ShowLegacy();
   ShowPerks();
   ShowOwned();
+  if (typeof ShowFeed == "function") ShowFeed(true);
   ShowDaily();
   ShowTactics();
   ShowFight(true);
@@ -4012,6 +4032,10 @@ function FormKeyDown(e) {
 
   if (e.key === 'j' && typeof OpenJournal == "function") {
     OpenJournal();
+  }
+
+  if (e.key === 'r' && typeof ToggleFeed == "function") {
+    ToggleFeed();
   }
 
   if (e.key === 'e') {

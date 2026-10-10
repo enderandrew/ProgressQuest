@@ -155,6 +155,7 @@ function run(opts) {
   if (fs.existsSync(path.join(opts.dir, "codex.js"))) load(ctx, opts.dir, "codex.js");
   load(ctx, opts.dir, "main.js");
   if (fs.existsSync(path.join(opts.dir, "journal.js"))) load(ctx, opts.dir, "journal.js");
+  if (fs.existsSync(path.join(opts.dir, "gossip.js"))) load(ctx, opts.dir, "gossip.js");
   load(ctx, opts.dir, "newguy.js");
   if (opts.setup) opts.setup(ctx);   // (for tests: change the rules first)
 

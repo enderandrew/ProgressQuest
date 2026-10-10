@@ -24,7 +24,7 @@ const warn = (msg) => { warnings++; console.log("warning " + msg); };
 
 // 1. Does every script parse?
 const scripts = ["config.js", "story.js", "combat.js", "events.js", "daily.js", "codex.js", "transfer.js", "replay.js", "menubar.js", "sheet.js",
-                 "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js", "journal.js", "settings.js"];
+                 "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js", "journal.js", "gossip.js", "settings.js"];
 for (const file of scripts) {
   const full = path.join(dir, file);
   if (!fs.existsSync(full)) continue;
@@ -46,7 +46,7 @@ const sandbox = { console, window: {}, document: null, navigator: { userAgent: "
 sandbox.window = sandbox;
 sandbox.$ = sandbox.jQuery = Object.assign(function () { return {}; }, { extend: Object.assign, each: () => {} });
 const ctx = vm.createContext(sandbox);
-for (const file of ["config.js", "story.js", "combat.js", "events.js"]) {
+for (const file of ["config.js", "story.js", "combat.js", "events.js"].concat(fs.existsSync(path.join(dir, "gossip.js")) ? ["gossip.js"] : [])) {
   try {
     vm.runInContext(fs.readFileSync(path.join(dir, file), "utf8"), ctx, { filename: file });
   } catch (e) {
@@ -245,6 +245,41 @@ Object.keys(K.SinkCompany || {}).forEach((key) => {
   });
 });
 
+// 2d. Scrollr (gossip.js): every line's placeholders mean something
+const GOSSIP_WORDS = ["hero", "race", "klass", "a-klass", "level", "alignment", "weapon", "gear", "spell", "wins",
+                      "deaths", "kingdom", "kingdom2", "giver", "nemesis", "nemesis2", "guy", "guy2", "boring",
+                      "item", "race-one", "insult", "act", "quest", "foe", "a-foe", "monsters", "loot", "rounds",
+                      "done", "thing", "gold", "event", "where", "choice", "seconds", "elite", "kind", "cause"];
+const GOSSIP_WHO = ["spreddit", "crier", "monster", "elite", "giver", "merchant", "nemesis", "townsfolk"];
+let gossipLines = 0;
+function checkGossip(name, lines) {
+  if (!Array.isArray(lines) || !lines.length) { error(`${name} should be a list of lines`); return; }
+  checkHoles(name, lines, "lines");
+  const seen = {};
+  lines.forEach((line) => {
+    if (typeof line !== "string" || !line.trim()) { error(`${name}: a line is empty or isn't text`); return; }
+    gossipLines++;
+    if (seen[line]) warn(`${name}: "${line}" is there twice (it can only be posted once anyway)`);
+    seen[line] = true;
+    (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+      if (GOSSIP_WORDS.indexOf(p.slice(1, -1)) < 0) error(`${name}: unknown placeholder ${p} in "${line}"`);
+    });
+    if (/[{}]/.test(line.replace(/\{[^}]*\}/g, ""))) error(`${name}: an unmatched { or } in "${line}"`);
+  });
+}
+if (K.GossipPools) {
+  Object.keys(K.GossipPools).forEach((key) => {
+    const pool = K.GossipPools[key];
+    if (GOSSIP_WHO.indexOf(pool.who) < 0) error(`K.GossipPools.${key}: who should be one of ${GOSSIP_WHO.join(", ")}`);
+    checkGossip(`K.GossipPools.${key}`, pool.lines);
+  });
+  Object.keys(K.GossipSinks || {}).forEach((key) => {
+    if (!sinkByKey[key]) error(`K.GossipSinks.${key}: there's no gold sink "${key}"`);
+    checkGossip(`K.GossipSinks.${key}`, K.GossipSinks[key]);
+  });
+  checkGossip("K.GossipReplies", K.GossipReplies);
+}
+
 (K.Races || []).forEach((r) => { r = r.split("|")[0]; if (!racial[r]) warn(`the ${r} race has no event of its own`); });
 (K.Klasses || []).forEach((c) => { c = c.split("|")[0]; if (!racial["class:" + c]) warn(`the ${c} class has no event of its own`); });
 
@@ -303,6 +338,7 @@ console.log(`\n${storyCount} stories (${Object.keys(K.RaceStories || {}).length}
             `${Object.keys(K.ClassStories || {}).length} classes, ${(K.Stories || []).length} others).`);
 console.log(`\n${(K.Perks || []).length} perks, ${(K.Sinks || []).length} gold sinks, ` +
             `${Object.keys(K.SinkCompany || {}).length} with a word to say and ${events.filter((e) => e.sink).length} events of their own.`);
+if (K.GossipPools) console.log(`Scrollr: ${gossipLines} lines, never posted twice.`);
 console.log(`\n${events.length} events, ${withChoices} with choices` +
             ` (${Math.round(withChoices / Math.max(1, events.length) * 100)}%).` +
             ` ${errors} error(s), ${warnings} warning(s).`);

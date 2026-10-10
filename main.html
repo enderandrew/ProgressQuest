@@ -53,6 +53,7 @@
 <script src="transfer.js"></script>
 <script src="main.js"></script>
 <script src="journal.js"></script>
+<script src="gossip.js"></script>
 <script src="menubar.js"></script>
 <script src="settings.js"></script>
 <script src="desktop.js"></script>
@@ -167,6 +168,12 @@
     <h2 class="label head panel-head"><button type="button" class="panel-toggle" aria-expanded="true" aria-controls="PanelBody-equipment">Equipment</button></h2>
     <div class="panel-body" id="PanelBody-equipment">
 
+    <div class="feed-tabs" role="tablist" aria-label="Equipment, or Scrollr, the realm's gossip">
+      <button type="button" role="tab" id="TabGear" aria-selected="true" aria-controls="GearPane">Equipment</button>
+      <button type="button" role="tab" id="TabFeed" aria-selected="false" aria-controls="Feed" tabindex="-1"
+              title="The realm's gossip: Sir Spreddit and the Sub-Spreddits (R)">&#x1F4EF; Scrollr <span id="FeedNew"></span></button>
+    </div>
+    <div id="GearPane" role="tabpanel" aria-labelledby="TabGear">
     <table id="Equips" class="listbox">
       <tbody>
         <tr><td>Weapon</td><td></td></tr>
@@ -183,6 +190,8 @@
       </tbody>
     </table>
     <div id="GearPower" class="profile"></div>
+    </div>
+    <div id="Feed" class="scroll listbox" role="tabpanel" aria-labelledby="TabFeed" tabindex="0" hidden></div>
 
         </div>
     </section>

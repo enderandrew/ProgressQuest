@@ -222,6 +222,8 @@ var MenuBar = [
     { label: "&Narration", key: "N", checked: NarrationOn, action: ToggleNarration },
     { label: "&Event Pop-ups", key: "E", checked: EventPopupsOn, action: ToggleEventPopups },
     { label: "&Combat Log", key: "C", checked: function () { return $("body").hasClass("show-log"); }, action: ToggleCombatLog },
+    { label: "Sc&rollr", key: "R", checked: function () { return typeof FeedOpen == "function" && FeedOpen(); },
+      action: function () { ToggleFeed(); } },
     { label: "&Desktop Icons", checked: function () { return !DesktopIconsHidden(); }, action: ToggleDesktopIcons },
     { label: "E&xpand All Panels", enabled: CompactLayout, action: function () { SetAllPanels(false); } },
     { label: "Collapse All Pane&ls", enabled: CompactLayout, action: function () { SetAllPanels(true); } },
