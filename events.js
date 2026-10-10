@@ -1324,7 +1324,7 @@ K.Sinks = [
             'It rhymes “{hero}” with “hero”. Close enough'],
     boon: { questMult: 1.2, name: 'The Ballad of {hero}', hours: 8,
             help: 'Quests go 20% faster (the quest givers have all heard it)',
-            ends: 'Nobody sings your ballad anymore. There’s a new one, about a goose' } }
+            ends: 'Nobody sings your ballad anymore. There’s a new one, about a goose' } },
 
   { key: 'feast', label: 'a feast', spend: 0.3,
     lines: ['You throw a feast for the whole of {kingdom}',

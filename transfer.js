@@ -541,12 +541,25 @@ function ShareUrl(code) {
 // The Share window: the link, and ways to send it
 function ShareHero(sheet) {
   ShareCode(sheet).then(function (code) {
-    var url = ShareUrl(code);
+    ShareLinkBox({ title: "Share Character Sheet", url: ShareUrl(code),
+      text: "Anyone with this link can see " + sheet.Traits.Name +
+            "'s character sheet as it is right now. It isn't a save: they can look, but not play or import.",
+      shareTitle: sheet.Traits.Name + " - Progress Quest Remix",
+      shareText: sheet.Traits.Name + ", level " + sheet.Traits.Level + " " + sheet.Traits.Race + " " + sheet.Traits.Class });
+  }, function () {
+    WinBox({ title: "Share Character Sheet", icon: "error", text: "This browser couldn't make a share link." });
+  });
+}
+
+// A window with a link to copy, open or share. opts: { title, text, url,
+// shareTitle, shareText }
+function ShareLinkBox(opts) {
+  (function () {
+    var url = opts.url;
     var box = document.createElement("div");
     box.className = "share-box";
     var p = document.createElement("p");
-    p.textContent = "Anyone with this link can see " + sheet.Traits.Name +
-      "'s character sheet as it is right now. It isn't a save: they can look, but not play or import.";
+    p.textContent = opts.text;
     var input = document.createElement("input");
     input.type = "text";
     input.readOnly = true;
@@ -568,15 +581,128 @@ function ShareHero(sheet) {
       { label: "Open", action: function () { window.open(url, "_blank", "noopener"); } }
     ];
     if (navigator.share) buttons.push({ label: "Share…", action: function () {
-      navigator.share({ title: sheet.Traits.Name + " - Progress Quest Remix",
-                        text: sheet.Traits.Name + ", level " + sheet.Traits.Level + " " + sheet.Traits.Race + " " + sheet.Traits.Class,
-                        url: url }).catch(function () {});
+      navigator.share({ title: opts.shareTitle || opts.title, text: opts.shareText || "", url: url }).catch(function () {});
     } });
     buttons.push({ label: "Close", value: null });
-    WinBox({ title: "Share Character Sheet", icon: "info", body: box, buttons: buttons, wide: true });
-  }, function () {
-    WinBox({ title: "Share Character Sheet", icon: "error", text: "This browser couldn't make a share link." });
+    WinBox({ title: opts.title, icon: "info", body: box, buttons: buttons, wide: true });
+  })();
+}
+
+// ---- Challenge links -----------------------------------------------------------
+//
+// No server, so everything a friend needs is in the link:
+//
+//   index.html#custom/<seed>/<mutators>[/<mode>]
+//       a Custom Run (Challenge Modes) filled in: the same seed rolls the
+//       same hero, and with the same choices plays the same game
+//   index.html#vs/<code>[/<code>]
+//       heroes side by side (the Daily, or the same custom run). With one
+//       code, the menu puts your own hero from the same challenge beside it.
+//
+// A versus code is a small sealed summary of a hero (VersusPayload), packed
+// like a character sheet's share code.
+
+function ChallengeUrl(seed, mutators, mode) {
+  var parts = ["custom", encodeURIComponent(seed || ""), (mutators || []).join(",")];
+  if (mode) parts.push(mode);
+  return new URL("index.html#" + parts.join("/"), window.location.href).href;
+}
+
+function VersusUrl(codes) {
+  return new URL("index.html#vs/" + codes.filter(Boolean).join("/"), window.location.href).href;
+}
+
+// How far a Daily hero got toward the goal (as DailyProgress in main.js
+// does in the game, from a save)
+function DailyProgressOf(g) {
+  var d = g.daily, s = (d && d.start) || {};
+  if (!d || !d.goal) return 0;
+  switch (d.goal.type) {
+    case 'level':  return parseInt(g.Traits.Level, 10) || 0;
+    case 'quests': return (g.questsDone || 0) - (s.quests || 0);
+    case 'gold':   return (g.goldEarned || 0) - (s.gold || 0);
+    case 'wins':   return (g.wins || 0) - (s.wins || 0);
+  }
+  return 0;
+}
+
+// A hero, in brief, for a side-by-side comparison
+function VersusPayload(g) {
+  var d = g.daily;
+  var p = {
+    v: 1, n: g.Traits.Name, r: g.Traits.Race, c: g.Traits.Class, a: g.Traits.Alignment || "",
+    l: parseInt(g.Traits.Level, 10) || 0,
+    st: K.Stats.map(function (s) { return parseInt(g.Stats[s], 10) || 0; }),
+    w: g.wins || 0, d: g.deaths || 0, qd: g.questsDone || 0, el: Math.floor(g.elapsed || 0),
+    gp: K.Equips.reduce(function (t, e) { return t + ((g.EquipPower || {})[e] || 0); }, 0),
+    sp: (g.Spells || []).length, best: g.bestequip || "",
+    pk: g.perks || [], mut: g.mutators || [], seed: g.runSeed || "", mode: g.mode || "normal",
+    fin: g.finale && g.finale.state == "won" ? g.finale.wonLevel : 0,
+    dead: g.dead ? (g.dead.cause || "dead") : "",
+    ch: g.cheater ? g.cheater.reason : "", uv: g.unverified || "",
+    at: Date.now()
+  };
+  if (d) p.dy = { date: d.date, label: d.label || "", s: d.status || "", p: d.played || 0,
+                  pr: DailyProgressOf(g), t: (d.goal && d.goal.target) || 0 };
+  return Seal(p);
+}
+
+// The same from a Daily book entry (for a hero who's gone from the roster):
+// only what the book kept. Sealed only if the entry is untouched.
+function VersusPayloadFromBook(e) {
+  var p = { v: 1, n: e.name, r: e.race, c: e.klass, a: "", l: 0, st: [], w: 0, d: 0, qd: 0, el: e.played || 0,
+            gp: 0, sp: 0, best: "", pk: [], mut: [], seed: "daily-" + e.date, mode: "normal", fin: 0, dead: "",
+            ch: e.cheater || "", uv: "", at: Date.now(), partial: true,
+            dy: { date: e.date, label: e.label || "", s: e.status == "started" ? "" : e.status, p: e.played || 0,
+                  pr: e.progress || 0, t: e.target || 0 } };
+  return SealOk(e) ? Seal(p) : p;
+}
+
+// Do two heroes share a challenge? "daily", "seed" (a custom run with the
+// same seed and mutators), or ""
+function SameChallenge(a, b) {
+  if (a.dy && b.dy) return a.dy.date == b.dy.date ? "daily" : "";
+  if (a.dy || b.dy || !a.seed) return "";
+  return a.seed == b.seed && (a.mut || []).slice().sort().join() == (b.mut || []).slice().sort().join() ? "seed" : "";
+}
+
+// Share a hero's challenge: a Daily hero's result (to compare), or a
+// seeded custom run (to play)
+function ShareChallenge(g) {
+  if (g.daily) {
+    ShareCodeFor(VersusPayload(g)).then(function (code) {
+      ShareLinkBox({ title: "Share Daily Result", url: VersusUrl([code]),
+        text: "Send this to someone who played the " + g.daily.date + " Daily Challenge (" + (g.daily.label || "") +
+              "). The link shows " + g.Traits.Name + " as they are right now, and their own hero for that day beside them. " +
+              "No server: everything is in the link.",
+        shareTitle: "Daily Challenge " + g.daily.date, shareText: g.Traits.Name + " vs. you: the " + g.daily.date + " Daily" });
+    }, function () {
+      WinBox({ title: "Share Daily Result", icon: "error", text: "This browser couldn't make a share link." });
+    });
+    return;
+  }
+  if (!g.runSeed && !(g.mutators || []).length) {
+    WinBox({ title: "Share This Run", icon: "info",
+             text: g.Traits.Name + " was rolled at random, with no seed, so nobody else can play the same game. " +
+                   "Start a Custom Run with a seed (Challenge Modes) for a run you can share." });
+    return;
+  }
+  var url = ChallengeUrl(g.runSeed, g.mutators, g.mode == "hardcore" || g.mode == "plus" ? g.mode : "");
+  ShareCodeFor(VersusPayload(g)).then(function (code) {
+    var vs = VersusUrl([code]);
+    var box = WinBox({ title: "Share This Run", icon: "info", wide: true,
+      text: "To play the same run" + (g.runSeed ? " (seed “" + g.runSeed + "”" : " (") +
+            ((g.mutators || []).length ? (g.runSeed ? ", " : "") + (g.mutators || []).length + " mutator" + ((g.mutators || []).length == 1 ? "" : "s") : "") +
+            "):\n" + url + "\n\nTo compare heroes from it, side by side:\n" + vs,
+      buttons: [{ label: "Copy Run Link", primary: true, action: function () { CopyText(url); } },
+                { label: "Copy Comparison Link", action: function () { CopyText(vs); } },
+                { label: "Close", value: null }] });
+    return box;
   });
+}
+
+function CopyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(function () {});
 }
 
 // The character sheet as plain text (Edit > Copy Character Sheet)

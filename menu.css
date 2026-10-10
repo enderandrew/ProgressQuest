@@ -345,3 +345,22 @@ dialog::backdrop { background: rgba(0, 20, 80, 0.25); }
 .xp-list .fallen .words { display: block; font-size: 11px; font-style: italic; margin-top: 2px; }
 .xp-list .fallen .epitaph { display: block; font-size: 11px; font-family: Georgia, serif; color: #444; }
 .xp-list .fallen .words:empty, .xp-list .fallen .epitaph:empty { display: none; }
+
+/* ---- Challenge links ---------------------------------------------------------- */
+
+.mode-card.custom.from-link { border-color: #2c6e1f; box-shadow: 0 0 0 2px #cfe8c6; }
+.from-link-note { background: #eef7ea; border: 1px solid #b8d9aa; padding: 4px 8px; color: #1f4d16; }
+#dlgVersus { width: min(760px, calc(100vw - 12px)); }
+.versus-table { width: 100%; border-collapse: collapse; font-size: 12px; background: #fff; table-layout: fixed; }
+.versus-table th, .versus-table td { padding: 3px 8px; border-bottom: 1px solid #efeee6; text-align: left; vertical-align: top;
+                                     overflow-wrap: anywhere; }
+.versus-table tbody th { width: 90px; color: var(--xp-muted); font-weight: normal; }
+.versus-table thead th { background: linear-gradient(#fff, #ebeadb); border-bottom: 1px solid #c7c5b2; height: 18px; }
+.versus-table thead th:first-child { width: 90px; }
+.versus-table thead th.leads { color: #7a5a00; }
+.versus-table thead th.empty { color: var(--xp-muted); font-weight: normal; font-style: italic; }
+.versus-table tbody tr:first-child td { font-weight: bold; font-size: 13px; }
+#versusBody .error { color: #900; }
+@media (max-width: 520px) {
+  .versus-table tbody th, .versus-table thead th:first-child { width: 64px; }
+}

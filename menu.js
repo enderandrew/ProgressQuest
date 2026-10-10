@@ -34,11 +34,14 @@ function CloseWindows() {
 // index.html#resume, #new, #plus, #hall, #challenge, #codex, #faq, #github
 // index.html#hall/<id> opens the Hall with that legend highlighted (a hero
 // who just retired); index.html#resume/<life ID> the Resume list with that
-// hero highlighted (the one you just left).
+// hero highlighted (the one you just left). Challenge links (transfer.js):
+// #custom/<seed>/<mutators>[/<mode>] and #vs/<code>[/<code>].
 var hashTarget = "";
 function WindowFromHash() {
   var parts = (window.location.hash || "").slice(1).split("/");
   var name = parts[0].toLowerCase();
+  if (name == "custom") { OpenCustomLink(parts.slice(1)); return; }
+  if (name == "vs") { OpenVersus(parts.slice(1).filter(Boolean).slice(0, 2)); return; }
   hashTarget = DecodeName(parts[1] || "");
   var ids = { "new": "dlgNew", resume: "dlgResume", plus: "dlgPlus", hall: "dlgHall",
               challenge: "dlgChallenge", hardcore: "dlgHardcore", codex: "dlgCodex", faq: "dlgFaq", github: "dlgGitHub" };
@@ -131,17 +134,166 @@ function ShowDailyCard() {
       if (!past.length) { $("#dailyPast").empty(); return; }
       var table = $("<table>");
       past.forEach(function (e) {
+        var mine = heroes.filter(function (h) { return h.daily && h.daily.date == e.date; })[0];
         table.append($("<tr>")
           .append($("<td>").text(e.date))
           .append($("<td>").text(e.name + ", " + e.race + " " + e.klass))
           .append($("<td>").text(e.label))
           .append($("<td>").addClass(e.status).text(DailyStatusText(e) +
             (e.cheater || !SealOk(e) ? " \u26a0" : ""))
-            .attr("title", e.cheater ? "Branded a cheater: " + e.cheater : !SealOk(e) ? "Edited outside the game" : "")));
+            .attr("title", e.cheater ? "Branded a cheater: " + e.cheater : !SealOk(e) ? "Edited outside the game" : ""))
+          .append($("<td>").append($("<a href=#>").text("Share").attr("title",
+            "A link that shows this hero beside someone else's from the same day")
+            .on("click", function (ev) { ev.preventDefault(); ShareDailyEntry(e, mine); }))));
       });
       $("#dailyPast").empty().append($("<b>").text("Your dailies")).append(table);
     });
   });
+}
+
+// Share a past Daily: from the hero if they're still on the roster (the
+// whole picture), otherwise from what the book kept
+function ShareDailyEntry(e, summary) {
+  var share = function (payload) {
+    ShareCodeFor(payload).then(function (code) {
+      ShareLinkBox({ title: "Share Daily Result", url: VersusUrl([code]),
+        text: "Send this to someone who played the " + e.date + " Daily Challenge (" + e.label + "). " +
+              "The link shows " + e.name + " beside their own hero for that day. No server: everything is in the link.",
+        shareTitle: "Daily Challenge " + e.date, shareText: e.name + " vs. you: the " + e.date + " Daily" });
+    });
+  };
+  if (summary) storage.loadHero(summary.id, function (sheet) { share(sheet ? VersusPayload(sheet) : VersusPayloadFromBook(e)); });
+  else share(VersusPayloadFromBook(e));
+}
+
+// ---- Side by side (index.html#vs/<code>[/<code>]) --------------------------------
+
+function OpenVersus(codes) {
+  var dlg = document.getElementById("dlgVersus");
+  if (!dlg) return;
+  $("dialog[open]").each(function () { if (this !== dlg) this.close(); });
+  $("#versusBody").empty().append($("<p class=dim>").text("Reading the link…"));
+  $("#versusNote").text("");
+  $("#versusCopy").prop("disabled", true);
+  if (!dlg.open) dlg.showModal();
+  if (!codes.length) { VersusError("This link has no heroes in it."); return; }
+  Promise.all(codes.map(ReadShareCode)).then(function (heroes) {
+    if (heroes.some(function (h) { return !h || !h.v || !h.n; })) throw new Error("not a hero");
+    if (heroes.length == 2) { ShowVersus(heroes[0], heroes[1], codes); return; }
+    // one hero: find yours from the same challenge
+    YourVersusHero(heroes[0], function (yours) {
+      if (!yours) { ShowVersus(heroes[0], null, codes); return; }
+      ShareCodeFor(yours).then(function (code) { ShowVersus(heroes[0], yours, [codes[0], code], true); },
+                               function () { ShowVersus(heroes[0], yours, codes, true); });
+    });
+  }).catch(function () { VersusError("This link couldn't be read. It may have been cut short when it was copied."); });
+}
+
+function VersusError(text) {
+  $("#versusBody").empty().append($("<p class=error>").text(text));
+}
+
+// Your hero for the same Daily (or the same seed and mutators), newest first;
+// for a Daily you no longer have, what the Daily book kept
+function YourVersusHero(theirs, callback) {
+  storage.listHeroes(function (list) {
+    var hit = list.filter(function (h) {
+      if (theirs.dy) return h.daily && h.daily.date == theirs.dy.date;
+      return !h.daily && theirs.seed && h.runSeed == theirs.seed &&
+             (h.mutators || []).slice().sort().join() == (theirs.mut || []).slice().sort().join();
+    })[0];
+    if (hit) { storage.loadHero(hit.id, function (sheet) { callback(sheet ? VersusPayload(sheet) : null); }); return; }
+    if (!theirs.dy) { callback(null); return; }
+    storage.loadDailies(function (book) {
+      var e = book[theirs.dy.date];
+      callback(e ? VersusPayloadFromBook(e) : null);
+    });
+  });
+}
+
+// Who's ahead: +1 the first, -1 the second, 0 a tie (or not comparable)
+function VersusLead(a, b, same) {
+  var sign = function (x) { return x > 0 ? 1 : x < 0 ? -1 : 0; };
+  if (same == "daily") {
+    var rank = function (h) { return h.dy.s == "done" ? 2 : h.dy.s == "died" ? 0 : 1; };
+    if (rank(a) != rank(b)) return sign(rank(a) - rank(b));
+    if (a.dy.s == "done") return sign(b.dy.p - a.dy.p);          // less play to finish wins
+    return sign(a.dy.pr - b.dy.pr);                                // otherwise, further along
+  }
+  if (same == "seed") return sign(a.l - b.l) || sign(b.el - a.el);   // higher level, then quicker
+  return 0;
+}
+
+// mine: b is your own hero, from this browser
+function ShowVersus(a, b, codes, mine) {
+  var same = b ? SameChallenge(a, b) : "";
+  var lead = b ? VersusLead(a, b, same) : 0;
+  var verified = function (h) { return SealOk(h) && !h.ch && !h.uv; };
+  var hours = function (sec) { return sec ? Hours(sec) : "—"; };
+  var perk = function (k) { var p = typeof PerkByKey == "function" && PerkByKey(k); return p ? p.label : k; };
+  var mutators = function (h) {
+    return (h.mut || []).map(function (k) { var m = K.Mutators.filter(function (x) { return x.key == k; })[0]; return m ? m.label : k; }).join(", ");
+  };
+  var rows = [
+    ["Hero", function (h) { return h.n; }],
+    ["", function (h) { return (h.l ? "Level " + h.l + " " : "") + h.r + " " + h.c; }],
+    ["Challenge", function (h) { return h.dy ? "Daily " + h.dy.date + ": " + h.dy.label :
+                                        h.seed ? "Seed “" + h.seed + "”" : "No seed (a random roll)"; }],
+    ["Result", function (h) {
+      if (!h.dy) return h.dead ? "☠ " + h.dead : h.fin ? "Beat the Old Bastard™ at level " + h.fin : "Still going";
+      return h.dy.s == "done" ? "✔ Done in " + hours(h.dy.p) + " of play" :
+             h.dy.s == "failed" ? "✘ Out of time (" + (h.dy.pr || 0).toLocaleString() + " of " + (h.dy.t || 0).toLocaleString() + ")" :
+             h.dy.s == "died" ? "☠ Died trying" : "Under way: " + (h.dy.pr || 0).toLocaleString() + " of " + (h.dy.t || 0).toLocaleString(); }],
+    ["Time played", function (h) { return hours(h.el); }],
+    ["Fights", function (h) { return h.partial ? "—" : h.w.toLocaleString() + " won, " + h.d.toLocaleString() + " lost"; }],
+    ["Quests", function (h) { return h.partial ? "—" : h.qd.toLocaleString(); }],
+    ["Stats", function (h) { return (h.st || []).length ? K.Stats.slice(0, 6).map(function (s, i) { return s + " " + h.st[i]; }).join(" · ") : "—"; }],
+    ["HP / MP", function (h) { return (h.st || []).length ? h.st[6] + " / " + h.st[7] : "—"; }],
+    ["Gear power", function (h) { return h.gp ? h.gp + (h.best ? " (best: " + h.best + ")" : "") : "—"; }],
+    ["Spells", function (h) { return h.sp ? h.sp : "—"; }],
+    ["Perks", function (h) { return (h.pk || []).map(perk).join(", ") || "—"; }],
+    ["Mutators", function (h) { return mutators(h) || "—"; }],
+    ["As of", function (h) { return h.at ? new Date(h.at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—"; }],
+    ["Seal", function (h) { return h.ch ? "⚠ Branded a cheater: " + h.ch : h.uv ? "⚠ Unverified" :
+                                   verified(h) ? "✔ Straight from the game" : "⚠ Edited after it was shared"; }]
+  ];
+  var table = $("<table class=versus-table>");
+  var head = $("<tr>").append($("<th>"));
+  [a, b].forEach(function (h, i) {
+    var ahead = lead == (i ? -1 : 1);
+    var who = mine ? (i ? "Yours" : "Theirs") : "";
+    head.append($("<th>").toggleClass("leads", ahead).toggleClass("empty", !h)
+      .text(!h ? "Your hero goes here" : who + (ahead ? (who ? " · " : "") + "🏆 Ahead" : "")));
+  });
+  table.append($("<thead>").append(head));
+  var body = $("<tbody>").appendTo(table);
+  rows.forEach(function (row) {
+    var tr = $("<tr>").append($("<th>").text(row[0]));
+    [a, b].forEach(function (h) { tr.append($("<td>").text(h ? row[1](h) : "")); });
+    body.append(tr);
+  });
+  $("#versusBody").empty().append(table);
+  var note = !b ? (a.dy ? "You don't have a hero for the " + a.dy.date + " Daily in this browser. " +
+                         (a.dy.date == DailyDate() ? "It's today's: play it (Challenge Modes), then open this link again." :
+                                                     "That day's challenge is over.")
+                       : a.seed ? "You haven't played this run. Open Challenge Modes to roll it (same seed, same hero)." :
+                                  "This hero wasn't on a seeded run, so there's nothing to play alongside.")
+           : same == "daily" ? "Same Daily Challenge, same hero to start with: the rest was choices and patience." +
+                               (lead ? "" : " Too close to call.")
+           : same == "seed" ? "Same seed and mutators: the same hero to start with." + (lead ? "" : " Neck and neck.")
+           : "These two weren't on the same challenge, so there's no winner; here they are anyway.";
+  $("#versusNote").text(note);
+  $("#versusPlay").toggle(!b && !!a.seed && !a.dy).off("click").on("click", function () {
+    window.location.hash = "custom/" + encodeURIComponent(a.seed) + "/" + (a.mut || []).join(",") +
+                           (a.mode == "hardcore" ? "/hardcore" : "");
+  });
+  $("#versusDaily").toggle(!b && !!a.dy && a.dy.date == DailyDate());
+  var url = VersusUrl(codes.slice(0, b ? 2 : 1));
+  $("#versusCopy").prop("disabled", false).off("click").on("click", function () {
+    CopyText(url);
+    $(this).text("Copied").delay(1500).queue(function (next) { $(this).text(b ? "Copy link to this comparison" : "Copy link"); next(); });
+  }).text(b ? "Copy link to this comparison" : "Copy link");
+  history.replaceState(null, "", "#vs/" + codes.slice(0, b ? 2 : 1).join("/"));
 }
 
 // One try a day: make the hero, write it in the book, and play
@@ -187,6 +339,48 @@ function ShowCustomCard() {
   $("#customPlusLabel").toggleClass("disabled", !legendCount)
     .attr("title", legendCount ? "" : "Retire a hero to the Hall of Legends first")
     .find("input").prop("disabled", !legendCount);
+}
+
+// A friend's run (index.html#custom/<seed>/<mutators>[/<mode>]): Challenge
+// Modes with the Custom Run filled in, ready to roll
+function OpenCustomLink(parts) {
+  var seedText = "";
+  try { seedText = decodeURIComponent(parts[0] || ""); } catch (e) { seedText = parts[0] || ""; }
+  seedText = seedText.slice(0, 64);
+  var keys = K.Mutators.map(function (m) { return m.key; });
+  var muts = String(parts[1] || "").split(",").filter(function (k) { return keys.indexOf(k) >= 0; });
+  var mode = parts[2] == "hardcore" || parts[2] == "plus" ? parts[2] : "";
+  OpenWindow("dlgChallenge");
+  ShowCustomCard();
+  $("#customSeed").val(seedText);
+  $("#customMutators input").each(function () { this.checked = muts.indexOf(this.value) >= 0; });
+  if (mode == "plus" && !legendCount) mode = "";   // (New Game+ needs a legend of your own)
+  $("input[name=customMode][value='" + mode + "']").prop("checked", true);
+  var labels = K.Mutators.filter(function (m) { return muts.indexOf(m.key) >= 0; }).map(function (m) { return m.label; });
+  $("#customFromLink").text("Someone sent you this run: " +
+    (seedText ? "seed “" + seedText + "”" : "a random seed") +
+    (labels.length ? ", " + labels.join(", ") : "") + (mode ? ", " + (mode == "plus" ? "New Game+" : "Hardcore") : "") +
+    ". Same seed, same hero; make the same choices and it's the same game.").show();
+  var card = document.querySelector("#dlgChallenge .mode-card.custom");
+  if (card) { card.classList.add("from-link"); card.scrollIntoView({ block: "nearest" }); }
+  $("#customStart").trigger("focus");
+}
+
+// Share what's filled in on the Custom Run card
+function ShareCustom() {
+  var mode = $("input[name=customMode]:checked").val() || "";
+  var seedText = String($("#customSeed").val() || "").trim().slice(0, 64);
+  var muts = $("#customMutators input:checked").map(function () { return this.value; }).get();
+  if (!seedText) {
+    WinBox({ title: "Share This Run", icon: "info",
+             text: "Give the run a seed first: without one, every hero is rolled at random and nobody gets the same game." });
+    return;
+  }
+  ShareLinkBox({ title: "Share This Run", url: ChallengeUrl(seedText, muts, mode),
+    text: "Anyone who opens this link gets the same Custom Run: the same seed rolls the same hero, " +
+          "and with the same choices plays the same game. Then send each other your heroes " +
+          "(File > Share This Run in the game) to compare them side by side.",
+    shareTitle: "A Progress Quest Remix run", shareText: "Try this run: seed “" + seedText + "”" });
 }
 
 function StartCustom() {
@@ -504,6 +698,8 @@ $(function () {
   $("#codexFilter").on("change", function () { ShowCodex(); });
   $("#codexRestore").on("change", function () { if (this.files[0]) RestoreCodex(this.files[0]); this.value = ""; });
   $("#customStart").on("click", StartCustom);
+  $("#customShare").on("click", ShareCustom);
+  $("#versusDaily").on("click", function () { OpenWindow("dlgChallenge"); });
   // Backups are made when asked for, from what's stored then
   $("#hallBackup").on("click", function (e) {
     e.preventDefault();

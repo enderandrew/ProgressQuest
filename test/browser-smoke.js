@@ -188,6 +188,27 @@ function step(name, ok, detail) {
     return r.foe + " / " + r.event.replace(/^.*Took /, "");
   });
 
+  await tryStep("challenge links: a run link fills in Custom Run, and a hero link shows side by side", async () => {
+    // (the smoke-test hero was rolled with a seed, so it can be compared with
+    // itself: the same run in the same browser)
+    const code = await page.evaluate(() => ShareCodeFor(VersusPayload(game)));
+    const menu = await context.newPage();
+    watch(menu, "menu");
+    await menu.goto(BASE + "index.html#custom/" + encodeURIComponent("smoke test") + "/glasscannon");
+    await menu.waitForSelector("#dlgChallenge[open] #customFromLink:visible");
+    const filled = await menu.evaluate(() => [$("#customSeed").val(),
+      $("#customMutators input:checked").map(function () { return this.value; }).get().join()]);
+    if (filled.join("|") != "smoke test|glasscannon") throw new Error("the run link filled in " + filled.join(" / "));
+    await menu.goto(BASE + "index.html");
+    await menu.goto(BASE + "index.html#vs/" + code);
+    await menu.waitForSelector("#dlgVersus[open] .versus-table");
+    const names = await menu.$$eval("#dlgVersus .versus-table tbody tr:first-child td", (t) => t.map((x) => x.textContent));
+    const note = await menu.textContent("#versusNote");
+    await menu.close();
+    if (names.length != 2 || !names[1]) throw new Error("side by side: " + names.join(" / ") + " (" + note + ")");
+    return names.join(" vs ") + ": " + note;
+  });
+
   await tryStep("quitting lands on Resume, with the hero listed", async () => {
     await page.keyboard.press("q");
     await page.waitForURL(/index\.html#resume/);

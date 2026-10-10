@@ -194,6 +194,7 @@ var MenuBar = [
     { label: "&Export Hero…", action: ExportHero },
     { label: "&Import Hero…", action: ImportHero },
     { label: "S&hare Character Sheet…", action: function () { ShareHero(game); } },
+    { label: "Share This &Run…", action: function () { ShareChallenge(game); } },
     "-",
     { label: "Page Set&up…", action: function () { Joke("pageSetup", "Page Setup"); } },
     { label: "&Print…", key: "Ctrl+P", action: function () { Joke("print", "Print"); } },

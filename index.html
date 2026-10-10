@@ -212,7 +212,9 @@
         <span>Mutators</span>
         <span id="customMutators"></span>
       </div>
-      <div class="xp-actions"><button class="xp-button default" id="customStart">Roll a custom hero</button></div>
+      <p id="customFromLink" class="from-link-note" style="display:none"></p>
+      <div class="xp-actions"><button class="xp-button" id="customShare" title="A link that sets up this same run for someone else">Share this run…</button>
+        <button class="xp-button default" id="customStart">Roll a custom hero</button></div>
     </div>
     <div class="mode-card">
       <h2>&#x2620; Hardcore</h2>
@@ -226,6 +228,25 @@
       <div class="xp-actions"><button class="xp-button default" id="startHardcore">Start a Hardcore hero</button></div>
     </div>
     <div class="xp-actions"><button class="xp-button" data-close>Close</button></div>
+  </div>
+</dialog>
+
+<!-- ---- Side by side: index.html#vs/<code>[/<code>] (menu.js, transfer.js) ---- -->
+<dialog class="xp-window" id="dlgVersus" aria-labelledby="dlgVersusTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgVersusTitle">Side by Side</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <div id="versusBody"></div>
+    <p id="versusNote" class="dim"></p>
+    <div class="xp-actions">
+      <button class="xp-button" id="versusPlay" style="display:none">Play this run</button>
+      <button class="xp-button" id="versusDaily" style="display:none">Play today's Daily</button>
+      <button class="xp-button default" id="versusCopy">Copy link</button>
+      <button class="xp-button" data-close>Close</button>
+    </div>
   </div>
 </dialog>
 

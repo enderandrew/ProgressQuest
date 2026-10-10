@@ -666,6 +666,27 @@ over in 20 minutes or next to impossible. The hero's counters
 anyway.
 
 
+Challenge links
+---------------
+
+No server, so a link carries everything:
+
+- index.html#custom/<seed>/<mutators>[/<mode>] opens Challenge Modes with
+  that Custom Run filled in (mutators comma-separated, mode "hardcore" or
+  "plus"). The same seed rolls the same hero; with the same choices it
+  plays the same game. The Custom Run card's "Share this run…" makes one.
+- index.html#vs/<code>[/<code>] shows heroes side by side. Each code is
+  a small sealed summary of a hero (VersusPayload in transfer.js, packed
+  like a character sheet's share link). Share one from the game (File >
+  Share This Run) or from a past Daily in Challenge Modes; whoever opens
+  it gets their own hero from the same Daily (or the same seed and
+  mutators) beside it, picked from their browser, and a link to the pair.
+  For the same Daily, the one who finished in less play is ahead (or got
+  further, if neither finished); for the same run, the higher level.
+  Each side says whether it came straight from the game (the seal) or was
+  edited, as the share page does.
+
+
 The menu bar
 ------------
 
