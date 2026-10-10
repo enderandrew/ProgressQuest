@@ -232,7 +232,6 @@ var MenuBar = [
   { label: "&Game", items: [
     { label: "&Pause", key: "P", checked: IsPaused, action: TogglePause },
     { label: "&Tactics…", key: "T", action: OpenTactics },
-    { label: "&Journal…", key: "J", action: function () { OpenJournal(); } },
     { label: "&Speed", items: [
       { label: "&Slow", action: function () { Joke("slow", "Speed"); } },
       { label: "&Normal", checked: function () { return true; }, action: function () {} },
@@ -249,6 +248,19 @@ var MenuBar = [
     { label: "Challenge &Modes", action: function () { OpenLink("index.html#challenge"); } },
     "-",
     { label: "Main Men&u", action: quit }
+  ] },
+  { label: "&Journal", items: [
+    { label: "&Read the Journal…", key: "J", action: function () { OpenJournal(); } },
+    { label: "&Download as Text", action: function () { DownloadJournal(); } },
+    "-",
+    { label: "&What Gets Written Down", action: function () {
+      WinBox({ title: "The Journal", icon: "info",
+               text: "Your hero keeps a journal from their first step: every level, every Act and how it ended, " +
+                     "every random event (the first of each kind in full, the rest in a line), every named elite, " +
+                     "the choices you made yourself, the Old Bastard™, and the end, however it comes. " +
+                     "Now and then they write something just for you, on the firm understanding that you'll never read it. " +
+                     "It's kept with the hero, so the oldest repeats make room for new entries over a long life." });
+    } }
   ] },
   { label: "&Help", items: [
     { label: "&Help Topics", key: "F1", action: function () { OpenLink("faq.html"); } },

@@ -5,6 +5,7 @@
 //   node test/balance.js                    every perk against none, to level 40
 //   node test/balance.js --levels 50 --seeds 6 --perks miser,bigspender
 //   node test/balance.js --sinks            gold sinks on against off
+//   node test/balance.js --elites           named elites on against off
 //
 // Each seed rolls the same hero (race, class, stats) for every perk, so the
 // comparison is hero against same hero. A perk changes how the dice fall from
@@ -41,6 +42,7 @@ function playOne(job) {
       ctx.K.Perks.push({ key: "placebo+", label: "Placebo", xp: 1.001, pro: "", con: "" },
                        { key: "placebo-", label: "Placebo", xp: 0.999, pro: "", con: "" });
       if (job.noSinks) ctx.K.Sinks = null;
+      if (job.noElites) ctx.K.Elite = null;
     } });
   } finally {
     console.log = log;
@@ -75,12 +77,15 @@ function main() {
   const levels = +arg("--levels", 30), nSeeds = +arg("--seeds", 24);
   const jobs = +arg("--jobs", os.cpus().length), mut = arg("--mut", undefined);
   const seeds = Array.from({ length: nSeeds }, (_, i) => "bal-" + (i + 1));
-  const sinks = process.argv.includes("--sinks");
+  const sinks = process.argv.includes("--sinks"), elites = process.argv.includes("--elites");
 
   // The configurations: the first BASES are the baseline
   const BASES = 3;
   let configs;
-  if (sinks) {
+  if (elites) {
+    configs = [{ name: "elites off", perks: [], noElites: true }, { name: "", perks: ["placebo+"], noElites: true },
+               { name: "", perks: ["placebo-"], noElites: true }, { name: "elites on", perks: [] }];
+  } else if (sinks) {
     configs = [{ name: "sinks off", perks: [], noSinks: true }, { name: "", perks: ["placebo+"], noSinks: true },
                { name: "", perks: ["placebo-"], noSinks: true }, { name: "sinks on", perks: [] }];
   } else {
@@ -109,12 +114,12 @@ function main() {
       const e = JSON.parse(line);
       cache[e.key] = e.result;
     });
-  const jobKey = (j) => JSON.stringify([version, j.seed, j.levels, j.mut || "", j.perks, !!j.noSinks]);
+  const jobKey = (j) => JSON.stringify([version, j.seed, j.levels, j.mut || "", j.perks, !!j.noSinks, !!j.noElites]);
 
   const queue = [];
   const results = configs.map(() => ({}));
   configs.forEach((cfg, ci) => seeds.forEach((seed) => {
-    const job = { id: queue.length, ci, seed, levels, mut, perks: cfg.perks, noSinks: cfg.noSinks };
+    const job = { id: queue.length, ci, seed, levels, mut, perks: cfg.perks, noSinks: cfg.noSinks, noElites: cfg.noElites };
     const hit = cache[jobKey(job)];
     if (hit) results[ci][seed] = hit;
     else queue.push(job);

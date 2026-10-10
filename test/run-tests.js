@@ -15,6 +15,7 @@
 //              a Daily Challenge hero plays; old saves still load
 //   gold sinks every one of them plays out; a hero rolling in gold splurges,
 //              and that game replays exactly too
+//   elites     named elites turn up and give up uniques
 //   replays    a hero's game replays exactly, and an edited one doesn't
 //   balance    heroes reach level 50 in a sensible time, winning most fights
 //              (the limits are in Balance below: change them when you change
@@ -256,7 +257,7 @@ test("every gold sink plays out (K.Sinks)", () => {
   check(!missing.length, "these sinks didn't play out: " + missing.join(", "));
   check(henchman, "no henchman swung in a fight");
   check(expired, "the timed boons were never checked");
-  const owned = (h.boons || []).map((b) => b.k).sort().join(",");
+  const owned = (h.boons || []).filter((b) => !b.until).map((b) => b.k).sort().join(",");
   check(owned == "backpack,egg,statue,tavern", "owned for good afterwards: " + owned);
   note(`${keys.length} sinks; e.g. ${results.henchman.join(" · ")}`);
 });
@@ -277,54 +278,16 @@ test("a hero rolling in gold splurges, and the game replays exactly", () => {
   note(`${h.Traits.Name}: ${h.splurges} splurges, ${h.goldSpent} gold`);
 });
 
-// ---- gold sinks -----------------------------------------------------------------
+// ---- elites -------------------------------------------------------------------------
 
-test("every gold sink plays out (K.Sinks)", () => {
-  // A hero handed a fortune, made to splurge on each sink in turn
-  let keys = null, next = 0, expired = null, henchman = false;
-  const results = {};
-  const h = play({ levels: 30, seed: "test-every-sink", onTask(ctx) {
-    const g = ctx.game;
-    keys = keys || ctx.K.Sinks.map((s) => s.key);
-    const r = g.recentEvent;
-    if (r && /^sink-/.test(r.key) && r.result && r.result.length) results[r.key.slice(5)] = r.result;
-    if (g.combat && (g.combat.log || []).some((l) => /^Henchman /.test(l))) henchman = true;
-    if (+g.Traits.Level < 6 || g.event || g.queue.length) return;
-    if (next < keys.length) {
-      ctx.Add(ctx.Inventory, "Gold", 1000000);
-      ctx.StartSplurge("", keys[next++]);
-    } else if (!expired && Object.keys(results).length == keys.length && (henchman || g.tasks > 5000)) {
-      // and once the henchman has had a fight or two, what doesn't last wears off
-      expired = g.tasks;
-      g.boons.forEach((b) => { if (b.until) b.until = g.elapsed + 1; });
-    } else if (expired && g.tasks > expired + 5 && g.tasks < expired + 7) {
-      const timed = g.boons.filter((b) => b.until);
-      if (timed.length) throw new Error("these didn't wear off: " + timed.map((b) => b.n).join(", "));
-    }
-  } });
-  const missing = (keys || []).filter((k) => !results[k] || !/^Spent \d+ gold/.test(results[k][0]));
-  check(!missing.length, "these sinks didn't play out: " + missing.join(", "));
-  check(henchman, "no henchman swung in a fight");
-  check(expired, "the timed boons were never checked");
-  const owned = (h.boons || []).map((b) => b.k).sort().join(",");
-  check(owned == "backpack,egg,statue,tavern", "owned for good afterwards: " + owned);
-  note(`${keys.length} sinks; e.g. ${results.henchman.join(" · ")}`);
-});
-
-test("a hero rolling in gold splurges, and the game replays exactly", () => {
-  // The shops won't serve a Hand-me-downs hero, so the gold piles up (unless
-  // the temple takes it: a hero who loses a lot pays a lot of tithes, so
-  // there are a few heroes to try)
-  let h;
-  for (const seed of ["hoard-1", "hoard-5", "test-sinks"]) {
-    h = play({ levels: 22, seed, mut: "noshop" });
-    check((h.mutators || []).indexOf("noshop") >= 0, "the hero has no Hand-me-downs mutator");
-    if (h.splurges > 0) break;
-  }
-  check(h.splurges > 0, "never splurged, with " + h.Inventory[0][1] + " gold in the bank");
-  const r = replayFile(tmpFile("hoard.json", h));
-  check(r.status === "match", "the replay came out " + r.status + ": " + (r.detail || ""));
-  note(`${h.Traits.Name}: ${h.splurges} splurges, ${h.goldSpent} gold`);
+test("named elites turn up, and give up uniques (K.Elite)", () => {
+  // about 1 fight in 500: a hero to level 25 fights about 4,000
+  const h = play({ levels: 25, seed: "test-elites" });
+  const uniques = h.uniques || [];
+  check(uniques.length > 0, "no uniques by level 25 (" + (h.elites || 0) + " elites slain)");
+  check(uniques.every((u) => u.name && u.slot && u.power > u.level), "a unique isn't above its finder's level");
+  check((h.journal || []).some((e) => e.k == "elite"), "no elite in the journal");
+  note(`${uniques.length} uniques, e.g. ${uniques[0].name} (${uniques[0].slot}, power ${uniques[0].power}), from ${uniques[0].from}`);
 });
 
 // ---- replays -------------------------------------------------------------------

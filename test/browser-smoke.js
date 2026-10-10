@@ -111,6 +111,18 @@ function step(name, ok, detail) {
     return entries + " journal entries";
   });
 
+  await tryStep("the Journal menu opens the journal", async () => {
+    await page.evaluate(() => CloseEventPopup());
+    const menu = page.locator("#MenuBar .menu-top", { hasText: "Journal" });
+    await menu.click();
+    await page.locator("#MenuBar .menu-pop:visible li", { hasText: "Read the Journal" }).click();
+    await page.waitForSelector("dialog.win95[open] .journal");
+    const first = await page.textContent("dialog.win95[open] .journal-entry .journal-stamp");
+    await page.click("dialog.win95[open] .win95-buttons button.primary");
+    if (!/level 1$/.test(first.trim())) throw new Error("the first entry is from " + first);
+    return "first entry: " + first.trim();
+  });
+
   await tryStep("a backup downloads and the hero saves", async () => {
     const [dl] = await Promise.all([page.waitForEvent("download"), page.evaluate(() => ExportHero())]);
     return dl.suggestedFilename();
@@ -128,50 +140,54 @@ function step(name, ok, detail) {
     return seal.trim();
   });
 
-  await tryStep("a hero rolling in gold splurges (a henchman, a tavern)", async () => {
+  await tryStep("a named elite is slain for a unique", async () => {
     const r = await page.evaluate(() => {
       CloseEventPopup();
       const play = () => { TaskBar.reposition(TaskBar.Max()); Timer1Timer(); };
-      const settle = () => { for (let i = 0; i < 100 && (game.event || game.queue.length); ++i) play(); };
-      settle();
-      Add(Inventory, "Gold", 1000000);
-      for (const key of ["henchman", "tavern"]) {
-        StartSplurge("", key);
-        settle();
-      }
-      ShowBuffs();
-      return { boons: $("#Boons").text(), owned: $("#Owned").text(), event: $("#RecentWhere").text() + ": " + $("#RecentResult").text(),
-               popup: document.getElementById("EventDialog").open };
+      for (let i = 0; i < 100 && (game.event || game.queue.length); ++i) play();
+      // the next fight is an elite: every seed passes (K.Elite.Odds of 1), and
+      // the elite is made weak enough to lose
+      const odds = K.Elite.Odds, hp = K.Elite.HP;
+      K.Elite.Odds = 1; K.Elite.HP = 0.01;
+      let tries = 0;
+      while (!(game.combat && game.combat.elite && game.combat.done) && tries++ < 200) play();
+      K.Elite.Odds = odds; K.Elite.HP = hp;
+      const won = game.combat.outcome == "win" || game.combat.outcome == "close";
+      return { won, foe: game.combat.foe, uniques: (game.uniques || []).length,
+               marked: $("#Equips tr.unique").length, event: $("#RecentWhere").text() + ": " + $("#RecentResult").text(),
+               journal: (game.journal || []).filter((e) => e.k == "elite").length };
     });
     await page.evaluate(() => CloseEventPopup());
-    if (!/^Splurged: Henchman \S+ \(\d+h \d+m\)/.test(r.boons)) throw new Error("under the health bars: " + r.boons);
-    if (!/^Owns: The .*, a tavern in /.test(r.owned)) throw new Error("under the purse: " + r.owned);
-    if (!/^Money to burn: Spent \d+ gold on a tavern/.test(r.event)) throw new Error("the last event: " + r.event);
-    if (!r.popup) throw new Error("no event pop-up");
-    return r.boons + " / " + r.owned;
+    if (!r.won) throw new Error("lost to " + r.foe);
+    if (!r.uniques || !r.marked) throw new Error(`uniques ${r.uniques}, marked in the equipment list ${r.marked}`);
+    if (!/^An elite!: Took .+ \(.+, power \d+\)/.test(r.event)) throw new Error("the last event: " + r.event);
+    if (!r.journal) throw new Error("not in the journal");
+    return r.foe + " / " + r.event.replace(/^.*Took /, "");
   });
 
-  await tryStep("a hero rolling in gold splurges (a henchman, a tavern)", async () => {
+  await tryStep("a named elite is slain for a unique", async () => {
     const r = await page.evaluate(() => {
       CloseEventPopup();
       const play = () => { TaskBar.reposition(TaskBar.Max()); Timer1Timer(); };
-      const settle = () => { for (let i = 0; i < 100 && (game.event || game.queue.length); ++i) play(); };
-      settle();
-      Add(Inventory, "Gold", 1000000);
-      for (const key of ["henchman", "tavern"]) {
-        StartSplurge("", key);
-        settle();
-      }
-      ShowBuffs();
-      return { boons: $("#Boons").text(), owned: $("#Owned").text(), event: $("#RecentWhere").text() + ": " + $("#RecentResult").text(),
-               popup: document.getElementById("EventDialog").open };
+      for (let i = 0; i < 100 && (game.event || game.queue.length); ++i) play();
+      // the next fight is an elite: every seed passes (K.Elite.Odds of 1), and
+      // the elite is made weak enough to lose
+      const odds = K.Elite.Odds, hp = K.Elite.HP;
+      K.Elite.Odds = 1; K.Elite.HP = 0.01;
+      let tries = 0;
+      while (!(game.combat && game.combat.elite && game.combat.done) && tries++ < 200) play();
+      K.Elite.Odds = odds; K.Elite.HP = hp;
+      const won = game.combat.outcome == "win" || game.combat.outcome == "close";
+      return { won, foe: game.combat.foe, uniques: (game.uniques || []).length,
+               marked: $("#Equips tr.unique").length, event: $("#RecentWhere").text() + ": " + $("#RecentResult").text(),
+               journal: (game.journal || []).filter((e) => e.k == "elite").length };
     });
     await page.evaluate(() => CloseEventPopup());
-    if (!/^Splurged: Henchman \S+ \(\d+h \d+m\)/.test(r.boons)) throw new Error("under the health bars: " + r.boons);
-    if (!/^Owns: The .*, a tavern in /.test(r.owned)) throw new Error("under the purse: " + r.owned);
-    if (!/^Money to burn: Spent \d+ gold on a tavern/.test(r.event)) throw new Error("the last event: " + r.event);
-    if (!r.popup) throw new Error("no event pop-up");
-    return r.boons + " / " + r.owned;
+    if (!r.won) throw new Error("lost to " + r.foe);
+    if (!r.uniques || !r.marked) throw new Error(`uniques ${r.uniques}, marked in the equipment list ${r.marked}`);
+    if (!/^An elite!: Took .+ \(.+, power \d+\)/.test(r.event)) throw new Error("the last event: " + r.event);
+    if (!r.journal) throw new Error("not in the journal");
+    return r.foe + " / " + r.event.replace(/^.*Took /, "");
   });
 
   await tryStep("quitting lands on Resume, with the hero listed", async () => {
@@ -202,6 +218,24 @@ function step(name, ok, detail) {
       await page.waitForSelector(selector);
     });
   }
+
+  await tryStep("the Codex lists the unique, and the Bestiary marks the elite's kind", async () => {
+    await page.click('#dlgCodex [data-tab="uniques"]');
+    await page.waitForSelector("#codexPane.codex-uniques td.unique");
+    const unique = await page.textContent("#codexPane td.unique");
+    await page.click('#dlgCodex [data-tab="bestiary"]');
+    await page.waitForSelector("#codexPane.codex-bestiary td.elite");
+    return unique;
+  });
+
+  await tryStep("the Codex lists the unique, and the Bestiary marks the elite's kind", async () => {
+    await page.click('#dlgCodex [data-tab="uniques"]');
+    await page.waitForSelector("#codexPane.codex-uniques td.unique");
+    const unique = await page.textContent("#codexPane td.unique");
+    await page.click('#dlgCodex [data-tab="bestiary"]');
+    await page.waitForSelector("#codexPane.codex-bestiary td.elite");
+    return unique;
+  });
 
   await browser.close();
   server.close();

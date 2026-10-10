@@ -412,6 +412,27 @@ story.js too (every race and class has a story, at least 3 quests each,
 no unknown placeholders).
 
 
+The journal
+-----------
+
+Every hero keeps a journal (the Journal menu, or J), from their very
+first step: each level, each Act and how it ended, every random event
+(the first of each kind in full; repeats a line each, gathered into the
+next level's entry), every named elite, the choices you make yourself,
+the Old Bastard™ (with a line for your race and one for your class: the
+same ones the victory scene plays, K.FinaleRaceEndings and
+K.FinaleClassEndings in story.js), and the end. Now and then the hero
+writes something just for the reader, sure that nobody will read it.
+It has dice of its own, so it never changes how a game goes.
+
+The journal is saved with the hero, and a hero can idle for months, so
+it has a budget (K.Journal in journal.js): 1,500 entries and 100,000
+characters. Over budget, the oldest of the least interesting entries go
+first (repeated events, then asides and level lines...); the first few
+entries and the finale always stay. A level 50 hero's journal comes to
+about 300 entries and 110 KB, about two thirds of the save.
+
+
 The desktop
 -----------
 

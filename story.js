@@ -1337,6 +1337,8 @@ K.FinaleStory = {
     'The Old Bastard™ staggers, wheezes, and falls to his knees',
     '“You haven\'t seen the last of me,” he croaks. You have, actually',
     'Your quest to right this particular wrong is finally over',
+    '{raceending}',
+    '{classending}',
     'Word of your victory spreads across the land. Bards start rhyming things with {hero}',
     'You could retire a legend. Or you could keep going, for the numbers'
   ],
@@ -1347,6 +1349,64 @@ K.FinaleStory = {
   ]
 };
 
+
+// How each race, and each class, takes beating the Old Bastard™: a line each
+// in the victory scene ({raceending} and {classending} above) and in the
+// journal. Keyed by the exact names in K.Races and K.Klasses; check-events.js
+// checks that every race and class has one. Placeholders as in the stories.
+K.FinaleRaceEndings = {
+  "4chan Troll": "Back on the Board, you post a blurry screenshot of the fight. Nobody believes you. Pics or it didn't happen",
+  "Aware-Wolf": "You howl at the moon, apologize to the moon for the noise, and then share your feelings about it at length",
+  "Demi-Canadian": "You apologize to the Old Bastard™ for the inconvenience. He apologizes back. This takes the rest of the afternoon",
+  "Double-Wookiee": "Both halves of you roar in triumph. The cave collapses a little. Nobody gives you a medal, which is typical",
+  "Double-sided Bad Dragon": "You celebrate twice: once from each side",
+  "Enchanted Talking Chamberpot": "They underestimated you your whole life. You were full of surprises. Mostly surprises",
+  "Erotic Sonic Fan-Fic Abomination": "Somewhere, a forum thread about your victory passes four hundred pages. Do not read it. You should not read it",
+  "Filthy Stinkin Lich": "You tuck the victory into your phylactery for safekeeping, next to the laundry",
+  "Goblin-Mode Satyr": "You celebrate by eating the Old Bastard™'s cheese, in the dark, with your hands",
+  "High Treant": "You put down roots on the spot to savor the moment. It is three weeks before anyone can get you moving again",
+  "Hungry Hungry Hobbit": "You celebrate with second breakfast, victory brunch, and a light elevenses of the Old Bastard™'s pantry",
+  "I No Longer Care Bear": "You have beaten the Old Bastard™. You still do not care. It was nice, though. Probably",
+  "Miniature Giant Space Hamster": "You run victory laps on a very small wheel. Go for the eyes, indeed",
+  "My Little Pygmy": "You learn that friendship was the real victory. Also the stabbing. Mostly the stabbing",
+  "Nympho Nymph": "The bards ask how you celebrated. You tell them. They write a much shorter song",
+  "Odorous Oompa Loompa": "You sing a cautionary song about the Old Bastard™. It rhymes, and it is extremely judgmental",
+  "Only Somewhat Racist Dwarf": "You toast the victory with every race in the tavern, even the elves. Mostly the elves. Growth",
+  "Pixie Ironically with a Pixie-Cut": "You celebrate ironically. Then, when nobody is looking, sincerely",
+  "Poultrygeist": "You haunt the Old Bastard™'s cave in triumph, clucking at the stalactites for all eternity",
+  "Reverse-Centaur": "Your horse half takes a bow while your human half does a little victory dance",
+  "Sharkasaurus": "You do a victory lap of the underground lake. It was not built for a shark this size, or a dinosaur this wet",
+  "Stupid Sexy Elf": "You toss your hair in triumph. It catches the light. Somewhere, a bard faints",
+  "Thirsty Cyberman": "You upgrade the Old Bastard™ to deleted, and download a celebratory beverage",
+  "Travelocity Gnome": "You take a selfie with the beaten Old Bastard™ for the brochure. Best rates on vengeance, guaranteed"
+};
+
+K.FinaleClassEndings = {
+  "99th Degree Stonecutter": "You carve the date into the cave wall with your bare hands, and a secret handshake underneath",
+  "Barbarian Pretzel": "You tie yourself into a victory knot. It takes the temple a week to untie you",
+  "Big Bad Voodoo Daddy": "You make a little Old Bastard™ doll for the mantelpiece, in case he ever gets ideas again",
+  "Blood-Sucking Lunatic": "You drain the Old Bastard™'s wine cellar. Only the wine. Mostly the wine",
+  "Boston Cream Strangler": "You leave a single pastry on the Old Bastard™ as your calling card",
+  "Drug Healer": "You prescribe the Old Bastard™ two aspirin and a very long rest",
+  "Drunken Forest Friar": "You raise a toast, then another, then a third to the first two",
+  "Electric Monk": "You believe the Old Bastard™ is beaten. You will go on believing it, so nobody else has to",
+  "Erotical Illusionist": "You make the Old Bastard™ disappear. That one wasn't an illusion. You are very tired",
+  "Fatal Flatulist": "Your victory is announced to the whole cave, and a minute later to everyone downwind",
+  "Grimdark Double-Hell Slayer": "You add the Old Bastard™'s skull to the pile. It is a very large pile, and your therapist has questions",
+  "Hamburglar": "You rob the Old Bastard™'s hoard on your way out. Robble robble",
+  "Dark Starry Knight": "You brood atop the cave for a while, silhouetted against the moon, because somebody has to",
+  "Paperback Fighter": "You write it all down. It's a bestseller in {kingdom}, sold at the checkout next to the gum",
+  "Paula Deen Paladin": "You deep-fry the victory in a stick of butter and serve it to the whole of {kingdom}",
+  "Pinball Wizard": "You tilt the Old Bastard™. Game over. Your initials go at the top of the high-score table",
+  "Sailor Rune": "You strike a pose and give a speech about justice. The Old Bastard™ waits politely until you are done",
+  "Shovel Knight": "You bury the Old Bastard™ yourself. It is the most satisfying use of a shovel to date",
+  "Sorcerer Supreme Pizza": "You celebrate with extra cheese, extra toppings, and an extra-large ego",
+  "Stranger Ranger": "You vanish into the woods before anyone can thank you. That is the whole point of being a Stranger",
+  "Stubborn Jackass": "You refuse to leave the cave until everyone admits you were right all along. Eventually, they do",
+  "Super Show-off Saiyan": "You power up anyway. The cave does not survive it. Nobody asked",
+  "Thief Executive Officer": "You announce the merger. The Old Bastard™'s assets are now yours, less fees",
+  "United States Coast Bard": "You compose a shanty about the battle. It is forty verses long, and every one ends with your name"
+};
 
 // ---- Obituaries (Hardcore) ------------------------------------------------------
 //

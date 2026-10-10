@@ -241,6 +241,21 @@ names(K.Klasses).forEach((c) => checkStory(`Act II story for the ${c} class`, (K
 Object.keys(K.RaceStories || {}).forEach((r) => { if (names(K.Races).indexOf(r) < 0) warn(`K.RaceStories has "${r}", which isn't a race`); });
 Object.keys(K.ClassStories || {}).forEach((c) => { if (names(K.Klasses).indexOf(c) < 0) warn(`K.ClassStories has "${c}", which isn't a class`); });
 
+// The Old Bastard™'s defeat: a line for every race and class
+["K.FinaleRaceEndings", "K.FinaleClassEndings"].forEach((which, i) => {
+  const table = (i ? K.FinaleClassEndings : K.FinaleRaceEndings) || {}, all = names(i ? K.Klasses : K.Races);
+  all.forEach((n) => { if (!table[n]) warn(`${which} has no line for the ${n} ${i ? "class" : "race"}`); });
+  Object.keys(table).forEach((n) => {
+    if (all.indexOf(n) < 0) warn(`${which} has "${n}", which isn't a ${i ? "class" : "race"}`);
+    const line = table[n];
+    if (typeof line !== "string" || !line.trim()) { error(`${which}["${n}"] isn't a line of text`); return; }
+    if (line.indexOf("|") >= 0) error(`${which}["${n}"] has a "|", which the game uses to separate fields`);
+    (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+      if (STORY_WORDS.indexOf(p.slice(1, -1)) < 0) error(`${which}["${n}"]: unknown placeholder ${p}`);
+    });
+  });
+});
+
 // The word lists (K.Monsters, K.Spells, K.Quests...) can have holes too
 Object.keys(K).forEach((k) => { if (Array.isArray(K[k])) checkHoles(`K.${k}`, K[k], "the list"); });
 

@@ -734,11 +734,22 @@ function FinaleVars() {
 // last line can carry a marker for Dequeue.
 function QueueFinale(part, marker) {
   var vars = FinaleVars();
-  var lines = K.FinaleStory[part] || [];
+  vars.raceending = FinaleEnding(K.FinaleRaceEndings, Get(Traits,'Race'));
+  vars.classending = FinaleEnding(K.FinaleClassEndings, Get(Traits,'Class'));
+  // (a race or class without a line of its own just skips it)
+  var lines = (K.FinaleStory[part] || []).filter(function (line) {
+    return !/^\{(race|class)ending\}$/.test(line) || vars[line.slice(1, -1)];
+  });
   $.each(lines, function (i, line) {
     var text = ProperName(StoryText(line, vars)).replace(/\|/g, '/');
     game.queue.push('scene|4|' + text + (marker && i == lines.length - 1 ? '|' + marker : ''));
   });
+}
+
+// The victory line for this race or class (K.FinaleRaceEndings and
+// K.FinaleClassEndings in story.js), or ""
+function FinaleEnding(list, name) {
+  return (list && list[name]) || "";
 }
 
 function StartFinale() {

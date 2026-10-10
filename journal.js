@@ -10,8 +10,13 @@
 // game itself: asides to whoever might be reading, on the firm assumption
 // that nobody ever will.
 //
-// game.journal: [{ h: game seconds, l: level, k: kind, x: text }], at most
-// K.Journal.Max entries (the first few stay; the oldest of the rest go).
+// game.journal: [{ h: game seconds, l: level, k: kind, x: text }]. It's
+// saved with the hero, and a hero can idle for months, so it has a budget
+// (K.Journal.Max entries, K.Journal.MaxChars of text): past it, the oldest
+// of the least interesting entries go (K.JournalDropOrder). Repeated events
+// wait in game.journalPending and go in together, a line each, with the next
+// level ("Also since level 22: ..."). A level 50 hero's journal comes to
+// about 350 entries and 100 KB; past that, it stays at its budget.
 // The journal has its own dice (JournalRandom): it never touches the game's,
 // so it can't change how a hero's game goes, or a replay of it.
 //
@@ -19,10 +24,17 @@
 // when this file is there.
 
 K.Journal = {
-  Max: 1500,          // entries kept
+  Max: 1500,          // entries kept, at most...
+  MaxChars: 100000,   // ...and this much text, about 110 KB in the save
   AsideChance: 0.3,   // after a level or an Act, the chance of an aside
-  Keep: 3             // the first entries, which always stay
+  Keep: 3,            // the first entries, which always stay
+  BriefChars: 64      // a repeated event's line, cut to about this long
 };
+
+// When the journal is full, what goes first: repeated events, then asides
+// and level lines, then the rest; the oldest of each first. The first Keep
+// entries, the finale and the end always stay.
+K.JournalDropOrder = ['again', 'aside', 'level', 'event', 'elite', 'away', 'perk', 'owned', 'act', 'fight', 'daily'];
 
 // ---- Writing ---------------------------------------------------------------
 
@@ -30,7 +42,26 @@ function JournalAdd(kind, text) {
   if (!game || !game.Traits || !text) return;
   var j = game.journal = game.journal || [];
   j.push({ h: Math.floor(game.elapsed || 0), l: GetI(Traits, 'Level'), k: kind, x: text });
-  if (j.length > K.Journal.Max) j.splice(K.Journal.Keep, j.length - K.Journal.Max);
+  // (the text is counted every so often, not on every entry)
+  if (j.length > K.Journal.Max || j.length % 20 == 0) JournalTrim(j);
+}
+
+// Over budget? Drop entries, least interesting and oldest first, down to
+// 90% of it (so it isn't trimmed again on the very next entry)
+function JournalTrim(j) {
+  var chars = 0;
+  j.forEach(function (e) { chars += e.x.length; });
+  var J = K.Journal;
+  if (j.length <= J.Max && chars <= J.MaxChars) return;
+  var wantN = Math.floor(J.Max * 0.9), wantC = Math.floor(J.MaxChars * 0.9);
+  var drop = {};
+  for (var o = 0; o < K.JournalDropOrder.length && (j.length - Object.keys(drop).length > wantN || chars > wantC); ++o) {
+    for (var i = J.Keep; i < j.length && (j.length - Object.keys(drop).length > wantN || chars > wantC); ++i) {
+      if (j[i].k == K.JournalDropOrder[o] && !drop[i]) { drop[i] = true; chars -= j[i].x.length; }
+    }
+  }
+  game.journal = j.filter(function (e, i) { return !drop[i]; });
+  game.journalTrimmed = (game.journalTrimmed || 0) + Object.keys(drop).length;
 }
 
 // Dice of its own, never the game's
@@ -111,11 +142,12 @@ function JournalBegin(isNew) {
 }
 
 function JournalTally() {
-  return { quests: game.questsDone || 0, wins: game.wins || 0, deaths: game.deaths || 0,
+  return { level: GetI(Traits, 'Level'), quests: game.questsDone || 0, wins: game.wins || 0, deaths: game.deaths || 0,
            gold: game.goldEarned || 0, spells: (game.Spells || []).length };
 }
 
 function JournalLevel() {
+  JournalFlush();   // (marked with the level they happened at)
   var now = JournalTally(), was = game.journalMark || now;
   game.journalMark = now;
   var n = function (x) { return Math.max(0, x).toLocaleString(); };
@@ -140,19 +172,41 @@ function JournalActBegin() {
   JournalAside(0.5, K.JournalActAsides);
 }
 
-// An event has played out (FinishEvent). The first of each kind goes in,
-// and any choice you made yourself.
+// An event has played out (FinishEvent). The first of each kind goes in in
+// full, and any choice you made yourself; after that, a line each.
 function JournalEvent(ev, result) {
   if (ev.perk) return;   // (AddPerk writes its own line)
   var seen = game.journalEvents = game.journalEvents || {};
   var mine = ev.by == 'you';
-  if (seen[ev.key] && !mine) return;
+  if (seen[ev.key] && !mine) {
+    // with the next level's entry (JournalFlush)
+    (game.journalPending = game.journalPending || []).push(JournalBrief(ev, result));
+    return;
+  }
   seen[ev.key] = 1;
   var text = JournalSentences(ev.lines || []);
   if (result && result.length) text += " (" + result.join(", ") + ".)";
   JournalAdd('event', text);
   if (mine && ev.choices && ev.chosen !== undefined && ev.choices[ev.chosen])
     JournalAdd('aside', JournalText(JournalPick(K.JournalYouChose), { choice: ev.choices[ev.chosen].label }));
+}
+
+// A repeat, in a line: how it started, and what came of it
+function JournalBrief(ev, result) {
+  var line = String((ev.lines || [])[0] || "Something happened").trim().replace(/[.!]$/, "");
+  var max = K.Journal.BriefChars;
+  if (line.length > max) line = line.slice(0, line.lastIndexOf(" ", max) > max / 2 ? line.lastIndexOf(" ", max) : max) + "…";
+  var what = (result || []).join(", ");
+  return line + (what ? " (" + what + ")" : "");
+}
+
+// The repeated events since the last level, as one entry
+function JournalFlush() {
+  var p = game.journalPending;
+  if (!p || !p.length) return;
+  game.journalPending = [];
+  var since = (game.journalMark && game.journalMark.level) || GetI(Traits, 'Level');
+  JournalAdd('again', "Also, since level " + since + ": " + p.join("; ") + ".");
 }
 
 // A gold sink has played out (JournalEvent has the first of each kind). A
@@ -184,7 +238,15 @@ function JournalFirstDefeat(foe) {
 }
 
 function JournalFinale(won, tries) {
-  JournalAdd('finale', JournalText(JournalPick(won ? K.JournalFinaleWon : K.JournalFinaleEscaped), { tries: tries }));
+  var text = JournalText(JournalPick(won ? K.JournalFinaleWon : K.JournalFinaleEscaped), { tries: tries });
+  // and how this race and class celebrate (story.js), as the bards tell it
+  // (no game dice here: the kingdom stays "the kingdom")
+  if (won && typeof FinaleEnding == "function") {
+    var told = [FinaleEnding(K.FinaleRaceEndings, Get(Traits, 'Race')), FinaleEnding(K.FinaleClassEndings, Get(Traits, 'Class'))]
+      .filter(Boolean).map(function (line) { return StoryText(line, { kingdom: "the kingdom", hero: Get(Traits, 'Name') }); });
+    if (told.length) text += " The bards' version: “" + JournalSentences(told) + "”";
+  }
+  JournalAdd('finale', text);
   if (won) JournalAdd('aside', JournalText(K.JournalFinaleAside));
 }
 
@@ -209,10 +271,12 @@ function JournalBrand(reason) {
 }
 
 function JournalRetire() {
+  JournalFlush();
   JournalAdd('end', JournalText(JournalPick(K.JournalRetire)));
 }
 
 function JournalDeath(cause) {
+  JournalFlush();
   JournalAdd('end', JournalText(JournalPick(K.JournalDeath), { cause: cause }));
 }
 
