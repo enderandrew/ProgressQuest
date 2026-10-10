@@ -138,6 +138,20 @@ function step(name, ok, detail) {
     return keys + " shortcuts listed";
   });
 
+  await tryStep("time lost with the game open (a throttled tab) is played through", async () => {
+    const r = await page.evaluate(() => new Promise((done) => {
+      CloseEventPopup();
+      const was = game.elapsed, paused = IsPaused();
+      StartTimer();
+      clock.lasttick -= 20000;   // twenty seconds without a tick
+      setTimeout(() => { const got = game.elapsed - was; if (paused) TogglePause(); StopTimer(); done(got); }, 500);
+    }));
+    // (game time counts whole seconds per task, so short tasks lose a little;
+    // without catching up, the gap would count for a tenth of a second)
+    if (!(r >= 10)) throw new Error("only " + r + " seconds of the 20 were played");
+    return r + " of 20 seconds played (game time counts whole seconds a task)";
+  });
+
   await tryStep("a backup downloads and the hero saves", async () => {
     const [dl] = await Promise.all([page.waitForEvent("download"), page.evaluate(() => ExportHero())]);
     return dl.suggestedFilename();

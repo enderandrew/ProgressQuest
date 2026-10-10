@@ -687,6 +687,22 @@ No server, so a link carries everything:
   edited, as the share page does.
 
 
+Time away
+---------
+
+The hero keeps going while you're not looking. Close the game and come
+back later, and the time you were gone is played out when the hero loads
+(up to K.CatchUp.MaxHours, 12, and only past K.CatchUp.MinSeconds, a
+minute), with a summary of what happened and a line in the journal.
+
+The same goes for time lost with the game still open. The clock ticks
+every 50 ms from a worker (clock.js), and each tick counts for at most
+100 ms. A browser may slow a background tab's ticks, freeze the tab, or
+the computer may sleep, and those gaps used to be lost. Now a gap of up
+to a minute is played through at once, a tenth of a second at a time
+(MissedTime in main.js), and a longer one is caught up like time away.
+
+
 Settings
 --------
 

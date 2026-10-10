@@ -15,6 +15,7 @@ function StartTimer() {
       // A tick the worker sent before it got 'stop' can still arrive after
       // StopTimer(); don't let it play on (or restart the clock)
       if (!clock.running) return;
+      if (MissedTime()) return;
       Timer1Timer();
       clock.lasttick = timeGetTime();
     });
@@ -24,6 +25,34 @@ function StartTimer() {
     clock.running = true;
     clock.postMessage('start');
   }
+}
+
+// Ticks come every 50 ms, and each counts at most 100 ms (so a hiccup
+// doesn't skip a task). But a browser may slow a background tab's ticks, or
+// freeze the tab, and a computer may sleep with the game open: then the
+// time between ticks is lost. Not any more: a gap of up to
+// K.CatchUp.MinSeconds is played through at once, a tenth of a second at a
+// time; a longer one is caught up like time away with the game closed
+// (CatchUp). Returns whether it took the tick.
+function MissedTime() {
+  var gap = timeGetTime() - clock.lasttick;
+  if (gap <= 250) return false;   // (a slow tick: the 100 ms cap is fine)
+  if (gap > K.CatchUp.MinSeconds * 1000 && K.CatchUp.MaxHours && !game.dead && !_catchingUp) {
+    var since = Date.now() - gap;
+    StopTimer();
+    CatchUp(StartTimer, since);
+    return true;
+  }
+  // play it now: Timer1Timer counts timeGetTime() - clock.lasttick, at most 100 ms
+  var now = timeGetTime(), owed = gap, guard = 0;
+  while (owed > 0 && clock.running && !game.dead && guard++ < 5000) {
+    var step = Min(owed, 100), finishing = TaskBar.done();
+    clock.lasttick = now - step;
+    Timer1Timer();
+    if (!finishing) owed -= step;   // (finishing a task takes no time)
+  }
+  if (clock.running) clock.lasttick = timeGetTime();
+  return true;
 }
 
 function StopTimer() {
@@ -3369,14 +3398,16 @@ function GameNow() {
   return _catchingUp ? _catchingUp.clock0 + ((game.elapsed || 0) - _catchingUp.elapsed0) * 1000 : Date.now();
 }
 
-// then: what to do once it's caught up (start the clock)
-function CatchUp(then) {
+// then: what to do once it's caught up (start the clock). since: when play
+// stopped (Date.now() time); by default, when the hero was last saved.
+function CatchUp(then, since) {
   var C = K.CatchUp;
-  var away = (Date.now() - (game.stamp || Date.now())) / 1000;
+  since = since || game.stamp || Date.now();
+  var away = (Date.now() - since) / 1000;
   if (!document || game.dead || !C.MaxHours || !(away >= C.MinSeconds)) { then(); return; }
   var credit = Math.min(away, C.MaxHours * 3600);
   var before = CatchUpSnapshot();
-  _catchingUp = { clock0: game.stamp, elapsed0: game.elapsed || 0, target: (game.elapsed || 0) + credit,
+  _catchingUp = { clock0: since, elapsed0: game.elapsed || 0, target: (game.elapsed || 0) + credit,
                   finale: false, ended: false };
 
   var body = document.createElement("div");
