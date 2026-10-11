@@ -433,6 +433,40 @@ story.js too (every race and class has a story, at least 3 quests each,
 no unknown placeholders).
 
 
+Your rival
+----------
+
+Every hero has a rival (K.Rival at the end of story.js): the same race,
+class and alignment, a name and a title of their own ("Grezlaeg the
+Insufferable"), who levels up as fast as you do (now and then a level
+ahead, or one behind) and means to beat the Old Bastard™ before you.
+
+- They are {nemesis} in every story, so their name turns up from the
+  first Act on, in whatever role the story gives them (a kidnapper, a
+  tournament opponent, a retention manager). Act endings that used to
+  kill the nemesis now let them limp off swearing revenge. {rival},
+  {rival-full} and {rival-level} work in stories and events too.
+- At the end of Act I, after your race's ending, you meet them properly
+  (K.Rival.Intro). From then on they're on the character sheet ("Rival:
+  Grezlaeg the Insufferable, level 13 (a level ahead)"), and they have
+  10 random events of their own (rival: true in K.Events): a duel, a
+  bog, a stolen kill, a booked-up inn, posters of their face.
+- On Scrollr they taunt you and boast about their level; Sir Spreddit
+  covers the rivalry. In the journal, you write about meeting them, and
+  now and then about them at a level-up.
+- The race to the Old Bastard™: a rival a level ahead at the end sets
+  out first (Scrollr breaks the news; the journal worries). They never
+  win: in the finale you find them in a heap at the cave mouth, they
+  turn up a minute late to your victory ("I had him"), and they watch
+  your losses from behind a rock.
+
+The rival has dice of their own, seeded by the hero's DNA: the same seed
+(a Daily Challenge, say) has the same rival, and a rival never changes
+how the game goes. A hero from before rivals who was past Act I has met
+theirs already (and the journal says so); one still in Act I meets
+theirs at its end.
+
+
 The journal
 -----------
 
@@ -479,7 +513,8 @@ And everyone else has an account too:
 - the Act's quest giver gets passive-aggressive about the quest under
   way, and thanks you (eventually) when one's done,
 - merchants brag about their markup right after a splurge,
-- the Act's nemesis taunts, a named elite who wins brags,
+- your rival taunts (once you've met), and boasts each time you both
+  level up; Sir Spreddit keeps score; a named elite who wins brags,
 - and the townsfolk reply.
 
 Like the journal, it's kept with the hero and never changes how the game

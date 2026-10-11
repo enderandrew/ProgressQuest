@@ -10,6 +10,8 @@
 //             'field'  after winning a fight
 //   weight  how likely it is compared to other events (default 1)
 //   minLevel / maxLevel   optional level range
+//   rival                 true: only once you've met your rival (K.Rival
+//                         in story.js), at the end of Act I
 //   race / klass          optional: only for heroes of that race or class
 //                         (exactly as in K.Races / K.Klasses). Every race
 //                         and class has one event of its own, at the end.
@@ -41,7 +43,8 @@
 // fate picks one at random. Keep choice events uncommon: the game is
 // supposed to play itself.
 //
-// Lines can use the story placeholders ({guy}, {kingdom}, {nemesis},
+// Lines can use the story placeholders ({guy}, {kingdom}, {nemesis}: your
+// rival, also {rival}, {rival-full} and {rival-level},
 // {boring}, {item}, {race}, {klass}, {insult}, {hero}...; see story.js),
 // plus {gold} and {loot} above. They are filled in when the event starts.
 //
@@ -194,7 +197,7 @@ K.Events = [
             'You take some notes, grudgingly'],
     effect: { xp: 0.03 } },
 
-  { key: 'nemesiscameo', where: ['field', 'road'], weight: 0.5, minLevel: 5,
+  { key: 'nemesiscameo', where: ['field', 'road'], weight: 0.5, minLevel: 5, rival: true,
     lines: ['In the distance you spot {nemesis}, watching you',
             'They wave. You wave back. It is awkward',
             'You resolve to train harder'],
@@ -1695,4 +1698,78 @@ K.Events = K.Events.concat([
     lines: ['You find a pocket in your bigger backpack that you have never seen before',
             'In it: {loot}, and a note in your own handwriting that says “don’t”'],
     effect: { item: 'special' } }
+]);
+
+// Your rival's events (K.Rival in story.js): only once you've met them, at
+// the end of Act I. {rival} is their name, {rival-full} adds their title,
+// {rival-level} is their level.
+K.Events = K.Events.concat([
+  { key: 'rival-killsteal', rival: true, where: ['field'], weight: 3,
+    lines: ['{rival} swoops in and finishes off your monster with one blow',
+            '“Thanks for softening it up,” says {rival}, and pockets the XP',
+            'They leave the loot. They’re “above loot” now. You are not: {loot}'],
+    effect: { item: 'boring' } },
+
+  { key: 'rival-inn', rival: true, where: ['rest'], weight: 1.5,
+    lines: ['You reach the inn at last. {rival} has booked the last room',
+            'You sleep in the stable. The horse snores',
+            'You wake up oddly refreshed. Spite is restful'],
+    effect: { heal: true } },
+
+  { key: 'rival-shop', rival: true, where: ['town'], weight: 1.5,
+    lines: ['{rival} buys the {item} you had your eye on, right in front of you',
+            'They pay full price, without haggling. Amateur',
+            'The shopkeeper slips you {gold} gold out of pity, and to annoy {rival}'],
+    effect: { gold: 1 } },
+
+  { key: 'rival-duel', rival: true, where: ['road'], weight: 1.5,
+    lines: ['{rival} blocks the road. “Duel me, {hero}. Loser buys the drinks”'],
+    ask: 'Well?',
+    choices: [
+      { label: 'Duel {rival}',
+        lines: ['You win on points. {rival} demands a recount, and then a rematch, and then a nap',
+                'You drink their drinks'],
+        effect: { xp: 0.05 } },
+      { label: 'Walk around them',
+        lines: ['You walk around {rival}. They follow you for a mile, explaining why that means they won'],
+        effect: { stat: 'WIS' } },
+      { label: 'Challenge them to a staring contest',
+        lines: ['Neither of you blinks for an hour. A crowd gathers. A goat wins'],
+        effect: { stat: 'CHA' } } ] },
+
+  { key: 'rival-bog', rival: true, where: ['road'], weight: 1.5,
+    lines: ['You find {rival} stuck in a bog, up to the neck',
+            '“Don’t you dare help me,” says {rival}'],
+    ask: 'Do you help?',
+    choices: [
+      { label: 'Pull them out',
+        lines: ['You pull {rival} out. They are furious that you saved them. You will never hear the end of it. Excellent'],
+        effect: { stat: 'CHA' } },
+      { label: 'Respect their wishes',
+        lines: ['You leave {rival} in the bog and make excellent time. They’ll get out. They always get out'],
+        effect: { xp: 0.04 } } ] },
+
+  { key: 'rival-letter', rival: true, where: ['rest'], weight: 1.5,
+    lines: ['A letter arrives from {rival}. It just says “Level {rival-level}. Catch me if you can”',
+            'You use it to light the campfire',
+            'It is a very warm campfire'],
+    effect: { stat: 'random' } },
+
+  { key: 'rival-posters', rival: true, where: ['town'], weight: 1.5,
+    lines: ['Posters all over {kingdom}: “{rival-full}: the Hero Who Will Beat the Old Bastard™”',
+            'You draw a moustache on every single one',
+            'It takes all afternoon. Worth it'],
+    effect: { stat: 'random' } },
+
+  { key: 'rival-team', rival: true, where: ['field'], weight: 1.5,
+    lines: ['You and {rival} charge the same monster from opposite sides',
+            'It surrenders to whoever is nearest. That’s you, by a nose',
+            '{rival} calls it a draw. It was not a draw'],
+    effect: { xp: 0.04 } },
+
+  { key: 'rival-mistaken', rival: true, where: ['town'], weight: 1.5,
+    lines: ['A shopkeeper in {kingdom} mistakes you for {rival}',
+            'Apparently {rival} owes them {gold} gold',
+            'You pay, to make them stop shouting. You will be sending {rival} the bill'],
+    effect: { gold: -1 } }
 ]);

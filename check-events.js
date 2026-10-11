@@ -63,7 +63,7 @@ if (!Array.isArray(events)) {
 const WHERE = ["rest", "road", "town", "field"];
 const EFFECTS = ["gold", "item", "stat", "spell", "equip", "heal", "wounded", "xp"];
 const STATS = ["random", "STR", "CON", "DEX", "INT", "WIS", "CHA"];
-const PLACEHOLDERS = ["nemesis", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
+const PLACEHOLDERS = ["nemesis", "rival", "rival-full", "rival-level", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
                       "item", "boring", "race", "race-one", "klass", "insult", "hero",
                       "gold", "loot"];
 
@@ -122,6 +122,7 @@ events.forEach((e, n) => {
   if (!where || !where.length) error(`${name}: 'where' is missing`);
   else where.forEach((w) => { if (WHERE.indexOf(w) < 0) error(`${name}: unknown where "${w}" (known: ${WHERE.join(", ")})`); });
   if ("weight" in e && !(e.weight >= 0)) error(`${name}: weight should be a number`);
+  if ("rival" in e && e.rival !== true) error(`${name}: rival should be true (or left out)`);
   if (e.minLevel && e.maxLevel && e.minLevel > e.maxLevel) error(`${name}: minLevel is above maxLevel`);
   const raceNames = (K.Races || []).map((x) => x.split("|")[0]), klassNames = (K.Klasses || []).map((x) => x.split("|")[0]);
   if (e.race && raceNames.indexOf(e.race) < 0) error(`${name}: race "${e.race}" isn't in K.Races (check the spelling)`);
@@ -246,11 +247,11 @@ Object.keys(K.SinkCompany || {}).forEach((key) => {
 });
 
 // 2d. Scrollr (gossip.js): every line's placeholders mean something
-const GOSSIP_WORDS = ["hero", "race", "klass", "a-klass", "level", "alignment", "weapon", "gear", "spell", "wins",
+const GOSSIP_WORDS = ["rival", "rival-full", "rival-level", "hero", "race", "klass", "a-klass", "level", "alignment", "weapon", "gear", "spell", "wins",
                       "deaths", "kingdom", "kingdom2", "giver", "nemesis", "nemesis2", "guy", "guy2", "boring",
                       "item", "race-one", "insult", "act", "quest", "foe", "a-foe", "monsters", "loot", "rounds",
                       "done", "thing", "gold", "event", "where", "choice", "seconds", "elite", "kind", "cause"];
-const GOSSIP_WHO = ["spreddit", "crier", "monster", "elite", "giver", "merchant", "nemesis", "townsfolk"];
+const GOSSIP_WHO = ["spreddit", "crier", "monster", "elite", "giver", "merchant", "rival", "townsfolk"];
 let gossipLines = 0;
 function checkGossip(name, lines) {
   if (!Array.isArray(lines) || !lines.length) { error(`${name} should be a list of lines`); return; }
@@ -285,7 +286,7 @@ if (K.GossipPools) {
 
 // 3. The Act stories (story.js): every race and class has one, and each
 // story is complete
-const STORY_WORDS = ["nemesis", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
+const STORY_WORDS = ["nemesis", "rival", "rival-full", "rival-level", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
                      "item", "boring", "race", "race-one", "klass", "insult", "hero"];
 const storyKeys = {};
 let storyCount = 0;
@@ -331,6 +332,23 @@ Object.keys(K.ClassStories || {}).forEach((c) => { if (names(K.Klasses).indexOf(
   });
 });
 
+// Your rival: the meeting at the end of Act I, and the finale's lines
+const RIVAL_WORDS = STORY_WORDS.concat(["hero-race", "hero-klass", "hero-alignment", "boss-level"]);
+if (K.Rival) {
+  if (!(K.Rival.Titles || []).length) error("K.Rival.Titles is empty");
+  if (!(K.Rival.Intro || []).length) error("K.Rival.Intro is empty");
+  checkHoles("K.Rival.Titles", K.Rival.Titles, "the list");
+  checkHoles("K.Rival.Intro", K.Rival.Intro, "the list");
+  (K.Rival.Intro || []).forEach((line) => (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+    if (RIVAL_WORDS.indexOf(p.slice(1, -1)) < 0) error(`K.Rival.Intro: unknown placeholder ${p} in "${line}"`);
+  }));
+}
+const FINALE_WORDS = STORY_WORDS.concat(["taunt", "tries", "hours", "raceending", "classending"]);
+Object.keys(K.FinaleStory || {}).forEach((part) => (K.FinaleStory[part] || []).forEach((line) =>
+  (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+    if (FINALE_WORDS.indexOf(p.slice(1, -1)) < 0) error(`K.FinaleStory.${part}: unknown placeholder ${p} in "${line}"`);
+  })));
+
 // The word lists (K.Monsters, K.Spells, K.Quests...) can have holes too
 Object.keys(K).forEach((k) => { if (Array.isArray(K[k])) checkHoles(`K.${k}`, K[k], "the list"); });
 
@@ -338,6 +356,7 @@ console.log(`\n${storyCount} stories (${Object.keys(K.RaceStories || {}).length}
             `${Object.keys(K.ClassStories || {}).length} classes, ${(K.Stories || []).length} others).`);
 console.log(`\n${(K.Perks || []).length} perks, ${(K.Sinks || []).length} gold sinks, ` +
             `${Object.keys(K.SinkCompany || {}).length} with a word to say and ${events.filter((e) => e.sink).length} events of their own.`);
+console.log(`Your rival: ${events.filter((e) => e.rival).length} events, ${(K.Rival && K.Rival.Titles || []).length} titles.`);
 if (K.GossipPools) console.log(`Scrollr: ${gossipLines} lines, never posted twice.`);
 console.log(`\n${events.length} events, ${withChoices} with choices` +
             ` (${Math.round(withChoices / Math.max(1, events.length) * 100)}%).` +

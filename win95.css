@@ -246,6 +246,7 @@ dialog.win95::backdrop { background: rgba(0, 0, 40, 0.3); }
 .journal-stamp { display: block; font: 8pt Tahoma, sans-serif; color: #777; }
 .journal-aside .journal-text { font-style: italic; color: #5a3d8a; }
 .journal-act .journal-text { font-weight: bold; }
+.journal-rival .journal-text { color: #8a0000; }
 .journal-end .journal-text, .journal-finale .journal-text { color: #8a1c1c; }
 
 /* The "While you were away" summary */

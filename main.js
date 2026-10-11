@@ -179,6 +179,7 @@ function InterplotCinematic() {
     RefreshActTooltips();
   }
   if (typeof JournalActEnd == "function") JournalActEnd(game.act, ending);
+  if (game.act == 1 && typeof MeetRival == "function") MeetRival();   // (Act I's ending introduces them)
   $.each(ending, function (i, line) { Q('scene|4|' + line); });
   Q('plot|1|Loading ...');
 }
@@ -1097,7 +1098,8 @@ function MaybeEvent(where, resume) {
     return e.where.indexOf(where) >= 0 &&
       (!e.minLevel || level >= e.minLevel) && (!e.maxLevel || level <= e.maxLevel) &&
       (!e.race || e.race == Get(Traits,'Race')) && (!e.klass || e.klass == Get(Traits,'Class')) &&
-      (!e.sink || !!LiveBoon(e.sink));   // (only with what the gold bought: K.SinkCompany)
+      (!e.sink || !!LiveBoon(e.sink)) &&   // (only with what the gold bought: K.SinkCompany)
+      (!e.rival || (typeof RivalMet == "function" && RivalMet()));   // (only once you've met your rival)
   });
   if (!choices.length) return;
   var total = 0;
@@ -1472,6 +1474,18 @@ function ShowPerks() {
   var perks = Perks();
   $("#PerkLine").text(perks.length ? "Perks: " + perks.map(function (p) { return p.label; }).join(", ") : "")
     .attr("title", perks.map(PerkText).join("\n"));
+}
+
+// "Rival: Grezlaeg the Insufferable, level 13 (a level ahead)", once met
+// (K.Rival in story.js)
+function ShowRival() {
+  if (!document) return;
+  if (typeof RivalMet != "function" || !RivalMet()) { $("#RivalLine").text("").attr("title", null); return; }
+  var mine = GetI(Traits,'Level'), theirs = RivalLevel();
+  $("#RivalLine").text("Rival: " + RivalFull() + ", level " + theirs +
+                       (theirs > mine ? " (a level ahead)" : theirs < mine ? " (a level behind)" : " (neck and neck)"))
+    .attr("title", "The same race, class and alignment as you, racing you to the Old Bastard\u2122. " +
+                   "They level up as fast as you do.");
 }
 
 // ---- Temporary buffs --------------------------------------------------------
@@ -3211,6 +3225,7 @@ function LevelUp() {
   ExpBar.reset(LevelUpTime(GetI(Traits,'Level')));
   if (typeof JournalLevel == "function") JournalLevel();
   if (typeof Gossip == "function") Gossip('level');
+  if (typeof RivalLevelUp == "function") RivalLevelUp();
   // A new perk on offer every K.PerkEvery levels (OfferPerk, between tasks)
   var lv = GetI(Traits,'Level');
   if (lv % K.PerkEvery == 0 && lv <= K.PerkLast) game.perkDue = (game.perkDue || 0) + 1;
@@ -3864,6 +3879,7 @@ function LoadGame(sheet) {
 
   randseed(game.seed);
   EnsureStory();
+  if (typeof RivalCatchUp == "function") RivalCatchUp();   // (a hero from before rivals)
   // The Codex, and the spells this hero already knows (for heroes from
   // before the Codex)
   if (document && !game.dead) CodexStart(function () {
@@ -3883,6 +3899,7 @@ function LoadGame(sheet) {
   ShowRetire();
   ShowLegacy();
   ShowPerks();
+  ShowRival();
   ShowOwned();
   if (typeof ShowFeed == "function") ShowFeed(true);
   ShowDaily();

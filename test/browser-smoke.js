@@ -209,6 +209,21 @@ function step(name, ok, detail) {
     return seen.posts + " posts; newest: " + seen.first;
   });
 
+  await tryStep("your rival: met, on the character sheet, in the journal and on Scrollr", async () => {
+    const met = await page.evaluate(() => {
+      const before = $("#RivalLine").text();
+      const journal = (game.journal || []).length, feed = game.feedN || 0;
+      MeetRival();
+      return { before, line: $("#RivalLine").text(), name: game.rival.n,
+               journal: game.journal.slice(journal).map((e) => e.x), posted: (game.feedN || 0) - feed };
+    });
+    if (met.before) throw new Error("the rival was on the sheet before you'd met: " + met.before);
+    if (met.line.indexOf("Rival: " + met.name) != 0 || !/level \d+/.test(met.line)) throw new Error("the sheet says " + JSON.stringify(met.line));
+    if (!met.journal.some((x) => x.indexOf(met.name) >= 0)) throw new Error("no journal entry about meeting them");
+    if (met.posted < 1) throw new Error("Sir Spreddit didn't post about it");
+    return met.line;
+  });
+
   await tryStep("time lost with the game open (a throttled tab) is played through", async () => {
     const r = await page.evaluate(() => new Promise((done) => {
       CloseEventPopup();

@@ -22,6 +22,7 @@
 //              (the limits are in Balance below: change them when you change
 //              the balance on purpose)
 //   journal    it stays small
+//   rival      met at the end of Act I, then the nemesis; changes nothing
 //   Scrollr    the feed never changes the game, never repeats, stays small
 //
 // Exits with 1 if anything failed, which turns the GitHub check red.
@@ -346,6 +347,37 @@ test("the journal starts at level 1, and keeps to its budget however long a hero
   check(flooded.finale, "the finale was dropped");
   note(`first entry at level 1 (task ${first.tasks}); flooded with 6,000 entries: ${flooded.entries} kept, ` +
        `${Math.round(flooded.chars / 1000)}k characters`);
+});
+
+// ---- your rival -----------------------------------------------------------------
+
+test("your rival: met at the end of Act I, the nemesis from then on, and the game unchanged (K.Rival)", () => {
+  let early = null, metAt = null;
+  const h = play({ levels: 32, seed: "test-rival", onTask(ctx) {
+    const g = ctx.game, ev = g.event;
+    if (g.rival && g.rival.met && metAt === null) metAt = { act: g.act, level: +g.Traits.Level };
+    if (ev && !early && !(g.rival && g.rival.met) && ctx.K.Events.some((e) => e.key == ev.key && e.rival)) early = ev.key;
+  } });
+  const r = h.rival || {};
+  check(r.n && r.t && r.n != h.Traits.Name, "no rival: " + JSON.stringify(r));
+  check(r.met && r.told && metAt && metAt.act == 1, "not met at the end of Act I: " + JSON.stringify(metAt));
+  check(!early, "a rival's event before you'd met: " + early);
+  const later = (h.storyLog || []).filter((st) => st.act >= 2);
+  check(later.length, "never got past Act I");
+  check((h.journal || []).some((e) => e.k == "rival"), "the journal never mentions meeting them");
+  check((h.journal || []).some((e) => e.k == "act" && e.x.indexOf("It is " + r.n) >= 0),
+        "Act I's ending doesn't introduce them");
+  const holes = (h.journal || []).map((e) => e.x).concat((h.feed || []).map((p) => p.x)).filter((t) => /\{[a-z][a-z0-9-]*\}/.test(t));
+  check(!holes.length, "a placeholder wasn't filled in: " + holes[0]);
+  // the same seed, the same rival
+  const again = play({ levels: 3, seed: "test-rival", onTask(ctx) { if (ctx.game.act >= 1) ctx.Rival(); } });
+  check(again.rival && again.rival.n == r.n, "the same seed met " + (again.rival && again.rival.n) + ", not " + r.n);
+  // and a different rival plays the very same game (they have dice of their own)
+  const fingerprint = (x) => JSON.stringify([x.tasks, x.elapsed, x.Traits, x.Stats, x.Equips, x.Inventory, x.Spells]);
+  const other = play({ levels: 32, seed: "test-rival", setup(ctx) { ctx.RivalKey = () => "somebody else entirely"; } });
+  check(other.rival && other.rival.n != r.n, "the other rival has the same name");
+  check(fingerprint(other) == fingerprint(h), "the game came out different with a different rival");
+  note(`${r.n} ${r.t}, met at level ${metAt.level}; e.g. "${later[later.length - 1].purpose}"`);
 });
 
 // ---- Scrollr --------------------------------------------------------------------

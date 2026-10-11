@@ -343,7 +343,7 @@ body.show-log #CombatLog { display: block; }
 #Feed .post-reply { margin: 2px 0 1px 2.4em; padding-left: 4px; border-left: 2px solid #ccc; color: #333; }
 #Feed .post-foot { margin-left: 1.6em; font-size: 7pt; }
 #Feed .post-s .post-head b { color: #00007a; }
-#Feed .post-m .post-head b, #Feed .post-e .post-head b, #Feed .post-n .post-head b { color: #8a0000; }
+#Feed .post-m .post-head b, #Feed .post-e .post-head b, #Feed .post-n .post-head b, #Feed .post-r .post-head b { color: #8a0000; }
 #Feed .feed-empty { color: #5a5a5a; padding: 8px 2px; font-style: italic; }
 
 /* (The layouts for other screen sizes are at the end of this file.) */

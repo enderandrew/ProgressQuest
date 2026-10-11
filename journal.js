@@ -27,13 +27,14 @@ K.Journal = {
   MaxChars: 100000,   // ...and this much text, about 110 KB in the save
   AsideChance: 0.3,   // after a level or an Act, the chance of an aside
   GhostNoteChance: 0.6,   // ...or of a ghostwriter's footnote, while one's on retainer
+  RivalChance: 0.2,       // ...or, once you've met your rival, of a word about them
   Keep: 3             // the first entries, which always stay
 };
 
 // When the journal is full, what goes first: asides and level lines, then
 // the rest; the oldest of each first. The first Keep
 // entries, the finale and the end always stay.
-K.JournalDropOrder = ['aside', 'level', 'event', 'elite', 'away', 'perk', 'owned', 'act', 'fight', 'daily'];
+K.JournalDropOrder = ['aside', 'level', 'event', 'elite', 'away', 'perk', 'owned', 'rival', 'act', 'fight', 'daily'];
 
 // ---- Writing ---------------------------------------------------------------
 
@@ -41,9 +42,15 @@ function JournalAdd(kind, text) {
   if (!game || !game.Traits || !text) return;
   var j = game.journal = game.journal || [];
   j.push({ h: Math.floor(game.elapsed || 0), l: GetI(Traits, 'Level'), k: kind, x: text });
-  // (the text is counted every so often, not on every entry)
-  if (j.length > K.Journal.Max || j.length % 20 == 0) JournalTrim(j);
+  // (a running count of the text, so it's only counted in full once a hero)
+  if (_journalCount.of !== j) _journalCount = { of: j, chars: j.reduce(function (t, e) { return t + e.x.length; }, 0) };
+  else _journalCount.chars += text.length;
+  if (j.length > K.Journal.Max || _journalCount.chars > K.Journal.MaxChars) {
+    JournalTrim(j);
+    _journalCount = {};
+  }
 }
+var _journalCount = {};
 
 // Over budget? Drop entries, least interesting and oldest first, down to
 // 90% of it (so it isn't trimmed again on the very next entry)
@@ -101,6 +108,11 @@ function JournalVars(extra) {
     quests: (game.questsDone || 0).toLocaleString(),
     act: ActCaption(game.act || 0)
   };
+  // the rival (story.js), once there is one
+  if (game.rival && typeof RivalVars == "function") {
+    var rv = RivalVars();
+    for (var rk in rv) v[rk] = rv[rk];
+  }
   for (var k in extra || {}) v[k] = extra[k];
   return v;
 }
@@ -109,7 +121,7 @@ function JournalText(template, extra) {
   if (Array.isArray(template)) template = JournalPick(template);   // (a list: one of them)
   var v = JournalVars(extra);
   if (v.kingdom === undefined && template.indexOf("{kingdom}") >= 0) v.kingdom = JournalKingdom();
-  return template.replace(/\{([a-z]+)\}/g, function (m, key) { return v[key] !== undefined ? v[key] : m; })
+  return template.replace(/\{([a-z][a-z0-9-]*)\}/g, function (m, key) { return v[key] !== undefined ? v[key] : m; })
     // "the {d}th time" with d = 1, 2 or 3 reads "the 1st time"...
     .replace(/\b(\d*?)(1|2|3)th\b/g, function (m, rest, last) {
       return /1$/.test(rest) ? m : rest + last + { 1: "st", 2: "nd", 3: "rd" }[last];
@@ -173,6 +185,8 @@ function JournalLevel() {
   if (special) JournalAdd('aside', JournalText(special));
   else if (typeof LiveBoon == "function" && LiveBoon('memoir'))
     JournalAside(K.Journal.GhostNoteChance, K.JournalGhostNotes, { who: BoonWho(LiveBoon('memoir')) });   // (the ghostwriter's still about)
+  else if (typeof RivalMet == "function" && RivalMet() && JournalChance(K.Journal.RivalChance))
+    JournalAside(1, K.JournalRivalAsides);   // (that rival again)
   else JournalAside();
 }
 
@@ -244,6 +258,16 @@ function JournalFinale(won, tries) {
   }
   JournalAdd('finale', text);
   if (won) JournalAdd('aside', JournalText(K.JournalFinaleAside));
+  if (typeof RivalMet == "function" && RivalMet())
+    JournalAdd('rival', JournalText(won ? K.JournalRivalBeaten : K.JournalRivalWatched));
+}
+
+// Your rival (K.Rival in story.js): 'met' at the end of Act I, 'late' for a
+// hero who was past it before there were rivals, 'race' when they set out
+// for the Old Bastard™ first
+function JournalRival(kind) {
+  var lines = kind == 'met' ? K.JournalRivalMet : kind == 'late' ? K.JournalRivalLate : K.JournalRivalRace;
+  JournalAdd('rival', JournalText(JournalPick(lines)));
 }
 
 function JournalAway(seconds, lines) {
@@ -655,6 +679,34 @@ K.JournalSplurgeAsides = [
   "Dropped {gold} gold on {thing}. At this rate, I won't need to defeat the Old Bastard™—I will simply bankrupt him through aggressive local inflation.",
   "Dropped {gold} gold on {thing} because the devs felt we needed gold sinks to balance the game. So there you have it.",
 ];
+
+// Your rival (K.Rival in story.js). {rival}, {rival-full} and {rival-level}
+// are theirs; {race}, {klass} and {alignment} are yours, and so theirs.
+K.JournalRivalMet = [
+  "Met {rival-full} today. {alignment}, {race}, {klass}: like looking in a mirror, if the mirror were smug. They say they'll beat the Old Bastard™ before me. Over my dead body. Ideally over theirs.",
+  "I have a rival. Their name is {rival}, and they are me, but worse. They think they're me, but better. We'll see who reaches the Old Bastard™ first.",
+  "So that's who {rival} is. I kept hearing the name. Same race as me, same class, same alignment, same level, give or take. Different attitude. Much worse attitude."
+];
+K.JournalRivalLate = [
+  "Something I should have written down ages ago: I have a rival. {rival-full}. Same race, same class, same alignment. They're racing me to the Old Bastard™, and they're level {rival-level}."
+];
+K.JournalRivalRace = [
+  "Word is {rival} has hit level {rival-level} and set out for the Old Bastard™'s cave. Ahead of me. I'm not worried. I'm a little worried. I'm walking faster.",
+  "{rival} has gone after the Old Bastard™ first. If they win, nobody will ever need me again. Hurry, legs."
+];
+K.JournalRivalAsides = [
+  "{rival} is level {rival-level}. I'm level {level}. I'm not keeping track. I keep a journal. That's a different thing.",
+  "Heard {rival} has been telling people they taught me everything I know. They taught me how to be annoyed.",
+  "Dreamt the Old Bastard™ was taunting {rival} instead of me. Woke up jealous. That's a new low.",
+  "Every time I level up, I picture {rival}'s face. It's very motivating. It's a very punchable face.",
+  "Somebody mistook me for {rival} today. I've never been so insulted. Same race, same class, same alignment. Different everything else.",
+  "Note to self: beat the Old Bastard™. Note to self, underlined twice: before {rival}.",
+  "{rival} sent me a letter. It just said “level {rival-level}”. I burned it. Then I fished it out of the fire to check the number.",
+  "Found out {rival} keeps a journal too. I bet theirs is worse. I bet nobody reads it. Nobody reads mine either, but still.",
+  "If {rival} is reading this: no you're not. This is private. Go and level up somewhere else."
+];
+K.JournalRivalBeaten = "As for {rival}: they showed up a minute late and said they'd softened him up. Let them have that. I have everything else.";
+K.JournalRivalWatched = "{rival} watched the whole thing from behind a rock. I could hear them taking notes.";
 
 // While the ghostwriter is on retainer (8 game hours), a level-up may get a
 // footnote from them instead of an aside. {who}: the ghostwriter.

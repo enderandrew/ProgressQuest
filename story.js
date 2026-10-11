@@ -8,7 +8,11 @@
 // Text can use these placeholders, which are filled in once when the Act
 // begins, so the setup and the ending always talk about the same people:
 //
-//   {nemesis} {nemesis2}  named monsters a little above your level
+//   {nemesis}             your rival (K.Rival below), the same in every
+//                         Act; {rival} is the same name, {rival-full}
+//                         adds their title ("Grezlaeg the Insufferable"),
+//                         {rival-level} is their level
+//   {nemesis2}            a named monster a little above your level
 //   {guy} {guy2}          impressive people
 //   {giver}               a titled nobody
 //   {kingdom} {kingdom2}  made-up places
@@ -19,7 +23,7 @@
 //   {hero}                your name
 //
 // An ending line of "*fight*" becomes a few lines of grim combat with
-// {nemesis}. Stories can also list quests of their own ("quests"), which
+// {nemesis}, your rival. Stories can also list quests of their own ("quests"), which
 // show up now and then while the Act is on.
 //
 // Depends on config.js. Uses functions from main.js at run time.
@@ -67,7 +71,7 @@ K.Stories = [
       'Your quarry is in sight, but a mighty enemy bars your path!',
       'A desperate struggle commences with {nemesis}',
       '*Mortal Kombat theme plays*',
-      'Victory! {nemesis} is slain! Old Bastard™ hits you with pocket sand!',
+      'Victory! {nemesis} limps off, swearing revenge! Old Bastard™ hits you with pocket sand!',
       'They escape! They really are a bastard!',
       'You follow the trail of Old Bastard™ and vow not to fall for pocket sand again.'],
     quests: ['Spy on {nemesis}', 'Find out what {nemesis} is weak to', 'Sharpen your weapon for {nemesis}', 'Ask {nemesis} to politely stand-aside since Old Bastard™ is behind them.'] },
@@ -251,7 +255,7 @@ K.Stories = [
       'You meet the union rep for the {race} of {kingdom}, {guy}.',
       'Their demands: dental, and the head of {nemesis}, who has been crossing the picket line.',
       '*Highlander Theme Music*',
-      '{nemesis} loses their head. The bridge is guarded. The dental plan is mediocre.',
+      '{nemesis} loses their job. The bridge is guarded. The dental plan is mediocre.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Bring coffee to the picket line', 'Read the {race} collective bargaining agreement', 'Ask {guy} for {kingdom} to meet with the {race} rep.', 'Call out the {klass} who crossed the picket line.'] },
 
@@ -845,7 +849,7 @@ K.ClassStories = {
     ending: [
       'You slip into the palace of {nemesis}.',
       'You unleash your deadliest technique. It is completely silent.',
-      'Guards faint. Paintings peel. {nemesis} falls.',
+      'Guards faint. Paintings peel. {nemesis} falls over, and swears revenge.',
       'The guild lets you in, on the condition that you work outdoors.',
       'You resume your quest to go after that Old Bastard™ from your vision.'],
     quests: ['Eat a dangerous amount of beans', 'Practice in an open field', 'Blame it on {guy}', 'Hold it in through an important meeting', 'Audtion for Sgt Poopers Lonely Farts Club Band'] },
@@ -1001,8 +1005,13 @@ K.ClassStories = {
 function StoryVars() {
   var level = GetI(Traits,'Level');
   var race = Split(Pick(K.Races), 0);
+  var monster = NamedMonster(level + 3);   // (still rolled, so the dice run as they always have)
+  var rival = Rival();
   return {
-    nemesis: NamedMonster(level + 3),
+    nemesis: rival ? rival.n : monster,
+    rival: rival ? rival.n : monster,
+    'rival-full': rival ? RivalFull() : monster,
+    'rival-level': rival ? RivalLevel() : level,
     nemesis2: NamedMonster(level + 3),
     guy: ImpressiveGuy(),
     guy2: ImpressiveGuy(),
@@ -1060,6 +1069,7 @@ function StoryTemplate(key) {
 function StoryEnding(story) {
   var t = StoryTemplate(story.key) || Pick(K.Stories);
   var vars = story.vars || StoryVars();
+  vars = Object.assign({}, vars, RivalVars(), { nemesis: vars.nemesis });   // (an older save's Act keeps its own)
   var lines = [];
   $.each(t.ending, function (i, line) {
     if (line === '*fight*') {
@@ -1075,6 +1085,8 @@ function StoryEnding(story) {
       lines.push(line);
     }
   });
+  // The end of Act I: you meet your rival (K.Rival)
+  if (story.act == 1 && K.Rival) lines = lines.concat(K.Rival.Intro);
   // The task line adds "..." itself, so drop a trailing period
   return lines.map(function (line) {
     return ProperName(StoryText(line, vars)).replace(/([^.])\.$/, '$1');
@@ -1324,6 +1336,8 @@ function MakeQuest() {
 K.FinaleStory = {
   approach: [
     'At long last, the trail of the Old Bastard™ leads to a damp cave outside {kingdom}',
+    'Fresh footprints lead in ahead of yours. {rival} got here first',
+    'You find {rival} in a heap by the entrance. “He’s all yours,” they groan. “I softened him up”',
     'He is exactly as old, and exactly as much of a bastard, as your dream promised',
     '“{taunt}” he sneers, just like he did all those levels ago',
     'You crack your knuckles. It is time to settle this'
@@ -1331,11 +1345,13 @@ K.FinaleStory = {
   rematch: [
     'You pick up the Old Bastard™\'s trail again, this time near {kingdom}',
     '“{insult}” he wheezes. He is running out of material',
+    '{rival} is there too, stretching. “After you,” they say. “I insist. I really insist”',
     'Round {tries}. Fight!'
   ],
   victory: [
     'The Old Bastard™ staggers, wheezes, and falls to his knees',
     '“You haven\'t seen the last of me,” he croaks. You have, actually',
+    '{rival} limps in a minute too late. “I had him,” they say. Nobody believes them',
     'Your quest to right this particular wrong is finally over',
     '{raceending}',
     '{classending}',
@@ -1345,6 +1361,7 @@ K.FinaleStory = {
   escape: [
     'The Old Bastard™ cackles and slips away through a door marked “Definitely Not An Exit”',
     'He looks a little older and a little slower every time he runs',
+    '{rival} watches from behind a rock, taking notes. “Amateur,” they whisper. Loudly',
     'He will be back. You will be ready. Probably'
   ]
 };
@@ -1467,3 +1484,124 @@ K.Obituary = {
 	"(act) wasn't the end of the script, until it was.",
   ]
 };
+
+// ---- Your rival -------------------------------------------------------------------
+//
+// Every hero has a rival: the same race, class and alignment, a name and a
+// title of their own ("Grezlaeg the Insufferable"), who levels up as fast
+// as you do (a level ahead now and then, or one behind) and means to beat
+// the Old Bastard™ before you. They're {nemesis} in every story, so their
+// name keeps turning up from the start; at the end of Act I you meet them
+// (K.Rival.Intro, after your race's ending). After that they have events of
+// their own (rival: true in K.Events), post on Scrollr, and get into the
+// journal and the finale.
+//
+// game.rival: { n: name, t: title, met: true once met, told: the meeting
+// has been written up, raced: they've set out for the Old Bastard™ }.
+// Made up with dice of its own (seeded by the hero's DNA: the same seed, the
+// same rival), so a rival never changes how a game goes.
+
+K.Rival = {
+  Titles: ['the Slightly Better', 'the Insufferable', 'the Also-Chosen', 'the Runner-Up', 'the Overachiever',
+           'the Smug', 'Who Peaked Early', 'the Other Chosen One', 'the Teacher’s Pet', 'the Humblebragger',
+           'the Perfectly Adequate', 'the Well-Rested', 'the Unbothered', 'the Main Character', 'the Early Riser',
+           'the Speedrunner', 'the Annoyingly Tall', 'Who Reads the Manual', 'the Second Opinion', 'the Sequel'],
+  // After Act I's ending. Also: {hero-race}, {hero-klass}, {hero-alignment}
+  // (yours, and so theirs) and {boss-level}.
+  Intro: [
+    'As the dust settles, someone slow-claps from the shadows',
+    'It is {rival-full}: {hero-alignment}, {hero-race}, {hero-klass}. Exactly like you, only smugger',
+    'You have heard the name {rival} everywhere you’ve been. Now you know why',
+    '“The Old Bastard™ is mine,” says {rival}. “I’ll beat him before you’re even level {boss-level}”',
+    '{rival} leaves by the good exit. You have a rival now. They level up exactly as fast as you do'
+  ]
+};
+
+// The rival, made up the first time they're needed (null before there's a hero)
+function Rival() {
+  if (typeof game == "undefined" || !game || !game.Traits) return null;
+  if (!game.rival) {
+    var dice = new Alea("rival", RivalKey());
+    var gameDice = typeof seed == "undefined" ? null : seed;
+    var name, title;
+    seed = dice;
+    try {
+      name = GenerateName();
+      title = Pick(K.Rival.Titles);
+    } finally {
+      if (gameDice) seed = gameDice;
+    }
+    if (name == Get(Traits, 'Name')) name += 'o';
+    // (a hero from before rivals, past Act I already, has met theirs)
+    game.rival = { n: name, t: title, met: (game.act || 0) >= 2 };
+  }
+  return game.rival;
+}
+
+// What the rival's dice are seeded with: the hero's DNA, rolled with the
+// hero, so the same seed (a Daily Challenge, say) meets the same rival
+function RivalKey() {
+  return game.dna ? String(game.dna) : (game.lifeId || Get(Traits, 'Name') || "");
+}
+
+function RivalMet() {
+  return !!(game && game.rival && game.rival.met);
+}
+
+// "Grezlaeg the Insufferable", "Grezlaeg, Who Peaked Early"
+function RivalFull() {
+  var r = Rival();
+  if (!r) return '';
+  return r.n + (/^the /.test(r.t) ? ' ' : ', ') + r.t;
+}
+
+// As fast as you: now and then a level ahead, or one behind
+function RivalLevel() {
+  var level = GetI(Traits, 'Level');
+  var roll = new Alea("rival-level", RivalKey(), level)();
+  return Max(1, level + (roll < 0.3 ? 1 : roll < 0.45 ? -1 : 0));
+}
+
+// The rival's placeholders, and yours to compare
+function RivalVars() {
+  var r = Rival();
+  return {
+    rival: r ? r.n : '', 'rival-full': RivalFull(), 'rival-level': r ? RivalLevel() : 0,
+    'hero-race': Get(Traits, 'Race'), 'hero-klass': Get(Traits, 'Class'),
+    'hero-alignment': Get(Traits, 'Alignment') || 'Unaligned', 'boss-level': K.Boss ? K.Boss.Level : 50
+  };
+}
+
+// The end of Act I: you've met (the cinematic says so, K.Rival.Intro)
+function MeetRival() {
+  var r = Rival();
+  if (!r || r.told) return;
+  r.met = true;
+  r.told = true;
+  if (typeof JournalRival == "function") JournalRival('met');
+  if (typeof Gossip == "function") Gossip('rival');
+  if (typeof ShowRival == "function") ShowRival();
+}
+
+// A hero who was past Act I before there were rivals: they've met, so say so
+function RivalCatchUp() {
+  var r = Rival();
+  if (!r || !r.met || r.told) return;
+  r.told = true;
+  if (typeof JournalRival == "function") JournalRival('late');
+}
+
+// You've levelled up, and so (more or less) have they
+function RivalLevelUp() {
+  var r = Rival();
+  if (!r || !r.met) return;
+  // a level ahead at the end: they set out for the Old Bastard™ first
+  if (!r.raced && K.Boss && RivalLevel() >= K.Boss.Level && !(game.finale && game.finale.state == 'won')) {
+    r.raced = true;
+    if (typeof JournalRival == "function") JournalRival('race');
+    if (typeof Gossip == "function") Gossip('rival', { race: true });
+  } else if (typeof Gossip == "function") {
+    Gossip('rival', { level: true });
+  }
+  if (typeof ShowRival == "function") ShowRival();
+}

@@ -713,6 +713,7 @@ function CodexJournalPane(pane, b, keep) {
       (ev.race ? " · " + ev.race + " heroes only" : "") +
       (ev.klass ? " · " + ev.klass + " heroes only" : "") +
       (ev.sink ? " · only with " + CodexSinkLabel(ev.sink) : "") +
+      (ev.rival ? " · once you've met your rival" : "") +
       (found ? " · " + e.n.toLocaleString() + (e.n == 1 ? " time" : " times") + " · first: " + CodexWhen(e) : "")));
     card.append(head);
     if (ev.choices && ev.choices.length) {
