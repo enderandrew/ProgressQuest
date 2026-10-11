@@ -26,7 +26,7 @@ K.Gossip = {
   GapMax: 60,          // ...up to this
   FightChance: 0.15,   // the chance of an everyday post after a fight, once the gap is up
   OtherChance: 0.5,    // ...and after anything else
-  ReplyChance: 0.35,   // the chance a post gets a reply
+  ReplyChance: 0.75,   // the chance a post gets a reply
   Fields: 's/KillingFields'
 };
 

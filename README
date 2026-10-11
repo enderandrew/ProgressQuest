@@ -819,10 +819,17 @@ the files, which go next to index.html):
   victory.mp3   a quest or an Act completed
   error.mp3     a blue screen (the crash screen, stop screens) or an error box
 
-More are wired up and silent until their file is named in K.Sounds:
-levelup, defeat (YOU DIED, in New Game−), elite (one appears), choice (an
-event waits for you), achievement, finale (the Old Bastard™ falls) and
-death (Hardcore). A missing file is silent too.
+  levelup.mp3   every level up
+  defeat.mp3    a fight lost (in New Game−, as YOU DIED appears)
+  elite.mp3     a named elite shows up
+  choice.mp3    an event waits for your choice (this one plays in a
+                background tab too: that's when it's needed)
+  achievement.mp3  an achievement unlocked
+  finale.mp3    the Old Bastard™ falls
+  death.mp3     a Hardcore hero dies for good
+
+A sound whose file isn't there is silent; a new one is a file, its name
+in K.Sounds, and a PlaySound call where it belongs.
 
 When several fall in the same moment (a quest done that also hands out
 gear) only the most important plays (K.SoundPriority), and the same

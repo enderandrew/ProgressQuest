@@ -70,14 +70,15 @@ function SettingsList() {
     { section: "Sound", label: "Sound effects", kind: "check",
       get: function () { return typeof SoundsOn == "function" && SoundsOn(); },
       set: function (on) { SettingSet("sound", on ? null : "0"); },
-      help: "A splurge, better gear, a quest or Act done, an error. (Sounds whose files aren't there are silent.)" },
+      help: "A splurge, better gear, a quest or Act done, a level, a lost fight, an elite, a choice waiting, " +
+            "an achievement, the Old Bastard™'s fall, a Hardcore death, an error." },
     { section: "Sound", label: "Volume", kind: "range", min: 0, max: 1, step: 0.1,
       get: function () { return typeof SoundVolume == "function" ? SoundVolume() : 0.6; },
       set: function (v) { SettingSet("soundvolume", v); }, format: function (v) { return Math.round(v * 100) + "%"; } },
     { section: "Sound", label: "Play them while the game is in a background tab", kind: "check",
       get: function () { return typeof SoundsInBackground == "function" && SoundsInBackground(); },
       set: function (on) { SettingSet("soundhidden", on ? "1" : null); },
-      help: "Off: only while you're looking. An idle game left in a tab is otherwise a lot of fanfare." },
+      help: "Off: only while you're looking (except a choice waiting for you). An idle game left in a tab is otherwise a lot of fanfare." },
 
     { section: "Events", label: "Pop up events as they happen", key: "E", kind: "check",
       get: EventPopupsOn, set: function (on) { if (on != EventPopupsOn()) ToggleEventPopups(); },

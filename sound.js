@@ -19,19 +19,21 @@
 
 var K = K || {};
 K.Sounds = {
-  splurge: "splurge.mp3",
-  item: "item.mp3",
-  victory: "victory.mp3",
-  error: "error.mp3",
-  // Ready for more: add the file, put its name here, and they play
-  levelup: null,       // a level up (LevelUp)
-  defeat: null,        // beaten in a fight (Defeated); YOU DIED in New Game−
-  elite: null,         // a named elite appears (K.Elite)
-  choice: null,        // an event is waiting for a choice (BeginChoice)
-  achievement: null,   // an achievement unlocked (the Codex toast)
-  finale: null,        // the Old Bastard™ falls (the finale's victory)
-  death: null          // a Hardcore hero dies for good
+  splurge: "splurge.mp3",           // a gold sink splurge (StartSplurge in main.js)
+  item: "item.mp3",                 // better gear equipped (WinEquip)
+  victory: "victory.mp3",           // a quest or an Act completed
+  error: "error.mp3",               // a blue screen, or an error message box
+  levelup: "levelup.mp3",           // a level up (LevelUp)
+  defeat: "defeat.mp3",             // beaten in a fight (Defeated); YOU DIED in New Game−
+  elite: "elite.mp3",               // a named elite appears (K.Elite)
+  choice: "choice.mp3",             // an event is waiting for a choice (BeginChoice)
+  achievement: "achievement.mp3",   // an achievement unlocked (the Codex toast)
+  finale: "finale.mp3",             // the Old Bastard™ falls (the finale's victory)
+  death: "death.mp3"                // a Hardcore hero dies for good
 };
+// Played in a background tab too, whatever Settings says: they're there to
+// call you back (a choice waits only so long)
+K.SoundAlerts = { choice: true };
 K.SoundPriority = { error: 9, death: 8, finale: 7, defeat: 6, victory: 5, levelup: 4, elite: 4,
                     achievement: 3, splurge: 3, choice: 2, item: 1 };
 K.SoundGap = 1500;   // ms before the same sound plays again
@@ -57,7 +59,7 @@ function PlaySound(key) {
   if (typeof document == "undefined" || !document || typeof Audio == "undefined") return;
   if (typeof _catchingUp != "undefined" && _catchingUp) return;   // (time away: no fanfare for each quest)
   if (!K.Sounds[key] || !SoundsOn()) return;
-  if (document.hidden && !SoundsInBackground()) return;
+  if (document.hidden && !SoundsInBackground() && !K.SoundAlerts[key]) return;
   // the most important of what happens in this moment
   if (_soundPending) {
     if ((K.SoundPriority[key] || 0) > (K.SoundPriority[_soundPending] || 0)) _soundPending = key;
