@@ -5,6 +5,8 @@
 //   PlaySound("victory")   a quest or an Act completed
 //   PlaySound("error")     a blue screen, or an error message box
 //
+// (and a small pop-up saying what each was for: K.Popups, at the end)
+//
 // Each key is a file in K.Sounds; a key set to null (or a file that isn't
 // there) is simply silent, so a new sound is: drop the .mp3 in, set its
 // name below, and call PlaySound where it belongs.
@@ -90,4 +92,93 @@ function PlaySoundNow(key) {
     var played = a.play();
     if (played && played.catch) played.catch(function () {});   // (no sound before the page has been clicked)
   } catch (e) {}
+}
+
+// ---- Pop-ups: what each sound was for --------------------------------------------
+//
+// A small window in the corner when a sound plays (Notify in main.js), saying
+// what it was for: "Quest Completed", "New Item"... It shows with the sound
+// off too (it's the sound, for the eyes), and goes by itself after a few
+// seconds, or on a click. Not for a choice (the event pop-up asks it), an
+// achievement (it has its own), the Old Bastard™'s fall or a death (they
+// have windows of their own), or an error (the error is the window). Never
+// while the game catches up on time away, nor in a background tab.
+// Settings > Sound turns them off (localStorage "pq.soundpopup").
+K.Popups = {
+  quest:   { sound: "victory", icon: "📜", title: "Quest Completed" },
+  act:     { sound: "victory", icon: "🎬", title: "Act Completed" },
+  item:    { sound: "item",    icon: "🗡️", title: "New Item" },
+  levelup: { sound: "levelup", icon: "⭐",       title: "Level Up" },
+  defeat:  { sound: "defeat",  icon: "💥", title: "Defeated in Combat" },
+  elite:   { sound: "elite",   icon: "👑", title: "An Elite Appears" },
+  splurge: { sound: "splurge", icon: "💸", title: "Splurge" }
+};
+K.PopupMax = 3;          // at most this many at once (the oldest goes)
+K.PopupSeconds = 5;      // how long each stays up
+K.PopupMerge = 2000;     // ms: the same kind again this soon updates the one showing ("×2")
+
+function SoundPopupsOn() { return SoundSetting("soundpopup", "1") !== "0"; }
+
+function SoundPopup(kind, info) {
+  var P = K.Popups[kind];
+  if (!P || typeof document == "undefined" || !document || !document.body) return;
+  if (typeof _catchingUp != "undefined" && _catchingUp) return;
+  if (document.hidden || !SoundPopupsOn()) return;
+  var box = document.getElementById("SoundPopups");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "SoundPopups";
+    box.setAttribute("aria-hidden", "true");   // (the sound, for the eyes: screen readers hear Announce)
+    document.body.appendChild(box);
+  }
+  var now = Date.now(), last = box.lastElementChild;
+  if (last && !last._closing && last.dataset.kind == kind && now - (+last.dataset.at || 0) < K.PopupMerge) {
+    // the same again (a quest's prizes, several pieces of gear): one pop-up, counted
+    var n = (+last.dataset.n || 1) + 1;
+    last.dataset.n = n;
+    last.dataset.at = now;
+    last.querySelector(".sp-title").textContent = P.title + " ×" + n;
+    last.querySelector(".sp-text").textContent = info.text || "";
+    last.querySelector(".sp-more").textContent = info.more || "";
+    clearTimeout(last._timer);
+    last._timer = setTimeout(function () { SoundPopupClose(last); }, K.PopupSeconds * 1000);
+    return;
+  }
+  var pop = document.createElement("div");
+  pop.className = "sound-popup sp-" + kind;
+  pop.dataset.kind = kind;
+  pop.dataset.at = now;
+  var bar = document.createElement("div");
+  bar.className = "sp-bar";
+  var icon = document.createElement("span");
+  icon.className = "sp-icon";
+  icon.textContent = P.icon;
+  var title = document.createElement("span");
+  title.className = "sp-title";
+  title.textContent = P.title;
+  var x = document.createElement("span");
+  x.className = "sp-x";
+  x.textContent = "×";
+  bar.appendChild(icon); bar.appendChild(title); bar.appendChild(x);
+  var text = document.createElement("div");
+  text.className = "sp-text";
+  text.textContent = info.text || "";
+  var more = document.createElement("div");
+  more.className = "sp-more";
+  more.textContent = info.more || "";
+  pop.appendChild(bar); pop.appendChild(text); pop.appendChild(more);
+  pop.addEventListener("click", function () { SoundPopupClose(pop); });
+  box.appendChild(pop);
+  while (box.children.length > K.PopupMax) SoundPopupClose(box.firstElementChild, true);
+  setTimeout(function () { pop.classList.add("show"); }, 20);
+  pop._timer = setTimeout(function () { SoundPopupClose(pop); }, K.PopupSeconds * 1000);
+}
+
+function SoundPopupClose(pop, now) {
+  if (!pop || pop._closing) return;
+  pop._closing = true;
+  clearTimeout(pop._timer);
+  pop.classList.remove("show");
+  var gone = function () { if (pop.parentNode) pop.parentNode.removeChild(pop); };
+  if (now) gone(); else setTimeout(gone, 300);
 }

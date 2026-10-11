@@ -1030,7 +1030,7 @@ function StoryVars() {
 
 // Pick the story for a new Act: your race's for Act I, your class's for
 // Act II, the Old Bastard™'s for Act 25 (K.FinaleAct) and your rival's for
-// Act 50 (K.EndgameAct); otherwise one of K.Stories, or once the Old
+// the Act that reaches level 100 (K.EndgameAct; game.endgameAct); otherwise one of K.Stories, or once the Old
 // Bastard™ has fallen, one that doesn't need him (K.PostStories, and the
 // K.Stories that don't start with him). One not yet told in this life if
 // there is one, else one not told lately.
@@ -1038,7 +1038,7 @@ function NewStory(act) {
   var story = act == 1 ? K.RaceStories[Get(Traits,'Race')] :
               act == 2 ? K.ClassStories[Get(Traits,'Class')] :
               act == K.Acts.FinaleAct ? K.FinaleAct :
-              act == K.Acts.EndgameAct ? K.EndgameAct : null;
+              act === game.endgameAct ? K.EndgameAct : null;
   if (!story) {
     // (after him: the stories for after him, and the others that don't start
     // with him; and once your rival has fallen too, none that start with
@@ -1628,30 +1628,30 @@ function RivalLevelUp() {
 //
 // An Act every two levels: Act I ends at level 4, Act II at 6... Act XXIV
 // at 50. Act XXV is always the Old Bastard™'s (K.FinaleAct): it ends when
-// he falls. After him the Acts go on, two levels each, toward the end
-// game: Act L, at level 100, is your rival's (K.EndgameAct), who declared
-// themselves the New Bastard™ the day the old one fell. After that, Acts
-// go on for as long as you do.
-K.Acts = { LevelsPerAct: 2, FinaleAct: 25, EndgameAct: 50 };
+// he falls. After him the Acts go on, two levels each, but no longer than
+// an Act at level CapLevel (50) takes at that pace: past 50 a level can
+// take weeks (Saga), months (Classic / Slow) or years (Sonic, past 80), so
+// later Acts may end between levels (NewActSpan in main.js). The Act that
+// would reach level 100 is your rival's (K.EndgameAct; game.endgameAct),
+// who declared themselves the New Bastard™ the day the old one fell; it
+// ends when they do. After that, Acts go on for as long as you do.
+K.Acts = { LevelsPerAct: 2, FinaleAct: 25, CapLevel: 50 };
 
-// The level that ends an Act (Infinity: it ends with a fight, not a level)
+// The level that ends an Act before the Old Bastard™'s (Infinity: his,
+// and the ones after, which NewActSpan in main.js measures in XP)
 function ActEndLevel(act) {
-  var A = K.Acts, boss = (K.Boss && K.Boss.Level) || 50, end = (K.Endgame && K.Endgame.Level) || 100;
+  var A = K.Acts, boss = (K.Boss && K.Boss.Level) || 50;
   if (act < A.FinaleAct) return Math.min(boss, A.LevelsPerAct * (act + 1));
-  if (act == A.FinaleAct || act == A.EndgameAct) return Infinity;
-  if (act < A.EndgameAct) return Math.min(end, boss + A.LevelsPerAct * (act - A.FinaleAct));
-  return end + A.LevelsPerAct * (act - A.EndgameAct);
+  return Infinity;
 }
 
-// The Act a hero of this level should be in (heroes who started high, a
-// Daily Challenge's, and heroes from before Acts went by level, catch up)
+// The Act a hero of this level should be in, before the Old Bastard™ (a
+// Daily Challenge's hero who starts high, and heroes from before Acts went
+// by level, catch up)
 function ActForLevel(level) {
-  var A = K.Acts, boss = (K.Boss && K.Boss.Level) || 50, end = (K.Endgame && K.Endgame.Level) || 100;
+  var A = K.Acts, boss = (K.Boss && K.Boss.Level) || 50;
   if (level < boss) return Math.max(1, Math.floor(level / A.LevelsPerAct));
-  if (OldBastardAlive()) return A.FinaleAct;
-  if (level < end) return A.FinaleAct + 1 + Math.floor((level - boss) / A.LevelsPerAct);
-  if (NewBastardAlive()) return A.EndgameAct;
-  return A.EndgameAct + 1 + Math.floor((level - end) / A.LevelsPerAct);
+  return A.FinaleAct;
 }
 
 // Has the Old Bastard™ fallen yet? (Then nothing should send you after him.)
@@ -1675,7 +1675,7 @@ function PostVictoryOK(text, exempt) {
   if (exempt != 'post' && !OldBastardAlive() && /Old Bastard/.test(text)) return false;
   return NewBastardAlive() || !K.EndgameWords.test(text);
 }
-K.EndgameWords = /New Bastard|level 100(?!\d)|\bAct L\b/i;
+K.EndgameWords = /New Bastard|level 100(?!\d)/i;
 
 // What a pool, story or event was written for (for PostVictoryOK): '',
 // 'post' or 'beyond'
@@ -1735,7 +1735,8 @@ K.FinaleAct = { key: 'oldbastard', title: 'The Old Bastard™',
   ending: ['The Old Bastard™ falls'],
   quests: ['Find the Old Bastard™’s cave', 'Practice your victory speech', 'Get there before {rival}', 'Warm up'] };
 
-// Act L: your rival, the New Bastard™, at level 100 (K.Endgame in combat.js;
+// The Act that reaches level 100 (game.endgameAct): your rival, the New
+// Bastard™ (K.Endgame in combat.js;
 // K.EndgameStory below is how the fight is told). The day the Old Bastard™
 // fell, {rival} went through his door marked "Definitely Not An Exit" and
 // found the room where the progress bars are made: they are the system's

@@ -343,7 +343,7 @@ K.Boss = {
   WeakenMax: 10
 };
 
-// The end game: your rival, the New Bastard™, at level 100 (Act L, K.Acts in
+// The end game: your rival, the New Bastard™, at level 100 (the Act that reaches it, K.Acts in
 // story.js), for a hero who beat the Old Bastard™ and kept going. Fought
 // like him (BeginBoss in main.js), a little tougher; told by K.EndgameStory.
 // They balanced the fight themselves: they fight at your effective level

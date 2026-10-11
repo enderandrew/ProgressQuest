@@ -331,7 +331,7 @@ function checkStory(name, st) {
 (K.Stories || []).forEach((st, i) => checkStory(`story "${(st && st.key) || "#" + (i + 1)}"`, st));
 (K.PostStories || []).forEach((st, i) => checkStory(`story for after the Old Bastard™ "${(st && st.key) || "#" + (i + 1)}"`, st));
 if (K.FinaleAct) checkStory("K.FinaleAct (Act XXV)", K.FinaleAct);
-if (K.EndgameAct) checkStory("K.EndgameAct (Act L)", K.EndgameAct);
+if (K.EndgameAct) checkStory("K.EndgameAct (the Act that reaches level 100)", K.EndgameAct);
 const names = (list) => (list || []).map((x) => x.split("|")[0]);
 names(K.Races).forEach((r) => checkStory(`Act I story for the ${r} race`, (K.RaceStories || {})[r]));
 names(K.Klasses).forEach((c) => checkStory(`Act II story for the ${c} class`, (K.ClassStories || {})[c]));

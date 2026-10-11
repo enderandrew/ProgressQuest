@@ -122,3 +122,8 @@ body.ng-minus .selected { background-color: #5a4414; color: #f3e6c8; }
 body.ng-minus .selected td { color: #f3e6c8; }
 body.ng-minus .event-choice { background: #241d14; border-color: #6a5636; }
 body.ng-minus .event-choice .ask { color: var(--ngm-text); }
+
+/* the sound pop-ups (sound.js), in the dark */
+body.ng-minus .sound-popup { background: var(--ngm-box); color: var(--ngm-text); border-color: var(--ngm-line); }
+body.ng-minus .sound-popup .sp-bar { background: linear-gradient(to right, #2a1f16, #5a3a1c); color: var(--ngm-ember); }
+body.ng-minus .sound-popup .sp-more { color: var(--ngm-dim); }

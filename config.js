@@ -895,17 +895,18 @@ function Div(dividend, divisor) {
 //            level 100 (a year or two more). For idling.
 //   slow     Classic / Slow: about eight months to level 50, the way the
 //            original felt, and past 50 the original's wall as well: each
-//            level about 5% longer again than the curve, so that level 101
+//            level 7% longer again than the curve, so that level 101
 //            is something like 24 years away, as it was for the original's
 //            best (an extrapolation: nobody has simulated 24 years).
 //
 // (Heroes rolled while the fast pace was called 'classic' keep it: PaceKey.)
 //
 // A level takes LevelUpTime XP, which is earned in seconds of fighting.
-// What a hero gets per level (quests and their prizes: QuestScale) is the
-// same at every pace (to level 60 or so: QuestScale), so a level 30 hero is
-// as strong at any; the slower heroes just spend longer there. Acts come every two levels at every
-// pace (K.Acts in story.js).
+// What a hero gets per level (quest prizes: QuestXP and QuestWorth) is the
+// same at every pace, so a level 30 hero is as strong at any; the slower
+// heroes just spend longer there, on longer quests. Acts come every two
+// levels at every pace, and after the Old Bastard™ are never longer than
+// an Act at level 50 at that pace (K.Acts in story.js).
 // (K.Pace and K.PaceDefault are with the other settings, below)
 
 // How much rarer per hour (K.Pace above): 1 at the Sonic pace
@@ -935,14 +936,43 @@ function LevelUpTime(level, pace) {  // XP (seconds of fighting)
   return Math.round((3 + Math.pow(1.15, level)) * 60);
 }
 
-// How much longer a quest takes at this pace and level, so there are as
-// many quests (and quest prizes) per level as at the Sonic pace. Never
-// shorter than Sonic's: past level 60 or so a Sonic level is the longer
-// one (it's exponential), and quests a few seconds long would hand out
-// prizes by the hundred.
+// How much longer a level is at this pace than at Sonic's (1 at Sonic)
 function QuestScale(level, pace) {
   var P = K.Pace[PaceKey(pace)];
-  return P && P.XP ? Math.max(1, LevelUpTime(level, pace) / LevelUpTime(level, 'sonic')) : 1;
+  return P && P.XP ? LevelUpTime(level, pace) / LevelUpTime(level, 'sonic') : 1;
+}
+
+// Quests. A Sonic quest is about 100 XP (a couple of minutes of fighting)
+// at every level, as it always was, and gives one prize; so a Sonic hero
+// gets as many prizes a level as there are 100s in the level, which grows
+// 15% a level, and that is what the monsters are fitted to (ExpectedStat
+// in combat.js). At the slower paces a quest is the longer of:
+//   - as many quests a level as at Sonic (QuestScale × 100), and
+//   - QuestXP × √level, eased in over the first 8 levels: about an hour
+//     and a half of fighting at level 10 at Saga, three at level 50, four by 100 (and
+//     twice that at Classic / Slow)
+// and is worth as many prizes as the Sonic quests in the same stretch of
+// a level (QuestWorth, at least 1), so a hero at a level is as strong at
+// every pace, without a quest every two minutes for months (past level 60
+// a Saga level is several thousand Sonic quests).
+function QuestXP(level, pace) {
+  var P = K.Pace[PaceKey(pace)];
+  if (!P || !P.XP) return 100;
+  return Math.max(100 * QuestScale(level, pace), P.QuestXP * Math.sqrt(level) * Math.min(1, level / 8));
+}
+
+function QuestWorth(level, pace) {
+  return QuestXP(level, pace) / (100 * QuestScale(level, pace));
+}
+
+// The XP from level 1 to the start of a level (Acts are measured in it:
+// ActSpan in main.js)
+var _xpBefore = {};
+function XPBefore(level, pace) {
+  pace = PaceKey(pace) || 'sonic';
+  var a = _xpBefore[pace] || (_xpBefore[pace] = [0, 0]);
+  for (var l = a.length; l <= level; ++l) a[l] = a[l - 1] + LevelUpTime(l - 1, pace);
+  return a[Math.max(0, level)];
 }
 
 // What a level means to an event that gives "a share of a level" (fx.xp).
@@ -1158,12 +1188,13 @@ K.Pace = {
   // more again for each level beyond it; Rare: how much rarer, per hour, the
   // things that make a hero stronger and come by the clock rather than by
   // the level (gold sink splurges, named elites), so a slow hero at level 30
-  // is about as strong as a Sonic one
+  // is about as strong as a Sonic one; QuestXP: how long quests are (QuestXP
+  // above)
   sonic: { label: 'Sonic (Gotta Go Fast)', short: 'Sonic',
            help: 'About a week to level 50. The pace this Remix has had all along. Past 50, the original\u2019s wall.' },
-  saga: { label: 'Saga', short: 'Saga', XP: 820, Power: 1.5, Rare: 13,
+  saga: { label: 'Saga', short: 'Saga', XP: 820, Power: 1.5, Rare: 13, QuestXP: 1500,
           help: 'About 75 days to level 50, if you leave it running, and a year or two more to 100. For idling.' },
-  slow: { label: 'Classic / Slow', short: 'Classic', XP: 2450, Power: 1.5, Wall: 1.047, WallFrom: 50, Rare: 39,
+  slow: { label: 'Classic / Slow', short: 'Classic', XP: 2800, Power: 1.5, Wall: 1.07, WallFrom: 50, Rare: 44, QuestXP: 3000,
           help: 'About eight months to level 50, like the original, and the original\u2019s wall past it: level 100 is decades off. For the truly patient.' }
 };
 K.PaceDefault = 'saga';

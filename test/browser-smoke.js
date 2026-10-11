@@ -216,6 +216,30 @@ function step(name, ok, detail) {
     return heard.join(", ");
   });
 
+  await tryStep("a small pop-up says what each sound was for, merges repeats, and Settings turns it off", async () => {
+    const seen = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms || 120));
+      $("#SoundPopups").remove();
+      game.queue = []; game.event = null;
+      CompleteQuest(); await wait();
+      Notify("item", { text: "A Test Sword", more: "Power 1" }); Notify("item", { text: "A Better Test Sword", more: "Power 2" }); await wait();
+      Notify("defeat", { text: "A rat leaves you for dead" }); Notify("levelup", { text: "Level 99" }); await wait(400);
+      const pops = $("#SoundPopups .sound-popup").map(function () { return $(this).find(".sp-title").text() + ": " + $(this).find(".sp-text").text(); }).get();
+      const hidden = $("#SoundPopups").attr("aria-hidden");
+      $("#SoundPopups .sound-popup").first().trigger("click"); await wait(400);
+      const afterClick = $("#SoundPopups .sound-popup").length;
+      SettingSet("soundpopup", "0"); $("#SoundPopups").remove(); Notify("levelup", { text: "Level 100" }); await wait();
+      const off = $("#SoundPopups .sound-popup").length;
+      SettingSet("soundpopup", null); $("#SoundPopups").remove();
+      return { pops, hidden, afterClick, off };
+    });
+    // (at most three: the quest's went first; the two swords are one, counted)
+    if (seen.pops.length != 3 || !/^New Item ×2: A Better Test Sword$/.test(seen.pops[0]) || !/^Defeated in Combat/.test(seen.pops[1]) ||
+        !/^Level Up: Level 99$/.test(seen.pops[2]) || seen.hidden != "true" || seen.afterClick != 2 || seen.off != 0)
+      throw new Error("the pop-ups: " + JSON.stringify(seen));
+    return seen.pops.join(" / ");
+  });
+
   await tryStep("the journal exports as a bad fantasy novel (Journal menu)", async () => {
     const dl = page.waitForEvent("download");
     await page.locator("#MenuBar .menu-top", { hasText: "Journal" }).click();

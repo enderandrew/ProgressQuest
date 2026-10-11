@@ -72,6 +72,11 @@ function SettingsList() {
       set: function (on) { SettingSet("sound", on ? null : "0"); },
       help: "A splurge, better gear, a quest or Act done, a level, a lost fight, an elite, a choice waiting, " +
             "an achievement, the Old Bastard™'s fall, a Hardcore death, an error." },
+    { section: "Sound", label: "A small pop-up saying what each sound was for", kind: "check",
+      get: function () { return typeof SoundPopupsOn == "function" && SoundPopupsOn(); },
+      set: function (on) { SettingSet("soundpopup", on ? null : "0"); },
+      help: "\u201cQuest Completed\u201d, \u201cNew Item\u201d, \u201cLevel Up\u201d, \u201cDefeated in Combat\u201d... in the corner for a few seconds; click one to close it. " +
+            "It shows with the sound off too." },
     { section: "Sound", label: "Volume", kind: "range", min: 0, max: 1, step: 0.1,
       get: function () { return typeof SoundVolume == "function" ? SoundVolume() : 0.6; },
       set: function (v) { SettingSet("soundvolume", v); }, format: function (v) { return Math.round(v * 100) + "%"; } },
@@ -113,7 +118,7 @@ function SettingsList() {
 
 // Defaults: what Reset puts back
 var SettingsDefaults = { narrate: null, voice: null, rate: null, volume: null, eventpopup: null,
-                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null, sound: null, soundvolume: null, soundhidden: null,
+                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null, sound: null, soundvolume: null, soundhidden: null, soundpopup: null,
                          chatter: null };
 
 function OpenSettings(tab) {

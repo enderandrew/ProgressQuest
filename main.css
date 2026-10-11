@@ -652,3 +652,49 @@ div.profile#DailyLine:empty { display: none; }
 /* Gear taken from a named elite (WinUnique in main.js) */
 #Equips tr.unique td:last-child { color: #8a5a00; font-weight: bold; }
 #Equips tr.unique td:last-child::before { content: "\2605 "; }
+
+/* ---- Sound pop-ups: what each sound was for (K.Popups in sound.js) ---------- */
+
+#SoundPopups {
+  position: fixed;
+  right: 12px;
+  bottom: 120px;   /* (above the achievement toast's corner) */
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 260px;
+  max-width: calc(100vw - 24px);
+  pointer-events: none;
+}
+.sound-popup {
+  pointer-events: auto;
+  text-align: left;
+  cursor: pointer;
+  background: #c0c0c0;
+  color: #000;
+  border: 2px outset #fff;
+  box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.35);
+  font: 11px Tahoma, "Segoe UI", Verdana, sans-serif;
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+.sound-popup.show { opacity: 1; transform: none; }
+.sound-popup .sp-bar {
+  display: flex; align-items: center; gap: 5px;
+  padding: 2px 4px;
+  background: linear-gradient(to right, #000080, #1084d0);
+  color: #fff;
+  font-weight: bold;
+}
+.sound-popup .sp-icon { font-size: 13px; line-height: 1; }
+.sound-popup .sp-title { flex: 1; }
+.sound-popup .sp-x { font-weight: normal; padding: 0 2px; }
+.sound-popup .sp-text { padding: 5px 7px 0; font-weight: bold; overflow-wrap: anywhere; }
+.sound-popup .sp-more { padding: 2px 7px 6px; color: #333; overflow-wrap: anywhere; }
+.sound-popup .sp-more:empty { padding-bottom: 4px; }
+.sound-popup.sp-defeat .sp-bar { background: linear-gradient(to right, #800000, #d01010); }
+.sound-popup.sp-elite .sp-bar { background: linear-gradient(to right, #604000, #c08a10); }
+@media (prefers-reduced-motion: reduce) { .sound-popup { transition: none; transform: none; } }
+@media (max-width: 480px) { #SoundPopups { left: 8px; right: 8px; width: auto; bottom: 104px; } }

@@ -360,7 +360,7 @@ if (!QUICK) test("an Act every two levels, the Old Bastard™'s Act XXV, and aft
   let wonAt = null, sagaXP = null;
   const h = play({ levels: 56, seed: "test-endgame",
     // (the end game sooner: Act XXVII at level 54, not Act L at 100)
-    setup(ctx) { ctx.K.Endgame.Level = 54; ctx.K.Acts.EndgameAct = 27; },
+    setup(ctx) { ctx.K.Endgame.Level = 54; },
     onTask(ctx) {
       const g = ctx.game, L = +g.Traits.Level;
       if (actAt[L] === undefined) actAt[L] = g.act;
@@ -384,9 +384,12 @@ if (!QUICK) test("an Act every two levels, the Old Bastard™'s Act XXV, and aft
   check(after.every((s) => !(s.ending || []).some((l) => /go after that Old Bastard/.test(l))), "an ending after him sends you after him");
   check(!oldOnly.length, "events that need him alive happened after he fell: " + oldOnly.join(", "));
   check(h.endgame && h.endgame.tries >= 1, "the end game never happened: " + JSON.stringify(h.endgame));
-  check(log.some((s) => s.key == "newbastard"), "no Act for the New Bastard™");
+  check(log.some((s) => s.key == "newbastard" && s.act == h.endgameAct), "no Act for the New Bastard™");
+  // after him, no Act longer than one at level 50 (Sonic's levels past 50 are, so Acts end between them)
+  const spans = after.filter((s) => s.act > 25 && s.act < h.endgameAct).length;
+  check(spans >= 2, "Acts after him aren't capped: " + spans + " before the end game at level 54");
   if (h.endgame.state == "won") {
-    const beyond = log.filter((s) => s.act > 27);
+    const beyond = log.filter((s) => s.act > h.endgameAct);
     check(beyond.every((s) => !/level 100|New Bastard/.test(s.purpose) || /^beyond-/.test(s.key)), "an Act after the New Bastard™ needs them: " + JSON.stringify(beyond));
     check(beyond.every((s) => !(s.ending || []).some((l) => /to level 100/.test(l))), "an ending after the New Bastard™ sends you to level 100");
   }
@@ -400,6 +403,7 @@ test("three paces, and what can be said once the Old Bastard™ and the New Bast
   let ctx = null;
   play({ levels: 3, seed: "test-paces", onLevel(g, c) { ctx = c; } });
   check(ctx, "the game never levelled");
+  const g0 = ctx.game;
   const T = ctx.LevelUpTime;
   // Sonic is the curve this Remix always had; heroes saved as 'classic' (its first name) keep it
   [1, 20, 50, 70].forEach((l) => check(T(l, "sonic") == Math.round((3 + Math.pow(1.15, l)) * 60) && T(l, "classic") == T(l, "sonic") && T(l) == T(l, "sonic"),
@@ -413,10 +417,25 @@ test("three paces, and what can be said once the Old Bastard™ and the New Bast
   const order = [days("sonic", 50), days("saga", 50), days("slow", 50)];
   check(order[0] < order[1] && order[1] < order[2] && order[2] > 2.5 * order[1], "the paces to 50 (days of fighting): " + order.map(Math.round));
   check(days("slow", 101) / 365 > 10, "Classic / Slow to 101 is only " + Math.round(days("slow", 101) / 365) + " years");
-  [10, 50].forEach((l) => check(Math.abs(ctx.QuestScale(l, "slow") * T(l, "sonic") - T(l, "slow")) < 1, "QuestScale at " + l));
-  // (past 60 or so a Sonic level is the longer one: quests no shorter than Sonic's, events no more than a level)
-  check(ctx.QuestScale(90, "saga") == 1 && ctx.EventLevelXP(90, "saga") == T(50, "sonic") && ctx.EventLevelXP(20, "saga") == T(20, "sonic") &&
-        ctx.EventLevelXP(90, "sonic") == T(90, "sonic") && ctx.EventLevelXP(5, "slow") == T(5, "sonic"), "past the crossover");
+  // quests: Sonic's as always; the slower paces' grow steadily, and are worth as many prizes a level as Sonic's
+  const QX = ctx.QuestXP, QW = ctx.QuestWorth;
+  [1, 30, 90].forEach((l) => check(QX(l, "sonic") == 100 && QW(l, "sonic") == 1, "Sonic quests at level " + l));
+  ["saga", "slow"].forEach((p) => {
+    const lens = [10, 30, 50, 70, 90, 99].map((l) => QX(l, p));
+    check(lens.every((x, i) => !i || x >= lens[i - 1] * 0.75) && lens[0] >= 1800 && lens[5] <= 40000, p + " quest lengths: " + lens.map(Math.round));
+    [5, 20, 50, 80].forEach((l) => check(QW(l, p) >= 1 && Math.abs(T(l, p) / QX(l, p) * QW(l, p) - T(l, "sonic") / 100) < 0.01 * T(l, "sonic") / 100,
+      p + ": prizes a level at " + l + " aren't Sonic's"));
+  });
+  check(ctx.EventLevelXP(90, "saga") == T(50, "sonic") && ctx.EventLevelXP(20, "saga") == T(20, "sonic") &&
+        ctx.EventLevelXP(90, "sonic") == T(90, "sonic") && ctx.EventLevelXP(5, "slow") == T(5, "sonic"), "event XP past the crossover");
+  // a quest worth many prizes gives them all, gathered up
+  const before = ctx.K.PrimeStats.concat(["HP Max", "MP Max"]).reduce((t, s) => t + (+g0.Stats[s] || 0), 0);
+  const spells = g0.Spells.reduce((t, s) => t + ctx.toArabic(s[1]), 0), items = g0.Inventory.length;
+  const won = ctx.QuestPrizes(1000);
+  const after = ctx.K.PrimeStats.concat(["HP Max", "MP Max"]).reduce((t, s) => t + (+g0.Stats[s] || 0), 0);
+  const spells2 = g0.Spells.reduce((t, s) => t + ctx.toArabic(s[1]), 0);
+  check(after - before >= 240 && after - before <= 260 && spells2 - spells >= 240 && spells2 - spells <= 260 && g0.Inventory.length > items,
+    "1,000 prizes: +" + (after - before) + " stats, +" + (spells2 - spells) + " spell levels: " + won);
   check(ctx.PaceRare({ pace: "slow" }) > ctx.PaceRare({ pace: "saga" }) && ctx.PaceRare({}) == 1, "PaceRare");
   // what can be said: while they live, after the Old Bastard™, and after both
   const ok = ctx.PostVictoryOK, g = ctx.game;

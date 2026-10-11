@@ -413,42 +413,65 @@ config.js, game.pace):
   choice (and any rolled while Sonic was called Classic: K.PaceAlias).
 - Saga: about 75 days of play to level 50. Level L takes 820 × L^1.5 XP
   (seconds of fighting), so it's a level every few hours at first and
-  every few days by the end, with no wall. Six simulated heroes took 55
-  to 120 days (74 on average; the sturdy ones about two months, the
-  fragile ones four): level 10 on day 1 to 4, 20 on day 7 to 23, 30 on
-  day 18 to 55, 40 on day 35 to 90. Past 50 it goes on the same way, but
-  slower than the curve says: past 70 or so a hero falls behind the
-  monsters (theirs is exponential; see EffectiveLevel) and picks easier
-  fights. One simulated hero went on to level 60 on day 98, 70 on day
-  141, 80 on day 219, 90 on day 389 and 100 on day 676, losing 16% of
-  their fights by the end, and beat the New Bastard™ on the first try.
+  every few days by the end, with no wall. Six simulated heroes took 64
+  to 115 days (77 on average; the sturdy ones about two months, the
+  fragile ones nearly four). Past 50 it goes on the same way: one went on
+  to level 60 on day 96, 80 on day 199 and 100 on day 367, losing 10% of
+  their fights by then, and beat the New Bastard™ on the first try.
 - Classic / Slow: about eight months to level 50, the way the original
-  felt: 2,450 × L^1.5, and past 50 the original's wall as well, each
-  level 4.7% longer again (K.Pace.slow.Wall), so level 101 is something
+  felt: 2,800 × L^1.5, and past 50 the original's wall as well, each
+  level 7% longer again (K.Pace.slow.Wall), so level 101 is something
   like 24 years away, where the original's best hero is (an
-  extrapolation from the Saga hero above; nobody has simulated 24 years).
-  Eight simulated heroes took 150 to 325 days to level 50 (about 240 on
-  average); the spread is wider than Saga's.
+  extrapolation; nobody has simulated 24 years). Six simulated heroes
+  took 199 to 454 days to level 50 (262 on average; four of them 199 to
+  218, and a fragile one, losing a tenth of its fights, 454).
 
-A hero is as strong at a level at any pace: quests are longer in step
-with the levels (QuestScale; never shorter than Sonic's, which past level
-60 or so are the longer ones), an event's XP is a share of a Sonic level
-or of this pace's, whichever is shorter (EventLevelXP: otherwise, at the
-slower paces, events would do most of the levelling, and past 60 a share
-of a Sonic level would be several), and the things that make a hero
-stronger by the hour rather than by the level, gold sink splurges and
-named elites, come less often (K.Pace's Rare: 13 times at Saga, 39 at
-Classic / Slow). The numbers were fitted on simulated heroes (node sim.js
---pace saga, --pace slow). Time away is caught up for up to 72 hours
-(K.CatchUp), so an idler can close the tab for a weekend. A Custom Run
-can fix the pace, and its challenge link carries it
-(index.html#custom/<seed>/<mutators>/<mode>/<pace>).
+A hero is as strong at a level at any pace. Quests: a Sonic quest is a
+couple of minutes of fighting and gives one prize (a spell, gear, a stat
+point or a special item), as always, so a Sonic hero gets more prizes
+every level, 15% more each time, and the monsters are fitted to that
+(ExpectedStat in combat.js). At the slower paces a quest is longer
+(QuestXP in config.js: K.Pace's QuestXP × √level, eased in over the
+first eight levels, or as many quests a level as at Sonic if that's
+longer) and pays as many prizes as the Sonic quests in the same stretch
+of a level would have (QuestWorth; the fraction carries over): one or
+two early on, 20 or so by level 50 at Saga, thousands past 80, gathered
+up ("+212 STR, +190 CON..."). So the beats keep a steady proportion to
+the pace, where before a Saga quest took two hours at level 20 and two
+minutes past 60 (16,000 quests an Act):
+
+                     a quest, an Act (fighting time)    simulated (all of it)
+  Sonic              2 minutes, 2 levels (≤ 30 hours)   -
+  Saga, level 10     1.7 hours, 15 hours                3 hours, 2 days
+  Saga, level 50     3 hours, 6 days                    6 hours, 3 days
+  Saga, level 90     4 hours, 6 days                    12 hours, 6 days
+  Classic, level 50  6 hours, 22 days                   9 hours, 13 days (to 62)
+  Classic, level 90  8 hours, 22 days
+
+(fighting time is XP; the game also travels, rests, sells and loses
+fights, more so at higher levels, which is the right-hand column). An
+event's XP is a share of a Sonic level or of this pace's, whichever is
+shorter (EventLevelXP: otherwise, at the slower paces, events would do
+most of the levelling, and past 60 a share of a Sonic level would be
+several), and the things that make a hero stronger by the hour rather
+than by the level, gold sink splurges and named elites, come less often
+(K.Pace's Rare: 13 times at Saga, 41 at Classic / Slow). The numbers
+were fitted on simulated heroes (node sim.js --pace saga, --pace slow).
+Time away is caught up for up to 72 hours (K.CatchUp), so an idler can
+close the tab for a weekend. A Custom Run can fix the pace, and its
+challenge link carries it (index.html#custom/<seed>/<mutators>/<mode>/<pace>).
 
 Acts come every two levels (K.Acts in story.js): Act I ends at level 4,
 Act XXIV at 50. Act XXV is always the Old Bastard™'s (K.FinaleAct): the
 finale is its ending. A hero who keeps going after him goes on two levels
-an Act, toward the end game: their rival waits at level 100 in Act L
-(K.EndgameAct; K.Endgame in combat.js; told by K.EndgameStory). The day the
+an Act, but no Act is longer than one at level 50 at their pace (K.Acts.
+CapLevel; Acts are measured in XP, NewActSpan in main.js), so past 50,
+where a level can take weeks at Saga, months at Classic / Slow and years
+at Sonic, Acts end between levels: about every six days of fighting at
+Saga, 22 at Classic / Slow, 30 hours at Sonic. A simulated Saga hero
+reached level 100 in Act LXXXVI. The Act that would reach level 100 is the
+end game's (game.endgameAct): their rival waits there (K.EndgameAct;
+K.Endgame in combat.js; told by K.EndgameStory). The day the
 Old Bastard™ fell, the rival went through his door marked "Definitely Not
 An Exit" and found the room where the progress bars are made: they're the
 New Bastard™ now, the system's architect (a parody of the Architect in The
@@ -962,6 +985,19 @@ sound waits 1.5 seconds before it plays again. Nothing plays while time
 away is caught up, or in a background tab unless Settings > Sound says
 so; Settings > Sound (or View > Sound Effects) turns them off and sets
 the volume. The Konami code keeps its own song.
+
+Each comes with a small pop-up in the corner saying what it was for
+(Notify in main.js, K.Popups in sound.js): Quest Completed (and what it
+paid), Act Completed, New Item, Level Up, Defeated in Combat, An Elite
+Appears, Splurge. It goes by itself after five seconds, or on a click;
+at most three show at once, and the same again within two seconds is one
+pop-up, counted ("New Item ×3"). They show with the sound off too (Settings
+> Sound turns them off separately), but not for a choice (the event pop-up
+asks it), an achievement (it has its own), the Old Bastard™'s fall or a
+death (windows of their own) or an error (the error is the window), nor
+while time away is caught up or in a background tab, nor YOU DIED in New
+Game− (it says so already). Screen readers don't hear them: what matters
+is announced already, and quests every two minutes would be a lot.
 
 
 Accessibility

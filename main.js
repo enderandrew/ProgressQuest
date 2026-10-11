@@ -477,7 +477,7 @@ function Dequeue() {
       // fights (more rounds) take longer to watch.
       var seed = Random(0x7fffffff);
       var elite = EliteFor(t, seed);   // now and then, a named elite (K.Elite)
-      if (elite) Sound('elite');
+      if (elite) Notify('elite', { text: elite.name, more: 'An elite ' + elite.kind + ', level ' + elite.level });
       if (elite) {
         RestoreHealth();               // (seen coming: the hero steels themselves)
         // and a fresh seed for the fight: the one that picked an elite is
@@ -833,7 +833,7 @@ function StartFinale() {
 // Bastard™. game.endgame is like game.finale.
 function EndgameDue() {
   if (!K.Endgame || OldBastardAlive() || !NewBastardAlive() || game.event) return false;
-  if (GetI(Traits,'Level') < K.Endgame.Level || game.act < K.Acts.EndgameAct) return false;
+  if (GetI(Traits,'Level') < K.Endgame.Level || !EndgameActNow(game.act)) return false;
   var e = game.endgame;
   return !e || (game.elapsed || 0) >= (e.nextTry || 0);
 }
@@ -928,7 +928,7 @@ function FinishEndgame() {
     Sound('finale');
     var told = QueueFinale('victory', 'victory', K.EndgameStory);
     var entry = StoryFor(game.act);
-    if (entry && game.act == K.Acts.EndgameAct) { entry.ending = told; RefreshActTooltips(); }
+    if (entry && EndgameActNow(game.act)) { entry.ending = told; RefreshActTooltips(); }
     game.queue.push('plot|1|Loading ...');
     Brag('f');
   } else {
@@ -1788,7 +1788,8 @@ function StartSplurge(resume, only) {
   $.each(ev.lines, function (i, text) {
     game.queue.push('scene|3|' + text + '|' + (i == ev.lines.length - 1 ? 'event' : 'ev'));
   });
-  Sound('splurge');
+  var what = ev.boon || sink.label || 'something expensive';
+  Notify('splurge', { text: what.charAt(0).toUpperCase() + what.slice(1), more: cost.toLocaleString() + ' gold' });
   return true;
 }
 
@@ -2539,7 +2540,8 @@ function Defeated(fight) {
     game.queue.push('task|4|You are dragged back to town by ' + rescuer);
     game.queue.push('heal|' + RecoveryTime() + '|Convalescing at ' + temple);
   }
-  Sound('defeat');
+  Notify('defeat', { text: ProperName(fight.foe) + ' leaves you for dead', more: taken.length ? 'Lost ' + taken.join(' and ') : '',
+                     quiet: game.mode == 'minus' });   // (New Game− says YOU DIED in large red letters already)
   game.wounded = D.WoundedFights;
   game.caution = Min(D.CautionMax, (game.caution || 0) + D.CautionPerDefeat);
   ShowCondition();
@@ -3116,7 +3118,7 @@ function WinEquip(power, shopping) {
   game.bestequip = name;
   if (posn > 1) game.bestequip += ' ' + Equips.label(posn);
   ShowGearPower();
-  Sound('item');   // (better gear: sound.js)
+  Notify('item', { text: game.bestequip, more: shopping ? 'Bought at market' : 'Power ' + power });   // (better gear: sound.js)
   return true;
 }
 
@@ -3190,6 +3192,94 @@ function BoringItem() {
   return Pick(K.BoringItems);
 }
 
+// A quest's prizes: one at random of a spell, gear, a stat point or an item,
+// as always; or for a quest worth n of them (QuestWorth), n at once, a
+// quarter of each, gathered up. Returns what was won, in words.
+function QuestPrizes(n) {
+  if (n <= 1) {
+    var prize = [WinSpell,WinEquip,WinStat,WinItem][Random(4)];
+    if (prize === WinEquip && HasMutator('noRewardGear')) prize = WinItem;   // (the Looter perk)
+    var got = prize();
+    return prize === WinSpell ? 'Learned ' + got :
+           prize === WinStat ? '+1 ' + got :
+           prize === WinEquip ? (got ? 'Equipped ' + game.bestequip : 'A spare piece of gear') : 'Found a special item';
+  }
+  var counts = [Math.floor(n / 4), Math.floor(n / 4), Math.floor(n / 4), Math.floor(n / 4)];
+  for (var i = 0; i < n % 4; ++i) counts[Random(4)]++;
+  if (HasMutator('noRewardGear')) { counts[3] += counts[1]; counts[1] = 0; }
+  var said = [];
+  if (counts[2]) said.push(WinStats(counts[2]));
+  if (counts[0]) said.push(WinSpells(counts[0]));
+  if (counts[1]) said.push(WinEquips(counts[1]));
+  if (counts[3]) said.push(WinItems(counts[3]));
+  return n.toLocaleString() + ' prizes: ' + said.join('; ');
+}
+
+// k stat points (WinStat k times; past a dozen, picked the same way and
+// added up, so it's quick)
+function WinStats(k) {
+  var got = {};
+  if (k <= 12) {
+    for (var i = 0; i < k; ++i) { var s = WinStat(); got[s] = (got[s] || 0) + 1; }
+  } else {
+    var weights = CharProfile().weights, tp = 0, tq = 0;
+    $.each(K.Stats, function (j, key) { tp += K.StatPickBase + weights[key]; });
+    $.each(K.PrimeStats, function (j, key) { tq += Square(GetI(Stats, key)); });
+    for (var i = 0; i < k; ++i) {
+      var pick, t;
+      if (Odds(1,2)) {
+        t = Random(tp);
+        $.each(K.Stats, function (j, key) { pick = key; t -= K.StatPickBase + weights[key]; if (t < 0) return false; });
+      } else {
+        t = Random(tq);
+        $.each(K.PrimeStats, function (j, key) { pick = key; t -= Square(GetI(Stats, key)); if (t < 0) return false; });
+      }
+      got[pick] = (got[pick] || 0) + 1;
+    }
+    $.each(got, function (key, c) { Add(Stats, key, c); });
+  }
+  return Object.keys(got).map(function (key) { return '+' + got[key].toLocaleString() + ' ' + key; }).join(', ');
+}
+
+// k spells or spell levels (WinSpell k times; past a dozen, added up)
+function WinSpells(k) {
+  if (k <= 12) {
+    var last;
+    for (var i = 0; i < k; ++i) last = WinSpell();
+    return k + (k == 1 ? ' spell' : ' spell levels') + ' (' + last + ', ...)';
+  }
+  var got = {}, first = null;
+  for (var i = 0; i < k; ++i) {
+    var spell = SpellName(K.Spells[RandomLow(Min(GetI(Stats,'WIS')+GetI(Traits,'Level'), K.Spells.length))]);
+    got[spell] = (got[spell] || 0) + 1;
+    if (!first) first = spell;
+  }
+  $.each(got, function (spell, c) {
+    AddR(Spells, spell, c);
+    CodexSpell(spell, toArabic(Get(Spells, spell)));
+  });
+  return k.toLocaleString() + ' spell levels (' + first + ', ...)';
+}
+
+// k pieces of reward gear (WinEquip; past two for every slot, the rest
+// are spares, all of a kind)
+function WinEquips(k) {
+  var most = 2 * K.Equips.length, better = 0;
+  for (var i = 0; i < Min(k, most); ++i) if (WinEquip()) better++;
+  if (k > most)
+    Add(Inventory, 'spare ' + MakeEquip(Random(K.Equips.length), GetI(Traits,'Level') + K.Loot.RewardMin), k - most);
+  return better ? 'Equipped ' + game.bestequip + (better > 1 ? ' and ' + (better - 1) + ' more' : '') :
+                  k.toLocaleString() + ' spare pieces of gear';
+}
+
+// k special items (one of a kind each, as WinItem; past a dozen, a stack)
+function WinItems(k) {
+  if (k <= 12) { for (var i = 0; i < k; ++i) WinItem(); return k + (k == 1 ? ' special item' : ' special items'); }
+  Random(999);
+  Add(Inventory, SpecialItem(), k);
+  return 'a stack of ' + k.toLocaleString() + ' special items';
+}
+
 function WinItem() {
   // (This used to give another of something already in the pack, once it
   // held 250 kinds of thing. It never does now, but the dice are still
@@ -3199,18 +3289,23 @@ function WinItem() {
 }
 
 function CompleteQuest() {
-  // (as many quests a level at any pace: QuestScale in config.js)
-  QuestBar.reset(Math.round((50 + Random(100)) * QuestScale(GetI(Traits,'Level'), PaceOf(game))));
+  // (how long, and how many prizes it's worth: QuestXP and QuestWorth in config.js)
+  var level = GetI(Traits,'Level'), pace = PaceOf(game);
+  QuestBar.reset(Math.round((50 + Random(100)) * QuestXP(level, pace) / 100));
   if (Quests.length()) {
     if (typeof Gossip == "function") Gossip('quest', { done: game.bestquest });
-    Sound('victory');
+    var done = game.bestquest;
     game.questsDone = (game.questsDone || 0) + 1;
     Log('Quest completed: ' + game.bestquest);
     Quests.CheckAll();
-    var prize = [WinSpell,WinEquip,WinStat,WinItem][Random(4)];
-    if (prize === WinEquip && HasMutator('noRewardGear')) prize = WinItem;   // (the Looter perk)
-    prize();
+    // a quest at a slower pace is worth several (the rest carries over)
+    var credit = (game.questCredit || 0) + (game.questWorth || 1);
+    var n = Max(1, Math.floor(credit + 1e-9));
+    game.questCredit = Max(0, credit - n);
+    var won = QuestPrizes(n);
+    Notify('quest', { text: done, more: won });
   }
+  game.questWorth = QuestWorth(level, pace);   // (the next one's)
   while (Quests.length() > 99)
     Quests.remove0();
 
@@ -3301,40 +3396,78 @@ function toArabic(s) {
   return _arabic[key] = n;
 }
 
-// The Plot bar for an Act: the XP from the level it began at to the level
-// that ends it (an Act that ends with a fight, the Old Bastard™'s or the
-// New Bastard™'s, shows full)
-function ActStartLevel(act) {
-  if (act <= 1) return 1;
-  var prev = ActEndLevel(act - 1);
-  return isFinite(prev) ? prev : act - 1 == K.Acts.FinaleAct ? K.Boss.Level : K.Endgame.Level;
+// Acts are measured in XP (XPBefore in config.js): CumXP is the hero's,
+// from level 1. game.actSpan is the current Act's { act, start, end }; an
+// Act that ends with a fight, the Old Bastard™'s or the New Bastard™'s,
+// has no end (and its Plot bar shows full).
+function CumXP() {
+  // (a full bar isn't the next level until the level-up, a fight later:
+  // an Act that ends at a level ends with it, its prizes at the new level)
+  return XPBefore(GetI(Traits,'Level'), PaceOf(game)) + Min(ExpBar.Position(), ExpBar.Max() - 1);
 }
 
-function ActPlotMax(act) {
-  var end = ActEndLevel(act), xp = 0;
-  if (!isFinite(end)) return 1;
-  for (var l = ActStartLevel(act); l < end; ++l) xp += LevelUpTime(l, PaceOf(game));
-  return Max(1, xp);
+function ActStartLevel(act) {
+  return act <= 1 ? 1 : ActEndLevel(act - 1);
+}
+
+function ActSpan() {
+  var s = game.actSpan;
+  if (s && s.act == game.act) return s;
+  return game.actSpan = NewActSpan(game.act);   // (a save from before spans, or a new Act)
+}
+
+// Before the Old Bastard™, an Act ends at its level (ActEndLevel in
+// story.js). After him, at the next even level, but no later than an Act
+// at level K.Acts.CapLevel would take at this pace (past 50 a level can
+// take months); the New Bastard™'s is the one that would reach their level.
+function NewActSpan(act) {
+  var A = K.Acts, pace = PaceOf(game), level = GetI(Traits,'Level'), now = CumXP();
+  if (act == A.FinaleAct || EndgameActNow(act)) return { act: act, start: now, end: Infinity };
+  if (act < A.FinaleAct) return { act: act, start: XPBefore(ActStartLevel(act), pace), end: XPBefore(ActEndLevel(act), pace) };
+  var next = level - level % A.LevelsPerAct + A.LevelsPerAct;
+  var cap = XPBefore(A.CapLevel, pace) - XPBefore(A.CapLevel - A.LevelsPerAct, pace);
+  return { act: act, start: now, end: Math.min(XPBefore(next, pace), now + cap) };
+}
+
+// Is this Act the New Bastard™'s? (game.endgameAct, set when it began; a
+// save from when it was always Act L knows it by its story)
+function EndgameActNow(act) {
+  if (game.endgameAct) return act == game.endgameAct;
+  var entry = typeof StoryFor == "function" ? StoryFor(act) : null;
+  return !!(entry && entry.key == 'newbastard');
+}
+
+function ActPlotMax() {
+  var s = ActSpan();
+  return isFinite(s.end) ? Max(1, s.end - s.start) : 1;
 }
 
 function ActProgress() {
-  var act = game.act, end = ActEndLevel(act), max = PlotBar.Max(), level = GetI(Traits,'Level');
-  if (!isFinite(end) || level >= end) return max;
-  var done = 0;
-  for (var l = ActStartLevel(act); l < level; ++l) done += LevelUpTime(l, PaceOf(game));
-  return Min(max, Max(0, done + ExpBar.Position()));
+  var s = ActSpan(), max = PlotBar.Max();
+  if (!isFinite(s.end)) return max;
+  return Min(max, Max(0, CumXP() - s.start));
+}
+
+function ActOver() {
+  return CumXP() >= ActSpan().end;
 }
 
 function CompleteAct() {
-  Sound('victory');
+  Notify('act', { text: ActCaption(game.act) });
   if (typeof Gossip == "function") Gossip('act', { act: ActCaption(game.act) });
   Plots.CheckAll();
   // the next Act, or the one for this level (a hero who started high, or
   // from before Acts went by level, catches up)
-  game.act = Max(game.act + 1, ActForLevel(GetI(Traits,'Level')));
+  var level = GetI(Traits,'Level');
+  game.act = Max(game.act + 1, level < K.Boss.Level ? ActForLevel(level) : 0);
   game.bestplot = 'Act ' + toRoman(game.act);
+  // the New Bastard™'s Act: the one that would reach their level
+  if (!game.endgameAct && !OldBastardAlive() && NewBastardAlive() && K.Endgame &&
+      NewActSpan(game.act).end >= XPBefore(K.Endgame.Level, PaceOf(game)))
+    game.endgameAct = game.act;
+  game.actSpan = NewActSpan(game.act);
   BeginStory(NewStory(game.act));
-  PlotBar.reset(ActPlotMax(game.act), 0);
+  PlotBar.reset(ActPlotMax(), 0);
   PlotBar.reposition(ActProgress());
   if (typeof RivalCatchUp == "function") RivalCatchUp();   // (past Act I without its ending: they've met)
   if (typeof JournalActBegin == "function") JournalActBegin();
@@ -3439,7 +3572,7 @@ function LevelUp() {
   var lv = GetI(Traits,'Level');
   if (lv % K.PerkEvery == 0 && lv <= K.PerkLast) game.perkDue = (game.perkDue || 0) + 1;
   Announce("Level " + lv + ".");
-  Sound('levelup');
+  Notify('levelup', { text: 'Level ' + lv, more: Get(Traits,'Race') + ' ' + Get(Traits,'Class') });
   Brag('l');
   CheckForCheating();
 }
@@ -3502,7 +3635,7 @@ function Timer1Timer() {
     // two levels: K.Acts in story.js)
     if (gain || !game.act) {
       if (game.act) PlotBar.reposition(ActProgress());
-      if (game.act ? GetI(Traits,'Level') >= ActEndLevel(game.act) : PlotBar.done())
+      if (game.act ? ActOver() : PlotBar.done())
         InterplotCinematic();
       else if (!game.act)
         PlotBar.increment(TaskBar.Max() / 1000);
@@ -4217,6 +4350,15 @@ window.onerror = function(message, source, lineno, colno, error) {
 // A sound effect (sound.js), where there's one to play
 function Sound(key) {
   if (typeof PlaySound == "function") PlaySound(key);
+}
+
+// A moment with a sound, and a small pop-up saying what it was for (K.Popups
+// in sound.js): kind 'quest', 'act', 'item', 'levelup', 'defeat', 'elite' or
+// 'splurge'; info { text, more, quiet (no pop-up) }. Only for show.
+function Notify(kind, info) {
+  var P = K.Popups && K.Popups[kind];
+  Sound(P ? P.sound : kind);
+  if (P && !(info && info.quiet) && typeof SoundPopup == "function") SoundPopup(kind, info || {});
 }
 
 function FormKeyDown(e) {
