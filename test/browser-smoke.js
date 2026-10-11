@@ -72,13 +72,19 @@ function step(name, ok, detail) {
     const frame = await (await page.waitForSelector("#newguyFrame")).contentFrame();
     await frame.waitForSelector("#Sold");
     // the same hero every run (a seeded roll, as a Custom Run makes)
-    await frame.goto(BASE + "newguy.html?embed&seed=smoketest");
+    // (the roller offers a pace, Saga unless chosen; this hero is Classic, so the rest of
+    // the steps can count on what a Classic hero does)
+    const pace = await frame.evaluate(() => ({ choice: $("#Pace").val(), options: $("#Pace option").length }));
+    if (pace.choice != "saga" || pace.options < 2) throw new Error("the pace choice: " + JSON.stringify(pace));
+    await frame.goto(BASE + "newguy.html?embed&seed=smoketest&pace=classic");
     await frame.waitForSelector("#Sold");
     await frame.fill("#Name", "Smoketest");
     await frame.click("#Sold");
     await page.waitForURL(/main\.html#/);
     await page.waitForFunction(() => window.game && game.Traits && !IsPaused(), null, { timeout: 15000 });
-    return await page.evaluate(() => game.Traits.Race + " " + game.Traits.Class);
+    const hero = await page.evaluate(() => ({ what: game.Traits.Race + " " + game.Traits.Class, pace: game.pace }));
+    if (hero.pace != "classic") throw new Error("the pace from the address didn't stick: " + hero.pace);
+    return hero.what;
   });
 
   await tryStep("the hero plays 500 tasks", async () => {
@@ -245,13 +251,14 @@ function step(name, ok, detail) {
 
   await tryStep("your rival: met, on the character sheet, in the journal and on Scrollr", async () => {
     const met = await page.evaluate(() => {
-      const before = $("#RivalLine").text();
-      const journal = (game.journal || []).length, feed = game.feedN || 0;
+      // (Act I ends at level 4: by now they may well have met at its end)
+      const already = !!(game.rival && game.rival.told), before = $("#RivalLine").text();
+      const journal = already ? 0 : (game.journal || []).length, feed = game.feedN || 0;
       MeetRival();
-      return { before, line: $("#RivalLine").text(), name: game.rival.n,
-               journal: game.journal.slice(journal).map((e) => e.x), posted: (game.feedN || 0) - feed };
+      return { already, before, line: $("#RivalLine").text(), name: game.rival.n,
+               journal: game.journal.slice(journal).map((e) => e.x), posted: already ? 1 : (game.feedN || 0) - feed };
     });
-    if (met.before) throw new Error("the rival was on the sheet before you'd met: " + met.before);
+    if (!met.already && met.before) throw new Error("the rival was on the sheet before you'd met: " + met.before);
     if (met.line.indexOf("Rival: " + met.name) != 0 || !/level \d+/.test(met.line)) throw new Error("the sheet says " + JSON.stringify(met.line));
     if (!met.journal.some((x) => x.indexOf(met.name) >= 0)) throw new Error("no journal entry about meeting them");
     if (met.posted < 1) throw new Error("Sir Spreddit didn't post about it");

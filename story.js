@@ -1029,14 +1029,24 @@ function StoryVars() {
 }
 
 // Pick the story for a new Act: your race's for Act I, your class's for
-// Act II, and after that one of K.Stories, avoiding the last few used
+// Act II, the Old Bastard™'s for Act 25 (K.FinaleAct) and your rival's for
+// Act 50 (K.EndgameAct); otherwise one of K.Stories, or once the Old
+// Bastard™ has fallen, one that doesn't need him (K.PostStories, and the
+// K.Stories that don't start with him). One not yet told in this life if
+// there is one, else one not told lately.
 function NewStory(act) {
   var story = act == 1 ? K.RaceStories[Get(Traits,'Race')] :
-              act == 2 ? K.ClassStories[Get(Traits,'Class')] : null;
+              act == 2 ? K.ClassStories[Get(Traits,'Class')] :
+              act == K.Acts.FinaleAct ? K.FinaleAct :
+              act == K.Acts.EndgameAct ? K.EndgameAct : null;
   if (!story) {
-    var recent = (game.storyLog || []).slice(-8).map(function (s) { return s.key; });
-    var choices = K.Stories.filter(function (s) { return recent.indexOf(s.key) < 0; });
-    if (!choices.length) choices = K.Stories;
+    var pool = OldBastardAlive() ? K.Stories :
+      K.PostStories.concat(K.Stories.filter(function (s) { return !/Old Bastard/.test(s.setup); }));
+    var told = (game.storyLog || []).map(function (s) { return s.key; });
+    var recent = told.slice(-8);
+    var choices = pool.filter(function (s) { return told.indexOf(s.key) < 0; });
+    if (!choices.length) choices = pool.filter(function (s) { return recent.indexOf(s.key) < 0; });
+    if (!choices.length) choices = pool;
     story = Pick(choices);
   }
   var vars = StoryVars();
@@ -1051,7 +1061,7 @@ function NewStory(act) {
 
 // Every story there is
 function AllStories() {
-  var all = K.Stories.slice();
+  var all = K.Stories.concat(K.PostStories || [], [K.FinaleAct, K.EndgameAct].filter(Boolean));
   [K.RaceStories, K.ClassStories].forEach(function (book) {
     for (var name in book) all.push(book[name]);
   });
@@ -1087,6 +1097,8 @@ function StoryEnding(story) {
   });
   // The end of Act I: you meet your rival (K.Rival)
   if (story.act == 1 && K.Rival) lines = lines.concat(K.Rival.Intro);
+  // Once the Old Bastard™ has fallen, an ending doesn't send you after him
+  lines = PostVictoryEnding(lines, t);
   // The task line adds "..." itself, so drop a trailing period
   return lines.map(function (line) {
     return ProperName(StoryText(line, vars)).replace(/([^.])\.$/, '$1');
@@ -1098,7 +1110,9 @@ function StoryQuest() {
   var story = game.story;
   var t = story && StoryTemplate(story.key);
   if (!t || !t.quests || !story.vars) return null;
-  return StoryText(Pick(t.quests), story.vars);
+  var quest = Pick(t.quests);
+  if (!t.post && !PostVictoryOK(quest)) return null;   // (the Old Bastard™ is beyond questing for)
+  return StoryText(quest, story.vars);
 }
 
 // Quests. Each is "kind|caption". A "hunt" quest picks a monster near your
@@ -1292,7 +1306,7 @@ function MakeQuest() {
     var storyQuest = StoryQuest();
     if (storyQuest && recent.indexOf(storyQuest) < 0) return { caption: storyQuest };
   }
-  var entry = Pick(K.Quests);
+  var entry = Pick(PostVictoryLines(K.Quests));   // (none about the Old Bastard™ once he's gone)
   var kind = Split(entry, 0), caption = Split(entry, 1);
   var vars = {
     guy: ImpressiveGuy(),
@@ -1605,3 +1619,238 @@ function RivalLevelUp() {
   }
   if (typeof ShowRival == "function") ShowRival();
 }
+
+// ---- Acts by level, the Old Bastard™'s Act, and after him ----------------------------
+//
+// An Act every two levels: Act I ends at level 4, Act II at 6... Act XXIV
+// at 50. Act XXV is always the Old Bastard™'s (K.FinaleAct): it ends when
+// he falls. After him the Acts go on, two levels each, toward the end
+// game: Act L, at level 100, is your rival's (K.EndgameAct), who declared
+// themselves the New Bastard™ the day the old one fell. After that, Acts
+// go on for as long as you do.
+K.Acts = { LevelsPerAct: 2, FinaleAct: 25, EndgameAct: 50 };
+
+// The level that ends an Act (Infinity: it ends with a fight, not a level)
+function ActEndLevel(act) {
+  var A = K.Acts, boss = (K.Boss && K.Boss.Level) || 50, end = (K.Endgame && K.Endgame.Level) || 100;
+  if (act < A.FinaleAct) return Math.min(boss, A.LevelsPerAct * (act + 1));
+  if (act == A.FinaleAct || act == A.EndgameAct) return Infinity;
+  if (act < A.EndgameAct) return Math.min(end, boss + A.LevelsPerAct * (act - A.FinaleAct));
+  return end + A.LevelsPerAct * (act - A.EndgameAct);
+}
+
+// The Act a hero of this level should be in (heroes who started high, a
+// Daily Challenge's, and heroes from before Acts went by level, catch up)
+function ActForLevel(level) {
+  var A = K.Acts, boss = (K.Boss && K.Boss.Level) || 50, end = (K.Endgame && K.Endgame.Level) || 100;
+  if (level < boss) return Math.max(1, Math.floor(level / A.LevelsPerAct));
+  if (OldBastardAlive()) return A.FinaleAct;
+  if (level < end) return A.FinaleAct + 1 + Math.floor((level - boss) / A.LevelsPerAct);
+  if (NewBastardAlive()) return A.EndgameAct;
+  return A.EndgameAct + 1 + Math.floor((level - end) / A.LevelsPerAct);
+}
+
+// Has the Old Bastard™ fallen yet? (Then nothing should send you after him.)
+function OldBastardAlive() {
+  return !(typeof game != "undefined" && game && game.finale && game.finale.state == 'won');
+}
+
+// ...and your rival, the New Bastard™ (K.Endgame)?
+function NewBastardAlive() {
+  return !(typeof game != "undefined" && game && game.endgame && game.endgame.state == 'won');
+}
+
+// Can this line be said now? (Not one that has the Old Bastard™ still
+// around, once he isn't.)
+function PostVictoryOK(text) {
+  return OldBastardAlive() || !/Old Bastard/.test(String(text));
+}
+
+// Of a list of lines, the ones that can be said now; all of them if none
+// can (for a pool of lines with nothing better to offer)
+function PostVictoryLines(list) {
+  if (OldBastardAlive() || !list) return list;
+  var ok = list.filter(PostVictoryOK);
+  return ok.length ? ok : list;
+}
+
+// An Act's ending, once he has fallen: "You resume your quest to go after
+// that Old Bastard™" becomes what you're after now; other lines about him
+// are left out
+function PostVictoryEnding(lines, template) {
+  if (OldBastardAlive() || (template && template.post)) return lines;   // (a story for after him says what it likes)
+  return lines.map(function (line) {
+    if (PostVictoryOK(line)) return line;
+    return /resume your quest|continue this super-epic journey|Time to hunt/i.test(line) ? Pick(K.PostVictory.Resume) : null;
+  }).filter(Boolean);
+}
+
+K.PostVictory = {
+  // In place of "You resume your quest to go after that Old Bastard™"
+  Resume: [
+    'You resume your quest to reach level 100 and settle things with {rival}, the New Bastard™',
+    'The Old Bastard™ is gone. {rival} is not. Onward, to level 100',
+    'You pick up where you left off: being a legend, at length',
+    'Somewhere, {rival} is still calling themselves the New Bastard™. You resume your quest to stop that',
+    'You resume your quest, which at this point is mostly a lifestyle'
+  ]
+};
+
+// Act XXV: the Old Bastard™'s. It ends when he falls (the finale,
+// K.FinaleStory, is its ending)
+K.FinaleAct = { key: 'oldbastard', title: 'The Old Bastard™',
+  setup: 'At last, the Old Bastard™ from your vision. He is old. He is a bastard. Beat him before {rival} does, and before he gets any older.',
+  ending: ['The Old Bastard™ falls'],
+  quests: ['Find the Old Bastard™’s cave', 'Practice your victory speech', 'Get there before {rival}', 'Warm up'] };
+
+// Act L: your rival, the New Bastard™, at level 100 (K.Endgame in combat.js;
+// K.EndgameStory below is how the fight is told)
+K.EndgameAct = { key: 'newbastard', title: 'The New Bastard™',
+  setup: '{rival} has spent fifty levels calling themselves the New Bastard™, and the realm has started to believe it. End it.',
+  ending: ['The New Bastard™ falls'],
+  quests: ['Find out where {rival} is hiding', 'Ignore {rival}’s latest post', 'Read the New Bastard™’s terms and conditions', 'Prepare a speech that is better than {rival}’s'] };
+
+// The fight with the New Bastard™, told like the Old Bastard™'s
+// (K.FinaleStory). Placeholders as there, plus {rival}.
+K.EndgameStory = {
+  approach: [
+    'Level 100. The trail leads to the Old Bastard™’s old cave, freshly redecorated',
+    '{rival} is waiting on a throne made of their own merchandise',
+    '“I am the New Bastard™,” says {rival}. “It’s trademarked. I checked”',
+    'Fifty levels of this. You crack your knuckles one more time'
+  ],
+  rematch: [
+    'Back to the cave. {rival} has added a second throne, for emphasis',
+    '“Attempt {tries}?” says {rival}. “I’ve been posting about every one of them”'
+  ],
+  victory: [
+    '{rival} staggers, drops the crown, and sits down on the floor',
+    '“Fine,” says {rival}. “You can be the bastard. I mean the legend. You know what I mean”',
+    'You help them up. Same race, same class, same alignment. Same scars, now',
+    'There is nothing left to beat. There is only more of everything, for as long as you like'
+  ],
+  escape: [
+    '{rival} laughs, and posts about it before you’ve even stood up',
+    'You will be back. They know it. They’ve already drafted the post'
+  ]
+};
+
+// Stories for after the Old Bastard™ (with K.Stories that don't need him).
+// Placeholders as in K.Stories; {nemesis} and {rival} are your rival, the
+// New Bastard™ now.
+K.PostStories = [
+  { key: 'post-estate', title: 'The Estate',
+    setup: 'The Old Bastard™ left a will. It leaves everything to {rival}. Contest it.',
+    ending: ['The will is read aloud in {kingdom}. It is mostly insults, addressed to you by name.',
+             'The estate is a cave, a collection of {boring}, and a great deal of debt.',
+             'The judge awards you the debt. {rival} gets the {boring}.',
+             'You resume your quest to reach level 100 and settle things with {rival}, the New Bastard™.'],
+    quests: ['Hire a lawyer in {kingdom}', 'Find a witness who liked the Old Bastard™', 'Read the small print', 'Object to {rival}’s character witness, who is {rival}'] },
+  { key: 'post-tour', title: 'The Victory Tour',
+    setup: 'Every kingdom wants to see the hero who beat the Old Bastard™. {guy} has booked the tour. Survive it.',
+    ending: ['The tour reaches {kingdom}. The crowd is three goats and {guy}.',
+             'You tell the story of the final fight. It gets longer every night.',
+             '{rival} is touring the other way, telling it differently.',
+             'The tour ends in debt, as tours do. Onward, to level 100.'],
+    quests: ['Sign 400 portraits of yourself', 'Practice your humble face', 'Avoid {rival}’s tour bus', 'Sell tour merchandise in {kingdom}'] },
+  { key: 'post-sequel', title: 'The Sequel',
+    setup: 'The bards want a sequel. There is no sequel. {rival} has offered to provide one. Stop them.',
+    ending: ['{rival} has written “The Old Bastard™ II: Bastard Harder”. It stars {rival}.',
+             'The first reading in {kingdom} is a disaster. Nobody leaves, out of politeness.',
+             'You write a rebuttal. It is worse. You both sell out.',
+             'The realm wants a third. Nobody wants a third.'],
+    quests: ['Read {rival}’s manuscript', 'Find a bard who owes you money', 'Write a better ending', 'Burn the second draft'] },
+  { key: 'post-cave', title: 'The Cleanup',
+    setup: 'Somebody has to clean out the Old Bastard™’s cave. The realm has decided it is you.',
+    ending: ['The cave goes back further than anyone thought. It is all {boring}.',
+             'At the back you find a door marked “Definitely Not An Exit”. You don’t open it.',
+             'You find {rival} measuring the walls for curtains.',
+             'The cave is clean. {rival} moves in. You resume your quest.'],
+    quests: ['Rent a cart', 'Sort the {boring} into piles', 'Evict a family of {race}', 'Fumigate'] },
+  { key: 'post-hall', title: 'The Waiting List',
+    setup: 'The Hall of Legends has a waiting list. You are on it, behind {rival}, somehow. Get to the front.',
+    ending: ['The Hall’s clerk explains the list. Nobody understands the list.',
+             'You bribe the clerk with {boring}. The clerk is offended, then accepts.',
+             'You are now ahead of {rival}. {rival} has filed a complaint, in triplicate.',
+             'The list will be reviewed at level 100. Of course it will.'],
+    quests: ['Fill in form 7B', 'Find form 7A', 'Wait', 'Wait some more'] },
+  { key: 'post-ghost', title: 'The Haunting',
+    setup: 'The ghost of the Old Bastard™ is haunting {kingdom}. Mostly he complains about you. Make him stop.',
+    ending: ['The ghost appears at midnight and calls you “{insult}”, for old times’ sake.',
+             'You try an exorcism. The ghost critiques your technique.',
+             'You agree to visit once a year. The ghost agrees to haunt {rival} instead.',
+             '{rival} is furious. The ghost is delighted. You resume your quest.'],
+    quests: ['Buy holy water in bulk', 'Ask a priest of {kingdom} about ghosts', 'Learn the ghost’s schedule', 'Introduce the ghost to {rival}'] },
+  { key: 'post-merch', title: 'The Merchandise',
+    setup: 'Your face is on mugs all over {kingdom}. You are not getting paid for it. Find out who is.',
+    ending: ['The trail leads to a warehouse full of mugs.',
+             'The owner of the warehouse is {rival}. Of course it is.',
+             'You negotiate. You now get one copper per mug. {rival} gets the rest.',
+             'You buy a mug. It’s a good mug. Onward, to level 100.'],
+    quests: ['Count the mugs', 'Find the warehouse', 'Read your contract, which you never signed', 'Sue {rival}'] },
+  { key: 'post-reunion', title: 'The Reunion',
+    setup: 'Everyone you ever met on your quest is having a reunion in {kingdom}, and it would be rude not to go.',
+    ending: ['{guy} is there. {guy2} is there. A lot of people you killed are there, somehow.',
+             'The monsters have formed a support group. They are doing well.',
+             '{rival} gives a toast. It is about {rival}.',
+             'You leave early. You are a legend. Legends leave early.'],
+    quests: ['Find something to wear', 'Remember everyone’s name', 'Avoid the monsters’ table', 'Bring a dish'] },
+  { key: 'post-therapy', title: 'The Therapy',
+    setup: 'Without the Old Bastard™ to chase, you feel strange. A therapist in {kingdom} has an opening. Go.',
+    ending: ['The therapist asks how the Old Bastard™ made you feel. You talk for six hours.',
+             'It turns out you defined yourself by your enemy. The therapist asks about {rival}.',
+             'You talk for six more hours. The therapist raises their rates.',
+             'You leave feeling better, and with a new enemy: the bill.'],
+    quests: ['Make an appointment', 'Keep a feelings journal', 'Stop talking about {rival}', 'Pay the bill'] },
+  { key: 'post-talkshow', title: 'The Talk Show',
+    setup: 'Sir Spreddit has invited you onto his show, live, to talk about your victory. {rival} is the other guest.',
+    ending: ['The show opens with a clip of the final fight. It has been edited to feature {rival}.',
+             'You correct the record. {rival} corrects your correction.',
+             'Sir Spreddit rings his bell. Nobody knows what it means.',
+             'The ratings are excellent. You resume your quest to reach level 100.'],
+    quests: ['Rehearse your anecdotes', 'Choose a talk-show outfit', 'Get to the studio before {rival}', 'Smile less'] },
+  { key: 'post-heir', title: 'The Heir',
+    setup: 'A child in {kingdom} claims to be the Old Bastard™’s heir. It is a very convincing beard. Investigate.',
+    ending: ['The beard comes off. It is three {race} in a trench coat.',
+             'They were hired by {rival}, to “keep the brand alive”.',
+             'You let them go. They have rent to pay.',
+             'The brand, you suspect, is not dead. Onward.'],
+    quests: ['Interview the heir', 'Tug the beard', 'Follow the trench coat', 'Report {rival} to someone'] },
+  { key: 'post-statue', title: 'The Monument',
+    setup: '{kingdom} is building a monument to the Old Bastard™’s defeat. {rival} is the sculptor. Supervise.',
+    ending: ['The monument is unveiled. It is {rival}, beating the Old Bastard™.',
+             'You are in it, small, in the background, holding {rival}’s coat.',
+             'You commission a second monument. It is bigger.',
+             'There is now a monument war in {kingdom}. Onward, to level 100.'],
+    quests: ['Inspect the scaffolding', 'Pose for a sculptor', 'Hide {rival}’s chisels', 'Pay for marble'] },
+  { key: 'post-pension', title: 'The Pension',
+    setup: 'Heroes who beat an Old Bastard™ are owed a pension. The pension office in {kingdom} disagrees. Collect.',
+    ending: ['The pension office has no record of the Old Bastard™, or of you.',
+             'You produce his beard as evidence. They need two forms of identification.',
+             'The pension is approved: one {boring} a month.',
+             '{rival} has applied for the same pension. Onward, to level 100.'],
+    quests: ['Find your birth certificate', 'Prove you were there', 'Queue', 'Queue again'] },
+  { key: 'post-apprentice', title: 'The Apprentice',
+    setup: 'A young {klass} wants to be your apprentice. You have never taught anyone anything. Try.',
+    ending: ['Lesson one: hit things. The apprentice takes notes.',
+             'Lesson two: hit bigger things. The apprentice is hit by a bigger thing.',
+             'The apprentice joins {rival} instead, who offers a stipend.',
+             'You feel strangely proud, and also robbed.'],
+    quests: ['Write a syllabus', 'Find a training dummy', 'Explain the Killing Fields™', 'Grade an essay'] },
+  { key: 'post-prophecy', title: 'The Second Prophecy',
+    setup: 'A new prophecy has surfaced: at level 100, a hero will face a bastard newer than the last. {rival} is very excited about it.',
+    ending: ['You find the prophet. They are {guy}, and they owe {rival} money.',
+             'The prophecy was paid for. It is still, technically, a prophecy.',
+             '{rival} has printed it on banners all over {kingdom}.',
+             'Level 100, then. Fine.'],
+    quests: ['Find the prophet', 'Read the prophecy, carefully', 'Take down a banner', 'Check the prophecy’s receipts'] },
+  { key: 'post-boredom', title: 'The Quiet',
+    setup: 'For the first time in your life, nothing is trying to kill you. It is unbearable. Find something.',
+    ending: ['You take up knitting. You knit a sword. It doesn’t work.',
+             'You take up gardening. Something in the garden tries to kill you. Finally.',
+             'It is a {boring} with teeth. You win. You feel alive.',
+             'You resume your quest, gratefully.'],
+    quests: ['Take up a hobby', 'Take up a second hobby', 'Visit {kingdom2}', 'Pick a fight with a garden'] }
+];
+// (they're for after him: they may mention him, in the past)
+K.PostStories.forEach(function (st) { st.post = true; });

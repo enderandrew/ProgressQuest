@@ -169,6 +169,9 @@ function FrontPage(l) {
   var story = $('<div class="fp-story">').appendTo(cols);
   $('<p>').text(ChronicleFill(ChroniclePick(C.Leads, key + 'l'), v)).appendTo(story);
   $('<p>').text(ChronicleFill(ChroniclePick(seconds, key + 'x'), v)).appendTo(story);
+  if (l.endgame)   // (the end game: K.Endgame)
+    $('<p>').text('Fifty levels later they beat their rival, ' + (l.endgame.rival ? l.endgame.rival + ', ' : '') +
+      'the New Bastard™, at level ' + l.endgame.level + '. The crown is in the gift shop.').appendTo(story);
   if (l.bestspell || l.beststat)
     $('<p>').text('Colleagues remember ' + [l.bestspell ? 'their ' + l.bestspell : '', l.beststat ? 'a ' + l.beststat : '']
       .filter(Boolean).join(' and ') + ', and little else.').appendTo(story);

@@ -602,7 +602,9 @@ function ShowHall(legends) {
     row.find(".feat").text("Beat the Old Bastard\u2122 at level " + l.wonLevel + ", " + Hours(l.wonAt || 0) +
       " in, " + (l.tries > 1 ? "on the " + Ordinal(l.tries) + " try" : "on the first try") +
       " \u00b7 defeated " + (l.deaths || 0).toLocaleString() + (l.deaths == 1 ? " time" : " times") +
-      " \u00b7 " + Hours(l.played || 0) + " played");
+      " \u00b7 " + Hours(l.played || 0) + " played" +
+      (l.endgame ? " \u00b7 \uD83D\uDC51 and beat " + (l.endgame.rival || "their rival") + ", the New Bastard\u2122, at level " + l.endgame.level : "") +
+      (l.pace == "saga" ? " \u00b7 Saga" : ""));
     row.find(".best").text([l.bestequip, l.bestspell, l.beststat].filter(Boolean).join(" / "));
     row.find(".taunt").text(l.taunt ? "\u201c" + l.taunt + "\u201d (the Old Bastard\u2122, in the Prologue)" : "");
     if (l.id === hashTarget) row.addClass("lit");

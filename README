@@ -399,14 +399,62 @@ I am reasonably happy with how balanced the current design is, but I will
 likely continue to tweak for better balance in the future.
 
 
+Pace, Acts and the end game
+---------------------------
+
+A hero is rolled at one of two paces (the choice beside Sold!; K.Pace in
+config.js, game.pace):
+
+- Saga: about 75 days of play to level 50. Level L takes 820 × L^1.5 XP
+  (seconds of fighting), so it's a level every few hours at first and
+  every few days by the end, with no wall. Six simulated heroes took 55
+  to 120 days (74 on average; the sturdy ones about two months, the
+  fragile ones four): level 10 on day 1 to 4, 20 on day 7 to 23, 30 on
+  day 18 to 55, 40 on day 35 to 90. Past 50 it goes on the same way,
+  toward level 100.
+- Classic: about a week, the curve this Remix has always had (4 minutes
+  at level 1, 15% more each level; most of it in the last ten). Daily
+  Challenges are Classic, and so is any hero from before the choice.
+
+A hero is as strong at a level at either pace: quests are longer in step
+with the levels (QuestScale), an event's XP is a share of a Classic level
+(at Saga it would otherwise do most of the levelling), and the things that
+make a hero stronger by the hour rather than by the level, gold sink
+splurges and named elites, come 13 times less often (K.Pace.saga.Rare).
+The Saga numbers were fitted on simulated heroes (node sim.js --pace saga).
+Time away is caught up for up to 72 hours (K.CatchUp), so an idler can
+close the tab for a weekend.
+
+Acts come every two levels (K.Acts in story.js): Act I ends at level 4,
+Act XXIV at 50. Act XXV is always the Old Bastard™'s (K.FinaleAct): the
+finale is its ending. A hero who keeps going after him goes on two levels
+an Act, toward the end game: their rival, who declared themselves the New
+Bastard™ the day the old one fell, waits at level 100 in Act L
+(K.EndgameAct; K.Endgame in combat.js; told by K.EndgameStory). After
+that, Acts go on for as long as you do. A Daily hero who starts high, or a
+hero from before Acts went by level, catches up to the Act for their level
+when the current one ends.
+
+Once the Old Bastard™ has fallen, nothing sends you after him: stories
+that start with him aren't picked (K.PostStories, 16 stories for after
+him, are), an Act ending's "You resume your quest to go after that Old
+Bastard™" becomes what you're after now (K.PostVictory), and the journal,
+Scrollr, events, quests and the entourage leave out lines that need him
+alive (OldBastardAlive and PostVictoryOK in story.js). Pools written for
+after him (the journal's K.JournalAfterAsides, Scrollr's afterRealm and
+newBastard, events with after: true) can mention him, in the past. Beating
+the New Bastard™ is in the Hall ("👑 and beat ... at level 100"), on the
+front page, and an achievement (Bastard, Junior).
+
+
 Story
 -----
 
 Every Act has a story, picked when the Act begins and shown in a box
 under Plot Development ("Act II: The Heist - {guy} hires you to steal
 the {item} from the vaults of {kingdom}. It is definitely not a setup.").
-When the Act's bar fills, that same story's ending plays out as the
-cinematic, with the same people and places, and the next Act begins
+When the Act is over (every two levels; see above), that same story's
+ending plays out as the cinematic, with the same people and places, and the next Act begins
 with a new story. Hover over an Act in the list to see what it was
 about and, once it is over, how it ended (handy, since the game idles
 and the cinematic is easy to miss). The Prologue is always the Old Bastard™

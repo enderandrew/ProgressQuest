@@ -110,6 +110,10 @@ function NewGuyFormLoad() {
   seed = new Alea();
   RollEm();
   ShowRunOptions();
+  // the pace: the last one chosen, unless the address says
+  try { var pace = localStorage.getItem("pq.pace"); if (K.Pace[pace]) $("#Pace").val(pace); } catch (e) {}
+  if (K.Pace[UrlParam("pace")]) $("#Pace").val(UrlParam("pace")).prop("disabled", true);
+  $("#Pace").on("change", function () { try { localStorage.setItem("pq.pace", this.value); } catch (e) {} });
   GenClick();
 
   fill("#races", K.Races, "Race");
@@ -167,7 +171,7 @@ function sold() {
     Quests: [],
     questmonster: "",
     kill: "Loading....",
-    ExpBar: { position: 0, max: LevelUpTime(1) },
+    ExpBar: { position: 0, max: LevelUpTime(1, RunPace()) },
     EncumBar: { position: 0, max: CarryFor(stats.STR) },
     PlotBar: { position: 0, max: 26 },
     QuestBar: { position: 0, max: 1 },
@@ -186,6 +190,7 @@ function sold() {
     choiceLog: [],
     perks: [perkRoll],
     mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : NewGameMinus() ? "minus" : "normal",
+    pace: RunPace(),   // (Saga or Classic: K.Pace in config.js)
     lifeId: NewLifeId(),   // who they are in storage, and to the Hardcore ledger
     saveGen: 0,
     legacy: (NewGamePlus() || Hardcore()) && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } :
@@ -286,6 +291,17 @@ function sold() {
 
 // newguy.html?seed=...: every roll of the run follows from it
 function RunSeed() { return UrlParam("seed").slice(0, 64); }
+
+// The pace (K.Pace in config.js): from the page's address (newguy.html?pace=classic),
+// else the choice beside Sold (remembered), else the default. The simulator,
+// which has no page, plays Classic unless told otherwise (it keeps the tests quick).
+function RunPace() {
+  var p = UrlParam("pace");
+  if (K.Pace[p]) return p;
+  if (!document) return 'classic';
+  var v = $("#Pace").val();
+  return K.Pace[v] ? v : K.PaceDefault;
+}
 
 // newguy.html?mut=nospells,glasscannon
 function RunMutators() {

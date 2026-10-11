@@ -455,6 +455,8 @@ function Dequeue() {
       }
     } else if (FinaleDue()) {
       StartFinale();   // queues the cinematic and the fight; picked up next time round
+    } else if (EndgameDue()) {
+      StartEndgame();  // the same, with your rival (K.Endgame)
     } else if (NeedsRest()) {
       // A heal spell gets you back on your feet twice as fast
       var heals = MutatorProduct('castMult') ? game.Spells.filter(function (sp) { return SpellType(sp[0]) == 'heal'; }) : [];
@@ -509,7 +511,7 @@ function Dequeue() {
 // in K.Elite.Odds. Never a passing NPC, a group, or a low-level
 // hero. Returns { name, kind, epithet, level, foe } or null.
 function EliteFor(t, seed) {
-  if (!K.Elite || new Alea("elite", seed)() * K.Elite.Odds >= 1) return null;
+  if (!K.Elite || new Alea("elite", seed)() * K.Elite.Odds * PaceRare(game) >= 1) return null;   // (rarer at the Saga pace)
   if (Split(game.task,3) == '*' || GetI(Traits,'Level') < K.Elite.MinLevel) return null;
   var kind = Split(game.task,1);
   // as tough as the fight the hero picked (a group's worth, for a group),
@@ -733,7 +735,7 @@ function MakeObituary(fight) {
     legacy: game.legacy ? (game.legacy.races || []).length + (game.legacy.klasses || []).length : 0,
     taunt: (prologue && prologue.taunt) || '',
     headline: 'Here lies ' + Get(Traits,'Name') + ', level ' + level + ' ' + Get(Traits,'Race') + ' ' + Get(Traits,'Class'),
-    cause: (fight.boss ? 'Slain by the Old Bastard\u2122 himself' : 'Slain by ' + foe) + ' at level ' + level,
+    cause: (fight.boss && /Old Bastard/.test(foe) ? 'Slain by the Old Bastard\u2122 himself' : 'Slain by ' + foe) + ' at level ' + level,
     lastWords: O.lastWords.length ? StoryText(Pick(O.lastWords), vars) : '',
     epitaph: O.epitaphs.length ? StoryText(Pick(O.epitaphs), vars) : '',
     cheater: game.cheater ? game.cheater.reason : null,
@@ -772,7 +774,7 @@ function ShowDeath(obit) {
 // game.finale: { state: 'pending' or 'won', tries, nextTry (game seconds),
 // wonAt, wonLevel }. null until the first attempt.
 function FinaleDue() {
-  if (GetI(Traits,'Level') < K.Boss.Level || game.event) return false;
+  if (GetI(Traits,'Level') < K.Boss.Level || game.event || game.act < K.Acts.FinaleAct) return false;
   var f = game.finale;
   if (f && f.state == 'won') return false;
   return !f || (game.elapsed || 0) >= (f.nextTry || 0);
@@ -789,19 +791,22 @@ function FinaleVars() {
 
 // Queue the lines of a part of the finale (K.FinaleStory), narrated. The
 // last line can carry a marker for Dequeue.
-function QueueFinale(part, marker) {
+function QueueFinale(part, marker, book) {
   var vars = FinaleVars();
   vars.raceending = FinaleEnding(K.FinaleRaceEndings, Get(Traits,'Race'));
   vars.classending = FinaleEnding(K.FinaleClassEndings, Get(Traits,'Class'));
   // (a race or class without a line of its own just skips it)
-  var story = game.mode == 'minus' && K.MinusFinale && K.MinusFinale[part] ? K.MinusFinale : K.FinaleStory;
+  var story = book || (game.mode == 'minus' && K.MinusFinale && K.MinusFinale[part] ? K.MinusFinale : K.FinaleStory);
   var lines = (story[part] || []).filter(function (line) {
     return !/^\{(race|class)ending\}$/.test(line) || vars[line.slice(1, -1)];
   });
+  var told = [];
   $.each(lines, function (i, line) {
     var text = ProperName(StoryText(line, vars)).replace(/\|/g, '/');
+    told.push(text);
     game.queue.push('scene|4|' + text + (marker && i == lines.length - 1 ? '|' + marker : ''));
   });
+  return told;
 }
 
 // The victory line for this race or class (K.FinaleRaceEndings and
@@ -811,18 +816,46 @@ function FinaleEnding(list, name) {
 }
 
 function StartFinale() {
+  game.bossKind = 'old';
   game.finale = game.finale || { state: 'pending', tries: 0 };
   QueueFinale(game.finale.tries && K.FinaleStory.rematch ? 'rematch' : 'approach');
   game.queue.push('boss|0|The Old Bastard\u2122');
   Log('The finale begins');
 }
 
+// ---- The end game: your rival, the New Bastard™ (K.Endgame) ------------------
+//
+// For a hero who beat the Old Bastard™ and kept going: at level 100, in Act
+// L (K.Acts in story.js), the rival who declared themselves the New
+// Bastard™. game.endgame is like game.finale.
+function EndgameDue() {
+  if (!K.Endgame || OldBastardAlive() || !NewBastardAlive() || game.event) return false;
+  if (GetI(Traits,'Level') < K.Endgame.Level || game.act < K.Acts.EndgameAct) return false;
+  var e = game.endgame;
+  return !e || (game.elapsed || 0) >= (e.nextTry || 0);
+}
+
+function NewBastardName() {
+  var r = typeof Rival == "function" ? Rival() : null;
+  return (r ? r.n + ', ' : '') + K.Endgame.Title;
+}
+
+function StartEndgame() {
+  game.bossKind = 'new';
+  game.endgame = game.endgame || { state: 'pending', tries: 0 };
+  QueueFinale(game.endgame.tries ? 'rematch' : 'approach', null, K.EndgameStory);
+  game.queue.push('boss|0|' + NewBastardName());
+  Log('The end game begins');
+}
+
 // The fight itself. Settled now, like any fight; the task bar plays it out.
+// The Old Bastard™, or in the end game, the New Bastard™ (game.bossKind)
 function BeginBoss() {
-  var B = K.Boss;
+  var endgame = game.bossKind == 'new';
+  var B = endgame ? K.Endgame : K.Boss, record = endgame ? game.endgame : game.finale;
   RestoreHealth();   // you rested up for this
-  var escapes = game.finale.tries || 0;   // he gets older every time he runs
-  var foe = { name: 'the Old Bastard\u2122',
+  var escapes = record.tries || 0;   // he gets older every time he runs
+  var foe = { name: endgame ? NewBastardName() : 'the Old Bastard\u2122',
               level: Max(1, B.Level + B.BossLevelGap - Min(B.WeakenMax, escapes * B.WeakenPerEscape)),
               qty: 1, boss: true, hpMult: B.BossHP, maxRounds: B.BossMaxRounds };
   var hero = HeroSnapshot();
@@ -833,9 +866,9 @@ function BeginBoss() {
   fight.qty = 1;
   fight.boss = true;
   game.combat = fight;
-  game.finale.tries = (game.finale.tries || 0) + 1;
-  Task('Fighting the Old Bastard\u2122 for the fate of everything (attempt ' + game.finale.tries + ')',
-       Min(60000, 10000 + fight.rounds * 800));
+  record.tries = (record.tries || 0) + 1;
+  Task((endgame ? 'Fighting ' + foe.name + ' for the last word' : 'Fighting the Old Bastard\u2122 for the fate of everything') +
+       ' (attempt ' + record.tries + ')', Min(60000, 10000 + fight.rounds * 800));
   game.task = 'boss';
   ShowFight(true);
 }
@@ -843,6 +876,7 @@ function BeginBoss() {
 // The fight has played out (FinishFight has applied it)
 function FinishBoss() {
   if (game.dead) return;
+  if (game.bossKind == 'new') return FinishEndgame();
   var fight = game.combat || {};
   var f = game.finale = game.finale || { state: 'pending', tries: 1 };
   if (fight.outcome == 'win' || fight.outcome == 'close') {
@@ -858,7 +892,11 @@ function FinishBoss() {
     if (game.mode == 'minus') { CodexFlag('bossminus'); MinusBanner('OLD BASTARD FELLED', 'felled'); }
     Sound('finale');
     $.each(game.mutators || [], function (i, m) { CodexFlag('boss:' + m); });
-    QueueFinale('victory', 'victory');
+    // the victory is Act XXV's ending; then on, toward the end game
+    var told = QueueFinale('victory', 'victory');
+    var entry = StoryFor(game.act);
+    if (entry && game.act == K.Acts.FinaleAct) { entry.ending = told; RefreshActTooltips(); }
+    game.queue.push('plot|1|Loading ...');
     ShowRetire();
     Brag('f');
   } else {
@@ -867,6 +905,33 @@ function FinishBoss() {
     if (typeof Gossip == "function") Gossip('finale', { won: false });
     if (fight.outcome != 'defeat') MinusBanner('YOU DIED', 'died');   // (New Game−; a defeat has already said so)
     QueueFinale('escape');
+  }
+}
+
+function FinishEndgame() {
+  var fight = game.combat || {};
+  var e = game.endgame = game.endgame || { state: 'pending', tries: 1 };
+  if (fight.outcome == 'win' || fight.outcome == 'close') {
+    e.state = 'won';
+    e.wonAt = game.elapsed || 0;
+    e.wonLevel = GetI(Traits,'Level');
+    Log('Defeated the New Bastard\u2122 after ' + e.tries + (e.tries == 1 ? ' try' : ' tries'));
+    if (typeof JournalEndgame == "function") JournalEndgame(true, e.tries);
+    if (typeof Gossip == "function") Gossip('endgame', { won: true });
+    CodexFlag('endgame');
+    if (game.mode == 'minus') MinusBanner('NEW BASTARD FELLED', 'felled');
+    Sound('finale');
+    var told = QueueFinale('victory', 'victory', K.EndgameStory);
+    var entry = StoryFor(game.act);
+    if (entry && game.act == K.Acts.EndgameAct) { entry.ending = told; RefreshActTooltips(); }
+    game.queue.push('plot|1|Loading ...');
+    Brag('f');
+  } else {
+    e.nextTry = (game.elapsed || 0) + K.Endgame.RetryMinutes * 60;
+    if (typeof JournalEndgame == "function") JournalEndgame(false, e.tries);
+    if (typeof Gossip == "function") Gossip('endgame', { won: false });
+    if (fight.outcome != 'defeat') MinusBanner('YOU DIED', 'died');
+    QueueFinale('escape', null, K.EndgameStory);
   }
 }
 
@@ -885,11 +950,16 @@ function ShowFinaleDialog() {
   if (_catchingUp) { _catchingUp.finale = true; return; }   // shown after the summary
   var dlg = document.getElementById("FinaleDialog");
   if (!dlg || !dlg.showModal) return;
-  var f = game.finale;
-  $("#FinaleSummary").text(Get(Traits,'Name') + " beat the Old Bastard\u2122 at level " + f.wonLevel +
-    ", " + RoughTime(f.wonAt) + " into the adventure" +
+  var f = game.endgame && game.endgame.state == 'won' && game.bossKind == 'new' ? game.endgame : game.finale;
+  $("#FinaleSummary").text(Get(Traits,'Name') + " beat " + (f === game.finale ? "the Old Bastard\u2122" : NewBastardName()) +
+    " at level " + f.wonLevel + ", " + RoughTime(f.wonAt) + " into the adventure" +
     (f.tries > 1 ? ", on attempt " + f.tries : ", on the first try") +
     ", after being defeated " + (game.deaths || 0) + (game.deaths == 1 ? " time." : " times."));
+  $("#FinaleTitle").text(f === game.finale ? "The Old Bastard\u2122 is defeated!" : "The New Bastard\u2122 is defeated!");
+  $("#FinaleNext").text(f === game.finale ?
+    "Kept going? Your rival " + (typeof Rival == "function" && Rival() ? Rival().n + " " : "") + "has already declared themselves the New Bastard\u2122, " +
+    "and means to be waiting at level " + K.Endgame.Level + "." :
+    "There's nothing left to beat. There's only more of everything, for as long as you like.");
   CloseEventPopup();
   if (!dlg.open) dlg.showModal();
 }
@@ -976,6 +1046,10 @@ function MakeLegend() {
     wonLevel: f.wonLevel || GetI(Traits,'Level'),
     wonAt: Math.round(f.wonAt || game.elapsed || 0),
     tries: f.tries || 1,
+    // the end game (K.Endgame): beat their rival, the New Bastard™, too
+    endgame: game.endgame && game.endgame.state == 'won' ?
+      { level: game.endgame.wonLevel, tries: game.endgame.tries || 1, rival: typeof Rival == "function" && Rival() ? Rival().n : '' } : null,
+    pace: PaceOf(game),
     deaths: game.deaths || 0,
     acts: game.act || 0,
     bestequip: game.bestequip || '',
@@ -1118,7 +1192,9 @@ function MaybeEvent(where, resume) {
       (!e.race || e.race == Get(Traits,'Race')) && (!e.klass || e.klass == Get(Traits,'Class')) &&
       (!e.sink || !!LiveBoon(e.sink)) &&   // (only with what the gold bought: K.SinkCompany)
       (!e.rival || (typeof RivalMet == "function" && RivalMet())) &&   // (only once you've met your rival)
-      (!e.minus || game.mode == 'minus');   // (New Game− only: minus.js)
+      (!e.minus || game.mode == 'minus') &&   // (New Game− only: minus.js)
+      (!e.after || !OldBastardAlive()) &&     // (only once the Old Bastard™ has fallen)
+      (e.after || !OldBastardOnly(e));        // (and none that need him alive, once he isn't)
   });
   if (!choices.length) return;
   var total = 0;
@@ -1168,6 +1244,13 @@ function MaybeEvent(where, resume) {
     instance.askAt = instance.lines.length;
     game.queue.push('choice|' + K.ChoiceSeconds + '|' + instance.ask);
   }
+}
+
+// Does this event need the Old Bastard™ alive? (Worked out once, from its words)
+function OldBastardOnly(e) {
+  if (OldBastardAlive()) return false;
+  if (e._ob === undefined) e._ob = /Old Bastard/.test(JSON.stringify([e.lines, e.ask, e.choices]));
+  return e._ob;
 }
 
 function EventLine(line, vars) {
@@ -1438,8 +1521,12 @@ function ApplyEventEffect(fx, amt, result) {
     result.push('Wounded for ' + fx.wounded + (fx.wounded == 1 ? ' fight' : ' fights'));
   }
   if (fx.xp) {
-    ExpBar.increment(ExpBar.Max() * fx.xp);
-    result.push('+' + Math.round(fx.xp * 100) + '% of the way to the next level');
+    // a share of a Classic level (K.Pace): at the Saga pace, where a level
+    // is far longer and events come far more often in it, a share of the
+    // whole level would do most of the levelling
+    var gained = LevelUpTime(GetI(Traits,'Level'), 'classic') * fx.xp, share = gained / Max(1, ExpBar.Max());
+    ExpBar.increment(gained);
+    result.push('+' + (share >= 0.01 ? Math.round(share * 100) : Math.round(share * 1000) / 10) + '% of the way to the next level');
   }
   if (fx.perk && AddPerk(fx.perk)) result.push('New perk: ' + PerkByKey(fx.perk).label);
 }
@@ -1638,7 +1725,7 @@ function SplurgeDue(old) {
   if (old != 'market' && old != 'sell' && old != 'buying') return false;
   if (GetI(Traits,'Level') < K.Sink.MinLevel) return false;
   if (game.lastSplurge !== undefined &&
-      (game.elapsed || 0) - game.lastSplurge < K.Sink.CooldownHours * 3600) return false;
+      (game.elapsed || 0) - game.lastSplurge < K.Sink.CooldownHours * 3600 * PaceRare(game)) return false;   // (rarer at the Saga pace)
   return SpareGold() >= K.Sink.Hoard * PremiumPrice() * MutatorProduct('hoardMult');
 }
 
@@ -1845,6 +1932,7 @@ function CompanyChatter(kind, fight) {
   (game.boons || []).forEach(function (b) {
     var talk = BoonLive(b) && K.SinkCompany[b.k];
     var lines = talk && (talk[kind] || (kind == 'close' && talk.win));
+    if (lines) lines = lines.filter(PostVictoryOK);   // (nothing that needs the Old Bastard™ alive, once he isn't)
     if (lines && lines.length) options.push({ b: b, lines: lines });
   });
   if (!options.length) return;
@@ -3100,7 +3188,8 @@ function WinItem() {
 }
 
 function CompleteQuest() {
-  QuestBar.reset(50 + Random(100));
+  // (as many quests a level at any pace: QuestScale in config.js)
+  QuestBar.reset(Math.round((50 + Random(100)) * QuestScale(GetI(Traits,'Level'), PaceOf(game))));
   if (Quests.length()) {
     if (typeof Gossip == "function") Gossip('quest', { done: game.bestquest });
     Sound('victory');
@@ -3201,14 +3290,42 @@ function toArabic(s) {
   return _arabic[key] = n;
 }
 
+// The Plot bar for an Act: the XP from the level it began at to the level
+// that ends it (an Act that ends with a fight, the Old Bastard™'s or the
+// New Bastard™'s, shows full)
+function ActStartLevel(act) {
+  if (act <= 1) return 1;
+  var prev = ActEndLevel(act - 1);
+  return isFinite(prev) ? prev : act - 1 == K.Acts.FinaleAct ? K.Boss.Level : K.Endgame.Level;
+}
+
+function ActPlotMax(act) {
+  var end = ActEndLevel(act), xp = 0;
+  if (!isFinite(end)) return 1;
+  for (var l = ActStartLevel(act); l < end; ++l) xp += LevelUpTime(l, PaceOf(game));
+  return Max(1, xp);
+}
+
+function ActProgress() {
+  var act = game.act, end = ActEndLevel(act), max = PlotBar.Max(), level = GetI(Traits,'Level');
+  if (!isFinite(end) || level >= end) return max;
+  var done = 0;
+  for (var l = ActStartLevel(act); l < level; ++l) done += LevelUpTime(l, PaceOf(game));
+  return Min(max, Max(0, done + ExpBar.Position()));
+}
+
 function CompleteAct() {
   Sound('victory');
   if (typeof Gossip == "function") Gossip('act', { act: ActCaption(game.act) });
   Plots.CheckAll();
-  game.act += 1;
-  PlotBar.reset(60 * 60 * (1 + 5 * game.act)); // 1 hr + 5/act
+  // the next Act, or the one for this level (a hero who started high, or
+  // from before Acts went by level, catches up)
+  game.act = Max(game.act + 1, ActForLevel(GetI(Traits,'Level')));
   game.bestplot = 'Act ' + toRoman(game.act);
   BeginStory(NewStory(game.act));
+  PlotBar.reset(ActPlotMax(game.act), 0);
+  PlotBar.reposition(ActProgress());
+  if (typeof RivalCatchUp == "function") RivalCatchUp();   // (past Act I without its ending: they've met)
   if (typeof JournalActBegin == "function") JournalActBegin();
   Narrate(ActCaption(game.act) + '. ' + game.story.purpose);
   Plots.AddUI(ActCaption(game.act));
@@ -3303,7 +3420,7 @@ function LevelUp() {
   WinStat();
   WinSpell();
   RestoreHealth();  // a new level, a fresh start
-  ExpBar.reset(LevelUpTime(GetI(Traits,'Level')));
+  ExpBar.reset(LevelUpTime(GetI(Traits,'Level'), PaceOf(game)));
   if (typeof JournalLevel == "function") JournalLevel();
   if (typeof Gossip == "function") Gossip('level');
   if (typeof RivalLevelUp == "function") RivalLevelUp();
@@ -3370,12 +3487,14 @@ function Timer1Timer() {
       }
     }
 
-    // advance plot
+    // advance plot: the Prologue by time, the Acts by level (an Act every
+    // two levels: K.Acts in story.js)
     if (gain || !game.act) {
-      if (PlotBar.done())
+      if (game.act) PlotBar.reposition(ActProgress());
+      if (game.act ? GetI(Traits,'Level') >= ActEndLevel(game.act) : PlotBar.done())
         InterplotCinematic();
-      else
-        PlotBar.increment(gain ? reward : TaskBar.Max() / 1000);
+      else if (!game.act)
+        PlotBar.increment(TaskBar.Max() / 1000);
     }
 
     Dequeue();

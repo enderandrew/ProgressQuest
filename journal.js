@@ -85,7 +85,10 @@ function JournalKingdom() {
   try { return KingdomName(); } finally { seed = gameDice; }
 }
 
-function JournalPick(list) {
+// One of the lines (not one that has the Old Bastard™ still around, once
+// he isn't: PostVictoryLines in story.js)
+function JournalPick(list, keep) {
+  if (!keep && !list.post && typeof PostVictoryLines == "function") list = PostVictoryLines(list);
   return list[Math.floor(JournalRandom()() * list.length)];
 }
 
@@ -147,7 +150,7 @@ function JournalAside(chance, pool, extra) {
   var fresh = [];
   pool.forEach(function (line) { if (used.indexOf(line.slice(0, 40)) < 0) fresh.push(line); });
   if (!fresh.length) return;
-  var line = JournalPick(fresh);
+  var line = JournalPick(fresh, pool.post);   // (a pool for after him says what it likes)
   used.push(line.slice(0, 40));
   JournalAdd('aside', JournalText(line, extra));
 }
@@ -186,6 +189,8 @@ function JournalLevel() {
   if (special) JournalAdd('aside', JournalText(special));
   else if (typeof LiveBoon == "function" && LiveBoon('memoir'))
     JournalAside(K.Journal.GhostNoteChance, K.JournalGhostNotes, { who: BoonWho(LiveBoon('memoir')) });   // (the ghostwriter's still about)
+  else if (typeof OldBastardAlive == "function" && !OldBastardAlive() && JournalChance(0.35))
+    JournalAside(1, NewBastardAlive() ? K.JournalAfterAsides : K.JournalEndAsides);   // (after him: what now)
   else if (game.mode == 'minus' && K.JournalMinusAsides && JournalChance(0.5))
     JournalAside(1, K.JournalMinusAsides);   // (New Game−: minus.js)
   else if (typeof RivalMet == "function" && RivalMet() && JournalChance(K.Journal.RivalChance))
@@ -263,6 +268,11 @@ function JournalFinale(won, tries) {
   if (won) JournalAdd('aside', JournalText(K.JournalFinaleAside));
   if (typeof RivalMet == "function" && RivalMet())
     JournalAdd('rival', JournalText(won ? K.JournalRivalBeaten : K.JournalRivalWatched));
+}
+
+// The end game: your rival, the New Bastard™, at level 100 (K.Endgame)
+function JournalEndgame(won, tries) {
+  JournalAdd('finale', JournalText(won ? K.JournalEndgameWon : K.JournalEndgameLost, { tries: tries }));
 }
 
 // Your rival (K.Rival in story.js): 'met' at the end of Act I, 'late' for a
@@ -708,6 +718,37 @@ K.JournalRivalAsides = [
   "Found out {rival} keeps a journal too. I bet theirs is worse. I bet nobody reads it. Nobody reads mine either, but still.",
   "If {rival} is reading this: no you're not. This is private. Go and level up somewhere else."
 ];
+// After the Old Bastard™: what a hero writes on the way to level 100, and
+// past it
+K.JournalAfterAsides = [
+  "Level {level}. The Old Bastard™ is gone and I'm still hitting things. Turns out that was the hobby all along.",
+  "{rival} has started signing letters “the New Bastard™”. I've started not reading them.",
+  "People keep asking what's next. Level 100, apparently. {rival} will be waiting. {rival} is always waiting.",
+  "Strange, not having a nemesis from a dream. Now I just have one from real life, which is worse.",
+  "Someone asked me to sign a portrait of the Old Bastard™. I did. I drew a little moustache on him too.",
+  "The bards have run out of rhymes for my name. They've started on {rival}'s. Unacceptable.",
+  "I keep a list of things that are still older than me. It's getting short.",
+  "Level {level}. Somewhere around level 100 I get to stop hearing about the New Bastard™. Probably.",
+  "I visited the old cave. {rival} has put up a gift shop. The fudge is good. I hate that the fudge is good."
+];
+K.JournalEndAsides = [
+  "Level {level}. Nothing left to beat. I beat things anyway. It's what I'm for.",
+  "{rival} sent a fruit basket. It was a nice fruit basket. We're not friends. It was a nice fruit basket.",
+  "The numbers keep going up. I've stopped asking why. I've started enjoying it, which is worse.",
+  "Somebody somewhere has a level higher than mine. I've decided not to look."
+];
+// (written for after him: they can mention him, in the past)
+K.JournalAfterAsides.post = K.JournalEndAsides.post = true;
+
+K.JournalEndgameWon = [
+  "Beat {rival}, the New Bastard™, on try number {tries}. They took it well. Then they posted about it badly. Level 100, and nobody left to chase.",
+  "It's over. {rival} handed me their crown, said it was a hat, and left. Level 100. I don't know what comes after a hundred. More, probably."
+];
+K.JournalEndgameLost = [
+  "Lost to {rival}, the New Bastard™. They were very gracious about it, in a post titled “GRACIOUS”.",
+  "{rival} beat me at level 100. I'll be back. They know. They've already scheduled the post."
+];
+
 K.JournalRivalBeaten = "As for {rival}: they showed up a minute late and said they'd softened him up. Let them have that. I have everything else.";
 K.JournalRivalWatched = "{rival} watched the whole thing from behind a rock. I could hear them taking notes.";
 

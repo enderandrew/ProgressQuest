@@ -1773,3 +1773,50 @@ K.Events = K.Events.concat([
             'You pay, to make them stop shouting. You will be sending {rival} the bill'],
     effect: { gold: -1 } }
 ]);
+
+// After the Old Bastard™ (after: true): only once he has fallen. Being a
+// legend has its moments, and your rival has a new title.
+K.Events = K.Events.concat([
+  { key: 'after-autograph', after: true, where: ['town'], weight: 2,
+    lines: ['A crowd in {kingdom} recognizes you as the hero who beat the Old Bastard™',
+            'You sign autographs for an hour. Someone asks you to sign their {boring}',
+            'They pay you {gold} gold for it. Fame has its uses'],
+    effect: { gold: 2 } },
+
+  { key: 'after-imposter', after: true, where: ['road'], weight: 2,
+    lines: ['A {race-one} on the road claims to be the hero who beat the Old Bastard™',
+            'They have a very convincing story, and a cardboard sword'],
+    ask: 'What do you do?',
+    choices: [
+      { label: 'Expose them',
+        lines: ['You challenge them to a duel. They challenge you to a story-telling contest. They win',
+                'You win the duel anyway. The crowd is confused'],
+        effect: { xp: 0.05 } },
+      { label: 'Let them have it',
+        lines: ['You let them keep the story. They buy you a drink. It’s a good drink'],
+        effect: { heal: true } } ] },
+
+  { key: 'after-cave', after: true, where: ['rest'], weight: 1.5,
+    lines: ['You camp near the Old Bastard™’s old cave, for old times’ sake',
+            'A tour group goes past. The guide gets the story wrong',
+            'You don’t correct them. You’re a legend; legends let things slide'],
+    effect: { stat: 'WIS' } },
+
+  { key: 'after-ghost', after: true, where: ['rest'], weight: 1.5,
+    lines: ['The ghost of the Old Bastard™ drifts into your campsite',
+            '“{insult}” he says, but fondly',
+            'You share the fire. He leaves before dawn, grumbling about his knees'],
+    effect: { stat: 'random' } },
+
+  { key: 'newbastard-decree', after: true, rival: true, where: ['town'], weight: 2,
+    lines: ['A herald in {kingdom} reads a decree from {rival}, the New Bastard™',
+            'Taxes on heroes are doubled. Taxes on rivals are abolished',
+            'Nobody pays it. You pay {gold} gold, by accident, out of habit'],
+    effect: { gold: -1 } },
+
+  { key: 'newbastard-merch', after: true, rival: true, where: ['road'], weight: 2,
+    lines: ['A merchant is selling New Bastard™ merchandise: mugs, banners, a commemorative {boring}',
+            'Every item has {rival}’s face on it',
+            'You buy a mug, ironically. It’s a good mug. You hate that it’s a good mug'],
+    effect: { stat: 'CHA' } }
+]);

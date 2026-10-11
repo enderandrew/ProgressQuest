@@ -343,6 +343,20 @@ K.Boss = {
   WeakenMax: 10
 };
 
+// The end game: your rival, the New Bastard™, at level 100 (Act L, K.Acts in
+// story.js), for a hero who beat the Old Bastard™ and kept going. Fought
+// like him (BeginBoss in main.js), a little tougher; told by K.EndgameStory.
+K.Endgame = {
+  Level: 100,
+  BossLevelGap: 1,
+  BossHP: 2.5,
+  BossMaxRounds: 70,
+  RetryMinutes: 30,
+  WeakenPerEscape: 1,
+  WeakenMax: 10,
+  Title: 'the New Bastard\u2122'
+};
+
 // Loot tuning (used by main.js)
 K.Loot = {
   // Chance a beaten monster drops its item: base, +per level the monster

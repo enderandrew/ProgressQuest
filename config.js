@@ -881,10 +881,46 @@ function Div(dividend, divisor) {
   return Math.trunc(dividend / divisor);
 }
 
-function LevelUpTime(level) {  // seconds
-  // Normally 20 minutes for level 1. Set to 3 for testing
-  // exponential increase after that
+// ---- Pace ------------------------------------------------------------------------
+//
+// How long the climb takes, chosen when a hero is rolled (game.pace):
+//
+//   saga     about 75 days of play to level 50, a level every few hours at
+//            first and every few days by the end; and on past it, toward
+//            level 100 (about a year more). For idling.
+//   classic  about a week to level 50, the pace this Remix has always had
+//            (exponential: most of it is the last ten levels). Daily
+//            Challenges, and heroes from before there was a choice.
+//
+// A level takes LevelUpTime XP, which is earned in seconds of fighting.
+// What a hero gets per level (quests and their prizes: QuestScale) is the
+// same at either pace, so a level 30 hero is as strong at either; Saga
+// heroes just spend longer there. Acts come every two levels at either
+// pace (K.Acts in story.js).
+// (K.Pace and K.PaceDefault are with the other settings, below)
+
+// How much rarer per hour (K.Pace above): 1 at the Classic pace
+function PaceRare(sheet) {
+  var P = K.Pace[PaceOf(sheet)];
+  return (P && P.Rare) || 1;
+}
+
+function PaceOf(sheet) {
+  var p = sheet && sheet.pace;
+  return K.Pace[p] ? p : 'classic';   // (heroes from before the choice)
+}
+
+function LevelUpTime(level, pace) {  // XP (seconds of fighting)
+  var P = K.Pace[pace];
+  if (pace == 'saga' && P) return Math.round(P.XP * Math.pow(level, P.Power));
+  // Classic: the original curve, 4 minutes at level 1 and growing 15% a level
   return Math.round((3 + Math.pow(1.15, level)) * 60);
+}
+
+// How much longer a quest takes at this pace and level, so there are as
+// many quests (and quest prizes) per level as at the classic pace
+function QuestScale(level, pace) {
+  return pace == 'saga' ? LevelUpTime(level, pace) / LevelUpTime(level, 'classic') : 1;
 }
 
 let RevString = '&rev=6';
@@ -1083,9 +1119,22 @@ K.Guard = {
 // Progress while the game is closed (CatchUp in main.js): time away shorter
 // than MinSeconds is ignored, and no more than MaxHours of it is played
 // (0 turns it off)
+// The paces (see LevelUpTime above)
+K.Pace = {
+  // XP: what level L takes is XP × L^Power (fitted to about 75 days, on
+  // simulated heroes); Rare: how much rarer, per hour, the things that make
+  // a hero stronger and come by the clock rather than by the level (gold
+  // sink splurges, named elites), so a Saga hero at level 30 is about as
+  // strong as a Classic one
+  saga: { label: 'Saga', XP: 820, Power: 1.5, Rare: 13,
+          help: 'About 75 days to level 50, if you leave it running, and the long road past it. For idling.' },
+  classic: { label: 'Classic', help: 'About a week to level 50. The pace this Remix has had all along.' }
+};
+K.PaceDefault = 'saga';
+
 K.CatchUp = {
   MinSeconds: 60,
-  MaxHours: 12
+  MaxHours: 72   // (three days: an idler can close the tab for a weekend)
 };
 
 // Replays (see replay.js and game.replay in main.js)
@@ -1920,7 +1969,7 @@ K.DefenseAttrib = [
   "Bribed-the-GM|+10",
 ];
 
-// from 16 to 164 Shields
+// from 16 to 220 Shields
 K.Shields = [
   "Parasol|0",
   "Paper Hand Fan|0",
@@ -2085,9 +2134,66 @@ K.Shields = [
   "Omnipotent Parody Aegis|49",
   "Source Code Firewall|50",
   "The Ultimate Plot Armor Greatshield|50",
+  "AdBlock Plus Aegis|51",
+  "The Terms of Service Wall|51",
+  "Two-Factor Authenticator Pavise|52",
+  "Shield of Mutual Restraining Orders|52",
+  "Certified Mail Return Receipt Scutum|53",
+  "Captcha Grid Crosswalk Buckler|54",
+  "Incognito Mode Privacy Barrier|55",
+  "Soundproof Noise-Canceling Headset|55",
+  "Retainer Agreement from a Pitbull Lawyer|56",
+  "Zero-Tolerance HR Policy Bulwark|57",
+  "NordVPN Encrypted Tunnel Kite Shield|58",
+  "Heavy-Duty Triple-Pane Storm Window|59",
+  "Corporate Non-Disclosure Agreement (NDA)|60",
+  "The 'Unsubscribe from All' Shield|60",
+  "Cloudflare DDoS Mitigation Mantlet|61",
+  "Air-Gapped Faraday Cage Buckler|62",
+  "The Overly Aggressive Spam Filter|63",
+  "Read-Only File Permissions Wall|64",
+  "Ergonomic Lumbar Support Greatshield|65",
+  "Blue-Light Blocking Filter Lens|65",
+  "Airplane Mode Toggle Pavise|66",
+  "The Sunk Cost Protective Bubble|67",
+  "Do Not Disturb Notification Ward|68",
+  "Passive-Aggressive Email Signature Bulwark|69",
+  "Quarantined Virtual Machine Sandbox|70",
+  "Kernel-Level Ring 0 Anti-Cheat Driver|71",
+  "Deflection of Accountability Buckler|72",
+  "Industrial Bubble Wrap Riot Shield|73",
+  "Tenured Professor Job Security Greatshield|74",
+  "Triple-Fan Liquid Cooling Radiator|75",
+  "The Block & Report Button|76",
+  "Diplomatic Immunity Laminate Passport|77",
+  "100% Plausible Deniability Bulwark|78",
+  "Titanium-Reinforced Carpal Tunnel Brace|79",
+  "Severed Fiber Optic Cable Aegis|80",
+  "Automated Off-Site Daily Backup Snapshot|81",
+  "Infinite Loop Circuit Breaker|82",
+  "The Sarcastic Eye-Roll Ward|83",
+  "Lead-Lined Basement Bunker Wall|84",
+  "Hardware Security YubiKey Aegis|85",
+  "AES-256 BitLocker Encrypted Partition|86",
+  "Total Emotional Detachment Pavise|87",
+  "The Outer Shell of Weaponized Indifference|88",
+  "Git Stash of Uncommitted Excuses|89",
+  "God-Mode Console Command Toggle|90",
+  "The Panic Alt+Tab Desktop Switcher|91",
+  "Root Administrator Superuser Shield|92",
+  "The Unplugged Ethernet Cable|93",
+  "Hardware Power Strip Master Switch|94",
+  "Anti-Entropy Cryogenic Stasis Field|95",
+  "The Impenetrable Wall of Sheer Apathy|96",
+  "The Fourth Wall (Reinforced Concrete)|97",
+  "The Developer's Apology Video Mantlet|98",
+  "The Kill Switch|99",
+  "Actual Reality (Deflects All Virtual Damage)|99",
+  "The Closed Laptop Lid|100",
+  "Touching Literal Grass|100",
 ];
 
-// from 20 to 145 Armors
+// from 20 to 198 Armors
 K.Armors = [
   "Chantilly and Lace|1",
   "Wet T-Shirt|1",
@@ -2233,9 +2339,63 @@ K.Armors = [
   "Immunity-to-Narrative-Consequences Mail|49",
   "Source Code Hex Armor|50",
   "Main Character Plot Armor of Destiny|50",
+  "Bespoke Corporate Golden Parachute Suit|51",
+  "Padded Noise-Canceling Cocoon Parka|51",
+  "Tenured Faculty Elbow-Patched Tweedplate|52",
+  "Weighted Anxiety Blanket of Total Isolation|53",
+  "Kevlar-Reinforced Remote Work Sweatpants|54",
+  "Bulletproof Non-Disclosure Agreement Doublet|55",
+  "Full-Body Ergonomic Memory Foam Exoskeleton|56",
+  "Zero-Liability Disclaimer Boilerplate Mail|57",
+  "Gore-Tex Cynicism Windbreaker|58",
+  "Guaranteed Severance Package Hauberk|59",
+  "Titanium-Weave Imposter Syndrome Carapace|60",
+  "Hermetically Sealed Home Office Hazmat Jumpsuit|60",
+  "Sandboxed Docker Container Enclosure|61",
+  "Air-Gapped Cleanroom Tyvek Suit|62",
+  "Legacy COBOL Monolith Battleplate|63",
+  "Immutable Infrastructure Diamond Cuirass|64",
+  "Zero-Trust Security Architecture Mail|65",
+  "Automated Rollback Safeguard Tunic|66",
+  "Blue-Green Deployment Redundant Plate|67",
+  "Chaff-Dispensing Crisis PR Tracksuit|68",
+  "Lead-Lined 42U Server Rack Chassis|69",
+  "Unbreakable Sunk-Cost Gambeson|70",
+  "RGB-Illuminated Herman Miller Aeron Exosuit|71",
+  "Liquid Nitrogen Overclocked Cryo-Rig|72",
+  "Carpal-Tunnel-Proof Titanium Compression Onesie|73",
+  "VTuber 2D Tracking Rig of Pure Deception|74",
+  "Battle-Scarred Orthopedic Recliner Shell|75",
+  "High-Frequency Automated Trading Poncho|76",
+  "Unwashed Heavy-Metal Festival Battle-Vest|77",
+  "Infinite Retry Save-Scumming Tunic|78",
+  "Subreddit Super-Moderator Tactical Trenchcoat|79",
+  "Faraday-Caged Lead Apron of EMF Denial|80",
+  "Unassailable Weaponized Apathy Plate|81",
+  "Garbage Collector Memory Sweep Shroud|82",
+  "Deterministic RNG Fixed-Seed Robes|83",
+  "Quantum Superposition 'Not My Problem' Cloak|84",
+  "Kernel-Level Privilege Escalation Hauberk|85",
+  "Pre-Rendered Background Mirage Armor|86",
+  "Unresolved Jira Ticket Backlog Mountain Plate|87",
+  "Void-Woven Nihilistic Terrycloth Bathrobe|88",
+  "Hardcoded Invulnerability Bytecode Mail|89",
+  "Total Psychological Dissociation Flak Jacket|90",
+  "Headless Browser Phantom Hauberk|91",
+  "Uncapped Frame-Rate Heat Distortion Field|92",
+  "The Developer's Commented-Out Debug Suit|93",
+  "Operating System Hibernation Sleep Sack|94",
+  "Thermal Throttling Copper Heat-Sink Exoskeleton|95",
+  "Glitch-Through-Collision Boundary Skin|96",
+  "The Fabric of Pure V8 JavaScript Runtime|97",
+  "Unplugged CRT Monitor Static Shroud|98",
+  "Uninstalled Application Ghost Vaporware|99",
+  "Actual Sunlight-Resistant Hazmat Garb|99",
+  "The System Shutdown Sequence Sleepwear|100",
+  "Clean Clothes Suitable for Going Outside|100",
 ];
 
-// from 39 to 231 Weapons
+// from 39 to 287 Weapons
 K.Weapons = [
   "Hollow log|0",
   "Self defense fruit|0",
@@ -2468,6 +2628,62 @@ K.Weapons = [
   "Infinite Loop God-Scythe|49",
   "The Source Code Eraser|50",
   "The One True Plot Device|50",
+  "Bespoke Cease-and-Desist Letter Opener|51",
+  "Subpoena Duces Tecum Spiked Morningstar|51",
+  "Triple-Screen Ultrawide Curved Flail|52",
+  "Mechanical Keyboard with Loud Blue Switches|53",
+  "Ergonomic Vertical Mouse War Pick|54",
+  "Uncapped High-Yield Savings Account Blade|55",
+  "Passive-Aggressive 'Per My Last Email' Halberd|55",
+  "Corporate Restructuring Machete|56",
+  "Mandatory Binding Arbitration Rapier|57",
+  "Friday 4:45 PM All-Hands Meeting Broadsword|58",
+  "Overclocked Soldering Iron Pike|59",
+  "Triple-Damages Class Action War Hammer|60",
+  "Hostile Corporate Takeover Stiletto|60",
+  "Production Server `sudo rm -rf /` Scythe|61",
+  "`DROP DATABASE production;` Morningstar|62",
+  "Git Force-Push to Protected Main Branch Warhammer|63",
+  "Zero-Day Buffer Overflow Javelin|64",
+  "Unbounded Regex Catastrophic Backtracking Whip|65",
+  "Unhandled NullPointerException Dagger|65",
+  "Memory Leak Blunt Truncheon|66",
+  "Endless Circular Dependency Boomerang|67",
+  "High-Frequency Algorithmic Shorting Blade|68",
+  "Unmonitored AWS Billing Alert Broadaxe|69",
+  "Kafka Queue Overflow Greatsword|70",
+  "Frame-Perfect Tool-Assisted Rapier|71",
+  "Macro-Recorded Autobutton Machete|72",
+  "Speedrunner's Backwards Long-Jump Glitch Estoc|73",
+  "RNG Manipulation Weighted Dice Flail|74",
+  "Unpatched Out-of-Bounds Wall-Clip Claymore|75",
+  "Subreddit Moderator Permaban Hammer|76",
+  "Swarm of Coordinated Downvote Shurikens|77",
+  "Negative Review-Bombing Spiked Club|78",
+  "Pay-to-Win Lootbox Opening Crowbar|79",
+  "Liquid Nitrogen Cryogenic Thermal Lance|80",
+  "Kernel Panic Blue Screen Halberd|81",
+  "Stack-Smashing Arbitrary Code Execution Spear|82",
+  "Deterministic State Desynchronization Guisarme|83",
+  "Corrupted VRAM Artifacting Zweihander|84",
+  "Integer Overflow Roll-Under Stiletto|85",
+  "Zero-Clock Speed Thermal Throttling Cleaver|86",
+  "Uncaught Promise Rejection Guillotine|87",
+  "Bit-Flip Cosmic Ray Partisan|88",
+  "Segmentation Fault Core-Dumper|89",
+  "Infinite Recursion Ouroboros Blade|90",
+  "Task Manager 'End Process Tree' Battleaxe|91",
+  "`kill -9` Uncatchable Signal Dart|92",
+  "Unplugged Surge Protector Heavy Morningstar|93",
+  "Emergency Thermal Cutoff Melt-Down Cleaver|94",
+  "Browser Cache Incineration Flamethrower|95",
+  "Corrupted Save-Data Hexadecimal Scythe|96",
+  "The Developer's Deprecated Repository Script|97",
+  "Alt+F4 Emergency Desktop Obliterator|98",
+  "The Physical Power Button (Held for 10 Seconds)|99",
+  "An Unplugged Wall Outlet Prong|99",
+  "A Resignation Letter from Digital Existence|100",
+  "A Handful of Genuine Fresh-Cut Lawn Grass|100",
 ];
 
 // from 37 to 91 Specials
@@ -3021,7 +3237,7 @@ K.BoringItems = [
   "Wumpa fruit core",
 ];
 
-// from 273 to 526 Monsters
+// from 273 to 596 Monsters
 K.Monsters = [
   "Ankle-biter|0|baby-teeth",
   "Charlotte the Spider|0|web",
@@ -3549,6 +3765,73 @@ K.Monsters = [
   "Death|64|cloak",
   "Procrastination|65|guilt",
   "Feature Creep|66|roadmap update",
+  "FOMO Battle Pass Demon|67|expired tier",
+  "Unskippable 40-Minute Cutscene|67|spacebar indentation",
+  "Microwave Burrito at 3 AM|68|frozen center",
+  "Stack Overflow Closed as Duplicate|68|downvote",
+  "Sauron's Optometrist|69|contact lens",
+  "The Nice Dragon|69|juvenile chuckle",
+  "Sunk Cost Fallacy Titan|70|wasted hours",
+  "Memory Leak Behemoth|70|uncollected garbage",
+  "Subreddit Moderator on a Power Trip|71|ban notice",
+  "Neglected Steam Backlog|71|unplayed bundle",
+  "Deprecated JavaScript Library|72|vulnerability report",
+  "ChatGPT Hallucination|72|fake citation",
+  "Sedentary Lifestyle Golem|73|sciatica",
+  "Malenia Blade of Bullshit|73|waterfowl feather",
+  "Cryptobro Bagholder Lich|74|worthless jpeg",
+  "Unread Work Emails Colossus|74|calendar invite",
+  "Sephiroth's One-Winged Hairdresser|75|mascara bottle",
+  "The Electricity Bill|75|kilowatt-hour",
+  "Endless Loading Screen|76|spinning circle",
+  "Chrome Tab Hogging 12GB RAM|76|crashed worker",
+  "OLED Screen Burn-In Apparition|77|ghost pixel",
+  "Severe Vitamin D Deficiency|77|pale freckle",
+  "Gacha Pull 50/50 Failure|77|off-banner dupe",
+  "The Unwashed Laundry Mountain|78|crusty sock",
+  "Terms of Service Document|78|unread paragraph",
+  "LinkedIn Thought Leader|79|unsolicited hustle advice",
+  "Midlife Crisis Sports Car|80|depreciation receipt",
+  "Prestige Mode Temptation Demon|80|shiny reset button",
+  "Algorithm-Driven Despair|81|engagement metric",
+  "Infinite Loop Worm|81|call stack frame",
+  "Spaghetti Code Megalith|82|tangled syntax",
+  "Caffeine Tolerance Overlord|82|empty energy drink",
+  "Corporate Synergy Demon|83|Q4 deliverable",
+  "Existential Dread of Turning 30|83|joint stiffness",
+  "Cloudflare 502 Bad Gateway|84|error page",
+  "Unskippable 30-Second Mobile Ad|84|fake close button",
+  "JRPG Boss With Seven Final Forms|85|latin choir chant",
+  "Chronic Lower Back Pain|85|orthopedic cushion",
+  "Unattended GitHub Pull Request|86|merge conflict",
+  "Daylight Savings Time Confusion|86|missing hour",
+  "Unchecked Imposter Syndrome|87|crippling self-doubt",
+  "The Inevitable March of Entropy|87|decay particle",
+  "The Physical Concept of Outside|88|blade of grass",
+  "The Abyss Staring Back and Sighing|88|tired blink",
+  "Zero-Day Exploit Fiend|89|security patch",
+  "The Final Exam You Forgot to Study For|89|blank bluebook",
+  "Integer Overflow Demon|90|flipped sign bit",
+  "Hard Drive Click of Death|90|corrupted sector",
+  "The Concept of a Funded 401(k)|91|imaginary compound interest",
+  "RuneScape Level 92 (You Are Halfway)|92|carpal tunnel",
+  "Server Rack Heat Exhaust Dragon|92|scorched dust",
+  "Unplugged Power Strip Poltergeist|93|cold shutdown",
+  "The Heat Death of the Universe|93|absolute zero",
+  "Your Mother Asking What You're Doing With Your Life|94|disappointed sigh",
+  "Galactus the Cloud Server Devourer|94|shredded bandwidth",
+  "The Developer Who Stopped Balancing Content at Level 50|95|apologetic shrug",
+  "Unopened Group Chat Notification (99+)|95|alienation",
+  "The Background Browser Tab You Forgot Was Running|96|whirring fan blade",
+  "The Meaning of Life (Not Found in Idle Games)|96|empty cardboard box",
+  "The Literal Sun Going Supernova|97|solar flare",
+  "The Concept of 'Touching Grass'|97|fresh oxygen molecule",
+  "The Last Surviving Progress Quest Purist|98|mouse blister",
+  "The Infinite Monolith of Arbitrary Numbers|98|incremented counter",
+  "The Kill Screen Glitch Horror|99|corrupted sprite",
+  "God (Filing a Restraining Order)|99|divine subpoena",
+  "Why Are You Still Playing This?|100|certificate of unemployment",
+  "Actual True Free Will|100|closed browser tab",
 ];
 
 // from 16 to 101 Monster Modifiers - Weren't implemented previously

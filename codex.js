@@ -57,6 +57,9 @@ K.Achievements = [
   { key: "hcboss", icon: "☠", label: "Death Takes a Holiday", help: "Beat the Old Bastard™ in Hardcore.",
     value: function (c) { return c.flag("bosshc"); }, goal: 1 },
   // New Game− (minus.js)
+  // The end game (K.Endgame): your rival, the New Bastard™, at level 100
+  { key: "endgame", icon: "\uD83D\uDC51", label: "Bastard, Junior", help: "Beat your rival, the New Bastard™, at level 100.",
+    value: function (c) { return c.flag("endgame"); }, goal: 1 },
   { key: "minusboss", icon: "\uD83D\uDD6F", label: "Prepare to Die (Edition)", help: "Beat the Old Bastard™ in New Game−.",
     value: function (c) { return c.flag("bossminus"); }, goal: 1 },
   { key: "fallen1", icon: "🪦", label: "Press F", help: "Lose a hero in Hardcore.",

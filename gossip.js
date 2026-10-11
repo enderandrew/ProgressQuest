@@ -751,6 +751,43 @@ finaleWon: { who: 'spreddit', lines: [
     "The Old Bastard™ went down way too fast. Clearly an unpatched balancing bug. Expect an official complaint filed with the developers."
   ] },
 
+  // After the Old Bastard™: Sir Spreddit on a realm without him (after: these
+  // can mention him, in the past; other pools' lines that need him alive are
+  // left out once he's gone)
+  afterRealm: { who: 'spreddit', after: true, lines: [
+    "One year since the Old Bastard™ fell, or one week, nobody's counting. Sir Spreddit is counting. It's been a while.",
+    "The realm's first Old Bastard™-free festival was a success. Attendance: everyone. Old Bastards: none.",
+    "Sir Spreddit's poll: what now? 40% 'level 100', 35% 'naps', 25% 'who is {rival} and why are they wearing a crown'.",
+    "Tourism to the Old Bastard™'s cave is up 900%. The gift shop is run by {rival}. Of course it is.",
+    "{hero} sighting: still hitting things, at level {level}. Some heroes don't know how to retire. Sir Spreddit respects it.",
+    "Historians agree the Old Bastard™ was old and a bastard. The debate is over which came first.",
+    "Sir Spreddit regrets to report there is a New Bastard™. Sir Spreddit regrets everything about it.",
+    "Level 100 rumors are circulating. Sir Spreddit has heard there's a throne. And merch.",
+    "Breaking: the Old Bastard™'s ghost has asked to be left out of this. Request denied."
+  ] },
+
+  // ...and your rival, now the self-proclaimed New Bastard™
+  newBastard: { who: 'rival', after: true, lines: [
+    "With the Old Bastard™ gone, somebody has to be the bastard. I've volunteered. You're welcome.",
+    "The New Bastard™ will be holding court at the old cave, level 100 and up. {hero}, you know where to find me.",
+    "{hero} got the Old Bastard™. Fine. I got the brand. The brand is worth more.",
+    "Level {rival-level}. The New Bastard™ grows stronger. Also taller. That's the boots.",
+    "Reminder: 'the New Bastard™' is trademarked. Every time someone says it, I get a copper.",
+    "Dear diary. I mean, Scrollr. Today {hero} hit level {level}. Today I bought a bigger throne.",
+    "I've redecorated the Old Bastard™'s cave. Mood lighting. Throne. A sign that says 'Level 100 or Go Home'.",
+    "Everyone's asking if I'm evil now. I'm not evil. I'm branded."
+  ] },
+
+  // The New Bastard™ falls (or doesn't): Sir Spreddit, at level 100
+  endgameWon: { who: 'spreddit', after: true, lines: [
+    "IT IS DONE. {hero} has beaten {rival}, the New Bastard™, at level 100. The crown has been returned to the gift shop.",
+    "The New Bastard™ is no more. {rival} has issued a statement: 'I was going to retire anyway.' Sir Spreddit is crying again."
+  ] },
+  endgameLost: { who: 'spreddit', after: true, lines: [
+    "The New Bastard™ wins this round. {rival} is already selling commemorative mugs. {hero} vows to return.",
+    "{hero} falls to {rival} at the old cave. The New Bastard™'s post about it has nine thousand likes."
+  ] },
+
   // ...or he got away from you
   rivalGloat: { who: 'rival', lines: [
     "The Old Bastard™ beat {hero}. Couldn't be me. (It was me, last week. Couldn't be me again.)",
@@ -934,18 +971,22 @@ function Gossip(what, info) {
   var everyday = what == 'arrive' || what == 'town' || what == 'rest' || what == 'fight';
   if (everyday) {
     // the everyday chatter: once in a while, and less often as the feed grows
-    var gap = Math.min(G.GapMax, G.Gap + G.GapGrowth * (game.feedN || 0)) * 60;
+    // (only the everyday posts so far count: news of Acts, levels and
+    // rivals doesn't crowd the chatter out)
+    var gap = Math.min(G.GapMax, G.Gap + G.GapGrowth * (game.feedDaily || 0)) * 60;
     if (game.feedAt !== undefined && now - game.feedAt < gap) return;
   }
   var dice = GossipDice(what);
   var minus = game.mode == 'minus';   // (New Game−'s own posts: minus.js)
+  var after = typeof OldBastardAlive == "function" && !OldBastardAlive();   // (the Old Bastard™ has fallen)
   var chance = function (p) { return dice() < p; };
   var pools = [];   // [pool key, extra vars], tried in turn
   var fight = info || {};
   switch (what) {
   case 'arrive':
     if (!chance(G.OtherChance)) return;
-    pools = GossipOrder(dice, [['arrive', 3], ['nag', 2], ['taunt', 1.5]].concat(minus ? [['omen', 4]] : []));
+    pools = GossipOrder(dice, [['arrive', 3], ['nag', 2], ['taunt', 1.5]].concat(minus ? [['omen', 4]] : [],
+                                                                                    after ? [['newBastard', 3]] : []));
     break;
   case 'town':
     if (!chance(G.OtherChance)) return;
@@ -953,8 +994,9 @@ function Gossip(what, info) {
     break;
   case 'rest':
     if (!chance(G.OtherChance)) return;
-    pools = GossipOrder(dice, minus ? [['grimRealm', 3], ['omen', 2], ['rivalry', 1], ['nag', 1], ['taunt', 1]] :
-                                      [['realm', 2], ['rivalry', 1.5], ['nag', 1], ['taunt', 1]]);
+    pools = GossipOrder(dice, (minus ? [['grimRealm', 3], ['omen', 2], ['rivalry', 1], ['nag', 1], ['taunt', 1]] :
+                                       [['realm', 2], ['rivalry', 1.5], ['nag', 1], ['taunt', 1]])
+                                .concat(after ? [['afterRealm', 3], ['newBastard', 1.5]] : []));
     break;
   case 'fight':
     if (fight.elite || !fight.outcome || !chance(G.FightChance)) return;
@@ -1002,12 +1044,16 @@ function Gossip(what, info) {
     GossipPost(dice, info.won ? 'finaleWon' : 'finaleLost', K.GossipPools[info.won ? 'finaleWon' : 'finaleLost']);
     if (RivalMet()) pools = [[info.won ? 'rivalBeaten' : 'rivalGloat']];
     break;
+  case 'endgame':
+    // the New Bastard™, at level 100 (K.Endgame)
+    GossipPost(dice, info.won ? 'endgameWon' : 'endgameLost', K.GossipPools[info.won ? 'endgameWon' : 'endgameLost']);
+    return;
   case 'rival':
     // met (MeetRival), set out for the Old Bastard™ first, or levelled up
     if (!RivalMet()) return;
     if (info && info.level) {
       if (!chance(0.3)) return;
-      pools = [['rivalLevel']];
+      pools = [[after ? 'newBastard' : 'rivalLevel']];
     } else pools = [[info && info.race ? 'rivalRace' : 'rivalMet']];
     break;
   case 'death':
@@ -1021,7 +1067,7 @@ function Gossip(what, info) {
     if (key == 'nag' && !game.bestquest) continue;
     if ((key == 'taunt' || key == 'rivalry') && !RivalMet()) continue;   // (not before Act I's end)
     if (GossipPost(dice, key, pool, pools[i][1])) {
-      if (everyday) game.feedAt = now;
+      if (everyday) { game.feedAt = now; game.feedDaily = (game.feedDaily || 0) + 1; }
       return;
     }
   }
@@ -1037,7 +1083,10 @@ function GossipOrder(dice, weighted) {
 function GossipPost(dice, key, pool, extra) {
   if (!pool || !pool.lines || !pool.lines.length) return null;
   var used = game.feedUsed = game.feedUsed || [];
-  var fresh = pool.lines.filter(function (line) { return used.indexOf(GossipHash(key + line)) < 0; });
+  var fresh = pool.lines.filter(function (line) {
+    return used.indexOf(GossipHash(key + line)) < 0 &&
+           (pool.after || typeof PostVictoryOK != "function" || PostVictoryOK(line));   // (he's gone: PostVictoryOK in story.js)
+  });
   if (!fresh.length) return null;
   var line = fresh[Math.floor(dice() * fresh.length)];
   used.push(GossipHash(key + line));

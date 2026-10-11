@@ -16,6 +16,7 @@
 //   --race RACE     race, e.g. "4chan Troll"                  (default random)
 //   --class CLASS   class, e.g. "Barbarian Pretzel"           (default random)
 //   --mut KEYS      challenge mutators, e.g. noshop,glasscannon (K.Mutators)
+//   --pace PACE     saga or classic (the default here: classic; K.Pace)
 //   --mode MODE     plus, minus or hardcore (New Game+ and New Game− without
 //                   a Hall of Legends have no legacy)
 //   --perks KEYS    the hero's perks, e.g. packmule,miser (K.Perks), instead
@@ -53,6 +54,7 @@ function parseArgs(argv) {
       case "--class":  opts.klass = next(); break;
       case "--mut":    opts.mut = next(); break;
       case "--mode":   opts.mode = next(); break;
+      case "--pace":   opts.pace = next(); break;
       case "--perks":  opts.perks = next().split(",").filter(Boolean); break;
       case "--daily":  opts.daily = next(); break;
       case "--replay": opts.replay = next(); break;
@@ -183,6 +185,7 @@ function run(opts) {
   const query = [];
   if (opts.mut) query.push("mut=" + encodeURIComponent(opts.mut));
   if (opts.mode) query.push(opts.mode);
+  if (opts.pace) query.push("pace=" + encodeURIComponent(opts.pace));   // (saga; the default here is classic)
   if (query.length) ctx.location.search = "?" + query.join("&");
   g("seed = new Alea(__seed); RollEm(); GenClick();" +
     "fill(null, K.Races, 'Race'); fill(null, K.Klasses, 'Class');");

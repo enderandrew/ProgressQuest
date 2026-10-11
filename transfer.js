@@ -83,7 +83,7 @@ function AuditSheet(sheet) {
       "more time was played than has passed since they were born",
       Math.round(elapsed / 360) / 10 + " hours in " + Math.max(0, Math.round((Date.now() - (sheet.birthstamp || Date.now())) / 86400000)) + " days");
   var xpTime = 0;
-  for (var l = sheet.startLevel || 1; l < level; ++l) xpTime += LevelUpTime(l);
+  for (var l = sheet.startLevel || 1; l < level; ++l) xpTime += LevelUpTime(l, PaceOf(sheet));
   add("Level pace", level >= 5 && elapsed < xpTime * G.LevelPace,
       "they reached level " + level + " faster than is possible",
       "level " + level + " in " + Math.round(elapsed / 360) / 10 + " hours");

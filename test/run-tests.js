@@ -351,6 +351,44 @@ test("the journal starts at level 1, and keeps to its budget however long a hero
        `${Math.round(flooded.chars / 1000)}k characters`);
 });
 
+// ---- Acts, the Old Bastard™'s Act, and after him ------------------------------------
+
+if (!QUICK) test("an Act every two levels, the Old Bastard™'s Act XXV, and after him the end game (K.Acts, K.Endgame)", () => {
+  const actAt = {}, afterEvents = [], oldOnly = [];
+  let wonAt = null, sagaXP = null;
+  const h = play({ levels: 56, seed: "test-endgame",
+    // (the end game sooner: Act XXVII at level 54, not Act L at 100)
+    setup(ctx) { ctx.K.Endgame.Level = 54; ctx.K.Acts.EndgameAct = 27; },
+    onTask(ctx) {
+      const g = ctx.game, L = +g.Traits.Level;
+      if (actAt[L] === undefined) actAt[L] = g.act;
+      if (!sagaXP) sagaXP = [10, 30, 50].map((l) => ctx.LevelUpTime(l, "saga"));
+      if (g.finale && g.finale.state == "won" && wonAt === null) wonAt = g.act;
+      const ev = g.event;
+      if (ev && wonAt !== null && ev.key && !ev.sink && afterEvents.indexOf(ev.key) < 0) {
+        afterEvents.push(ev.key);
+        const e = ctx.K.Events.find((x) => x.key == ev.key);
+        if (e && !e.after && /Old Bastard/.test(JSON.stringify([e.lines, e.choices]))) oldOnly.push(e.key);
+      }
+    } });
+  check(actAt[3] == 1 && actAt[5] == 2 && actAt[11] == 5 && actAt[49] == 24, "the Acts aren't two levels each: " + JSON.stringify(actAt));
+  check(wonAt == 25, "the Old Bastard™ fell in Act " + wonAt + ", not Act XXV");
+  const log = h.storyLog || [];
+  const finaleAct = log.find((s) => s.act == 25);
+  check(finaleAct && finaleAct.key == "oldbastard", "Act XXV isn't the Old Bastard™'s: " + JSON.stringify(finaleAct));
+  const after = log.filter((s) => s.act > 25);
+  check(after.length >= 2, "no Acts after him: " + log.map((s) => s.act + ":" + s.key).join(" "));
+  check(after.every((s) => !/Old Bastard/.test(s.purpose) || /^post-/.test(s.key)), "an Act after him needs him: " + JSON.stringify(after));
+  check(after.every((s) => !(s.ending || []).some((l) => /go after that Old Bastard/.test(l))), "an ending after him sends you after him");
+  check(!oldOnly.length, "events that need him alive happened after he fell: " + oldOnly.join(", "));
+  check(h.endgame && h.endgame.tries >= 1, "the end game never happened: " + JSON.stringify(h.endgame));
+  check(log.some((s) => s.key == "newbastard"), "no Act for the New Bastard™");
+  check((h.feed || []).length > 0 && (h.journal || []).some((e) => /New Bastard/.test(e.x)), "the journal never mentions the New Bastard™");
+  check(sagaXP[0] < sagaXP[1] && sagaXP[1] < sagaXP[2], "the Saga levels don't grow: " + sagaXP);
+  note(`Old Bastard™ in Act XXV; after him: ${after.map((s) => s.title).join(", ")}; ` +
+       `the New Bastard™: ${h.endgame.state} after ${h.endgame.tries} ${h.endgame.tries == 1 ? "try" : "tries"}`);
+});
+
 // ---- the chronicle ----------------------------------------------------------------
 
 test("the Hall's ridicule and the bad fantasy novel (chronicle.js)", () => {

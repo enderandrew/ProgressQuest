@@ -124,6 +124,7 @@ events.forEach((e, n) => {
   if ("weight" in e && !(e.weight >= 0)) error(`${name}: weight should be a number`);
   if ("rival" in e && e.rival !== true) error(`${name}: rival should be true (or left out)`);
   if ("minus" in e && e.minus !== true) error(`${name}: minus should be true (or left out)`);
+  if ("after" in e && e.after !== true) error(`${name}: after should be true (or left out)`);
   if (e.minLevel && e.maxLevel && e.minLevel > e.maxLevel) error(`${name}: minLevel is above maxLevel`);
   const raceNames = (K.Races || []).map((x) => x.split("|")[0]), klassNames = (K.Klasses || []).map((x) => x.split("|")[0]);
   if (e.race && raceNames.indexOf(e.race) < 0) error(`${name}: race "${e.race}" isn't in K.Races (check the spelling)`);
@@ -327,6 +328,9 @@ function checkStory(name, st) {
   });
 }
 (K.Stories || []).forEach((st, i) => checkStory(`story "${(st && st.key) || "#" + (i + 1)}"`, st));
+(K.PostStories || []).forEach((st, i) => checkStory(`story for after the Old Bastard™ "${(st && st.key) || "#" + (i + 1)}"`, st));
+if (K.FinaleAct) checkStory("K.FinaleAct (Act XXV)", K.FinaleAct);
+if (K.EndgameAct) checkStory("K.EndgameAct (Act L)", K.EndgameAct);
 const names = (list) => (list || []).map((x) => x.split("|")[0]);
 names(K.Races).forEach((r) => checkStory(`Act I story for the ${r} race`, (K.RaceStories || {})[r]));
 names(K.Klasses).forEach((c) => checkStory(`Act II story for the ${c} class`, (K.ClassStories || {})[c]));
@@ -360,6 +364,10 @@ if (K.Rival) {
   }));
 }
 const FINALE_WORDS = STORY_WORDS.concat(["taunt", "tries", "hours", "raceending", "classending"]);
+Object.keys(K.EndgameStory || {}).forEach((part) => (K.EndgameStory[part] || []).forEach((line) =>
+  (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
+    if (FINALE_WORDS.indexOf(p.slice(1, -1)) < 0) error(`K.EndgameStory.${part}: unknown placeholder ${p} in "${line}"`);
+  })));
 Object.keys(K.FinaleStory || {}).forEach((part) => (K.FinaleStory[part] || []).forEach((line) =>
   (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
     if (FINALE_WORDS.indexOf(p.slice(1, -1)) < 0) error(`K.FinaleStory.${part}: unknown placeholder ${p} in "${line}"`);
