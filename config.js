@@ -881,46 +881,10 @@ function Div(dividend, divisor) {
   return Math.trunc(dividend / divisor);
 }
 
-// ---- Pace ------------------------------------------------------------------------
-//
-// How long the climb takes, chosen when a hero is rolled (game.pace):
-//
-//   saga     about 75 days of play to level 50, a level every few hours at
-//            first and every few days by the end; and on past it, toward
-//            level 100 (about a year more). For idling.
-//   classic  about a week to level 50, the pace this Remix has always had
-//            (exponential: most of it is the last ten levels). Daily
-//            Challenges, and heroes from before there was a choice.
-//
-// A level takes LevelUpTime XP, which is earned in seconds of fighting.
-// What a hero gets per level (quests and their prizes: QuestScale) is the
-// same at either pace, so a level 30 hero is as strong at either; Saga
-// heroes just spend longer there. Acts come every two levels at either
-// pace (K.Acts in story.js).
-// (K.Pace and K.PaceDefault are with the other settings, below)
-
-// How much rarer per hour (K.Pace above): 1 at the Classic pace
-function PaceRare(sheet) {
-  var P = K.Pace[PaceOf(sheet)];
-  return (P && P.Rare) || 1;
-}
-
-function PaceOf(sheet) {
-  var p = sheet && sheet.pace;
-  return K.Pace[p] ? p : 'classic';   // (heroes from before the choice)
-}
-
-function LevelUpTime(level, pace) {  // XP (seconds of fighting)
-  var P = K.Pace[pace];
-  if (pace == 'saga' && P) return Math.round(P.XP * Math.pow(level, P.Power));
-  // Classic: the original curve, 4 minutes at level 1 and growing 15% a level
+function LevelUpTime(level) {  // seconds
+  // Normally 20 minutes for level 1. Set to 3 for testing
+  // exponential increase after that
   return Math.round((3 + Math.pow(1.15, level)) * 60);
-}
-
-// How much longer a quest takes at this pace and level, so there are as
-// many quests (and quest prizes) per level as at the classic pace
-function QuestScale(level, pace) {
-  return pace == 'saga' ? LevelUpTime(level, pace) / LevelUpTime(level, 'classic') : 1;
 }
 
 let RevString = '&rev=6';
@@ -1119,22 +1083,9 @@ K.Guard = {
 // Progress while the game is closed (CatchUp in main.js): time away shorter
 // than MinSeconds is ignored, and no more than MaxHours of it is played
 // (0 turns it off)
-// The paces (see LevelUpTime above)
-K.Pace = {
-  // XP: what level L takes is XP × L^Power (fitted to about 75 days, on
-  // simulated heroes); Rare: how much rarer, per hour, the things that make
-  // a hero stronger and come by the clock rather than by the level (gold
-  // sink splurges, named elites), so a Saga hero at level 30 is about as
-  // strong as a Classic one
-  saga: { label: 'Saga', XP: 820, Power: 1.5, Rare: 13,
-          help: 'About 75 days to level 50, if you leave it running, and the long road past it. For idling.' },
-  classic: { label: 'Classic', help: 'About a week to level 50. The pace this Remix has had all along.' }
-};
-K.PaceDefault = 'saga';
-
 K.CatchUp = {
   MinSeconds: 60,
-  MaxHours: 72   // (three days: an idler can close the tab for a weekend)
+  MaxHours: 12
 };
 
 // Replays (see replay.js and game.replay in main.js)
