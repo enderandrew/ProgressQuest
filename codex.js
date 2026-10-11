@@ -474,6 +474,7 @@ function CheckAchievements() {
 
 // "Achievement unlocked" pops up from the corner, one at a time
 function ToastAchievement(a) {
+  if (typeof PlaySound == "function") PlaySound("achievement");
   if (typeof document == "undefined" || !document || !document.body) return;
   _achievementQueue.push(a);
   if (_achievementQueue.length == 1) NextToast();

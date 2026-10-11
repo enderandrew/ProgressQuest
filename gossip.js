@@ -798,6 +798,7 @@ K.GossipSinks = {
 
 // Replies from the townsfolk, under a post now and then
 K.GossipReplies = [
+  // --- Original Core Comments ---
   "first", "ratio", "this is the content I'm here for", "source?", "all my this", "{hero} has main character syndrome",
   "my cousin was there and says this is true", "who asked", "lol", "no cap", "{nemesis} is my hero",
   "can confirm, I was the goat", "{hero} fans in shambles", "not the {klass} slander again",
@@ -808,8 +809,43 @@ K.GossipReplies = [
   "*grabs popcorn*", "mood", "😂😂😂", "{guy} would never", "the lore runs deep", "FIRST!",
   "living rent free in my head", "cross-posting this to s/{kingdom2}", "big if true", "true if big",
   "I checked with the local witch here in s/{kingdom2} and they said nothing matters because we will all die of plague-rot",
-  "can we kill {hero} a hero? They are killing everything s/{kingdom2} just because they were insulted and because we haven't invented therapy yet.",
-  "the {boring} is a metaphor", "and then everybody clapped", "{kingdom} represent"
+  "can we call {hero} a hero? They are killing everything in {kingdom2} just because they were insulted and because we haven't invented therapy yet.",
+  "the {boring} is a metaphor", "and then everybody clapped", "{kingdom} represent",
+  "L + ratio + fell off + no loot + maidenless", "bro really thought they did something", "let them cook",
+  "do NOT let {hero} cook ever again", "chat, is this real?", "common {hero} L", "common {nemesis} W", "deadass?", 
+  "it's giving desperate", "bro is farming negative aura", "the aura debt is generational", "skill issue tbh",
+  "git gud", "tell me you're a {klass} without telling me you're a {klass}",  "my brother in the gods, you chose to equip {weapon}",
+  "is the {boring} in the room with us right now?", "wake up babe, new {hero} discourse just dropped", 
+  "I'm not reading all that. happy for you though, or sorry that happened", "I miss the person I was 10 seconds ago before reading this",
+  "rent free in {kingdom}", "unhinged behavior, 10/10 no notes", "delete this nephew", "clown to clown communication",
+  "literally shaking and casting {spell} right now", "this has to be bait",  "bait used to be believable",
+  "Sir, this is a tavern in {kingdom}.", "take my upvote and get out", "thanks for the Spreddit Gold kind stranger!", 
+  "instructions unclear, got {weapon} stuck in a ceiling beam", "underrated comment", "came here to say this",
+  "came here looking for this comment", "s/thatHappened", "bold strategy Cotton, let's see if it pays off",
+  "wait, you guys are getting {gold} gold?", "wholesome 100", "sorts by controversial*",  "can we get a tldr?",
+  "source: it was revealed to me in a dream by the Old Bastard™", "source: trust me bro", "least unhinged {klass} player",
+  "average {race} enthusiast", "as a certified {race-one}, I do not claim them", "flair checks out",
+  "OP is clearly {nemesis} on a burner account", "mods, crush their skull, thank you", "devs, please nerf {klass} already",
+  "clearly carried by RNG", "staged. you can tell by the pixels", "imagine not running an optimized build in this economy",
+  "bro is playing on story difficulty", "reported for botting. nobody walks in straight lines like that",
+  "nice script, who wrote it for you?", "{hero} has died {deaths} times, when does the uninstall happen?",
+  "wearing {gear} with those stats is an absolute crime against math", "I soloed that when I was level 3, nothing special",
+  "drop table was clearly rigged", "P2W trash", "imagine flexing a {weapon} drop in {act}", 
+  "the meta left {hero} behind three patches ago", "can anyone recommend a reliable carriage repair guy in {kingdom}?",
+  "STOP POSTING, SOME OF US WORK NIGHT SHIFTS AT THE DUNGEON",
+  "whoever left their horse tied to the well: your horse is eating my laundry",
+  "is anyone else hearing strange chanting near the graveyard or just me?",
+  "unsubscribing from crier notices, too much drama on this feed",
+  "stop tagging me in this, I'm just trying to sell cabbages", "can confirm, I was the {weapon}",
+  "why did I read this in {guy}'s voice?", "the HOA in {kingdom} is going to hear about this",
+  "does {hero} even pay taxes here?", "lost: one gray cat. answers to 'Lord of Agony'. please do not pet",
+  "anyone selling a spare {boring}? need it for an alchemy thing, don't ask", "this is why property values in {kingdom} are plummeting",
+  "{nemesis} clears {hero} with negative difficulty, cry about it", "Stan {nemesis} for clear skin and better loot",
+  "friendly reminder that {hero} is a menace to the local ecosystem", "red flag. dump them and keep the {gear}",
+  "we stan an unbothered king/queen", "the sheer audacity", "I showed this post to my cleric and they excommunicated me",
+  "blocking everyone who liked this post", "why is nobody talking about {guy}'s involvement in this???",
+  "unpopular opinion: the Old Bastard™ actually had some valid points", "mutuals do not interact if you support {hero}",
+  "crying in the tavern privy rn", 
 ];
 
 // Who posted, in the saved post (p.w), and the icon beside their name

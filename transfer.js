@@ -105,6 +105,7 @@ function AuditSheet(sheet) {
 // buttons: [{ label, value, primary }], onClose(value), wide }.
 // Returns the <dialog>.
 function WinBox(opts) {
+  if (opts.icon == "error" && typeof PlaySound == "function") PlaySound("error");
   var dlg = document.createElement("dialog");
   dlg.className = "win95" + (opts.wide ? " wide" : "");
   dlg.setAttribute("aria-label", opts.title || "Progress Quest");

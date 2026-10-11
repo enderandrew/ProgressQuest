@@ -221,6 +221,8 @@ var MenuBar = [
     "-",
     { label: "&Narration", key: "N", checked: NarrationOn, action: ToggleNarration },
     { label: "&Event Pop-ups", key: "E", checked: EventPopupsOn, action: ToggleEventPopups },
+    { label: "S&ound Effects", checked: function () { return typeof SoundsOn == "function" && SoundsOn(); },
+      action: function () { SettingSet("sound", SoundsOn() ? "0" : null); } },
     { label: "&Combat Log", key: "C", checked: function () { return $("body").hasClass("show-log"); }, action: ToggleCombatLog },
     { label: "Sc&rollr", key: "R", checked: function () { return typeof FeedOpen == "function" && FeedOpen(); },
       action: function () { ToggleFeed(); } },

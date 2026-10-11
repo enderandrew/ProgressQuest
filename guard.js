@@ -11,6 +11,8 @@
 
 function ShowStopScreen(code, paragraphs) {
   if (!document || !document.body) return;
+  // (the Konami code has its own song: paragraphs.quiet)
+  if (!(paragraphs && paragraphs.quiet) && typeof PlaySound == "function") PlaySound("error");
   var dlg = document.getElementById("StopScreen");
   if (!dlg) {
     dlg = document.createElement("dialog");
@@ -80,7 +82,7 @@ function NoCheating() {
     if (played && played.catch) played.catch(function () {});
   } catch (e) {}
   ShowStopScreen("CHEATING_IS_NOT_ALLOWED", {
-    damage: "integrity",
+    damage: "integrity", quiet: true,   // (Konami.mp3 is playing)
     body: [
       "Up, up, down, down, left, right, left, right, B, A. We know that one. Everybody knows that one.",
       "No cheating is allowed in Progress Quest. Not even 30 extra lives. Your hero does not need " +

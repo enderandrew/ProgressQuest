@@ -67,6 +67,18 @@ function SettingsList() {
     { section: "Narration", label: "Volume", kind: "range", min: 0, max: 1, step: 0.1, disabled: !speech,
       get: NarrationVolume, set: function (v) { SettingSet("volume", v); }, format: function (v) { return Math.round(v * 100) + "%"; } },
 
+    { section: "Sound", label: "Sound effects", kind: "check",
+      get: function () { return typeof SoundsOn == "function" && SoundsOn(); },
+      set: function (on) { SettingSet("sound", on ? null : "0"); },
+      help: "A splurge, better gear, a quest or Act done, an error. (Sounds whose files aren't there are silent.)" },
+    { section: "Sound", label: "Volume", kind: "range", min: 0, max: 1, step: 0.1,
+      get: function () { return typeof SoundVolume == "function" ? SoundVolume() : 0.6; },
+      set: function (v) { SettingSet("soundvolume", v); }, format: function (v) { return Math.round(v * 100) + "%"; } },
+    { section: "Sound", label: "Play them while the game is in a background tab", kind: "check",
+      get: function () { return typeof SoundsInBackground == "function" && SoundsInBackground(); },
+      set: function (on) { SettingSet("soundhidden", on ? "1" : null); },
+      help: "Off: only while you're looking. An idle game left in a tab is otherwise a lot of fanfare." },
+
     { section: "Events", label: "Pop up events as they happen", key: "E", kind: "check",
       get: EventPopupsOn, set: function (on) { if (on != EventPopupsOn()) ToggleEventPopups(); },
       help: "Off: they still show in the Last Event box." },
@@ -100,7 +112,7 @@ function SettingsList() {
 
 // Defaults: what Reset puts back
 var SettingsDefaults = { narrate: null, voice: null, rate: null, volume: null, eventpopup: null,
-                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null,
+                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null, sound: null, soundvolume: null, soundhidden: null,
                          chatter: null };
 
 function OpenSettings(tab) {
@@ -109,7 +121,7 @@ function OpenSettings(tab) {
   box.className = "settings";
   var tabs = $("<div class='settings-tabs' role='tablist'>").appendTo(box);
   var panes = $("<div class='settings-panes'>").appendTo(box);
-  var sections = ["Narration", "Events", "Display", "Accessibility", "Advanced", "Keyboard"];
+  var sections = ["Narration", "Sound", "Events", "Display", "Accessibility", "Advanced", "Keyboard"];
   var show = function (name) {
     tabs.children().each(function () {
       var on = $(this).data("tab") == name;

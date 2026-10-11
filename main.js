@@ -470,6 +470,7 @@ function Dequeue() {
       // fights (more rounds) take longer to watch.
       var seed = Random(0x7fffffff);
       var elite = EliteFor(t, seed);   // now and then, a named elite (K.Elite)
+      if (elite) Sound('elite');
       if (elite) {
         RestoreHealth();               // (seen coming: the hero steels themselves)
         // and a fresh seed for the fight: the one that picked an elite is
@@ -674,6 +675,7 @@ function Percent(p) {
 }
 
 function Die(fight) {
+  Sound('death');
   var obit = MakeObituary(fight);
   if (typeof JournalDeath == "function") JournalDeath(obit.cause);   // (the tombstone has a Journal button)
   if (typeof Gossip == "function") Gossip('death', { cause: obit.cause });
@@ -845,6 +847,7 @@ function FinishBoss() {
     if (f.tries == 1) CodexFlag('bossfirst');
     if (game.mode == 'hardcore') CodexFlag('bosshc');
     if (game.mode == 'minus') { CodexFlag('bossminus'); MinusBanner('OLD BASTARD FELLED', 'felled'); }
+    Sound('finale');
     $.each(game.mutators || [], function (i, m) { CodexFlag('boss:' + m); });
     QueueFinale('victory', 'victory');
     ShowRetire();
@@ -1272,6 +1275,7 @@ function BeginChoice(seconds, caption) {
   Announce("Decision time: " + caption + " " + ev.choices.map(function (c, i) { return (i + 1) + ": " + c.label; }).join(". ") +
            ". Press a number, or fate decides in " + seconds + " seconds. P pauses the clock.", true);
   StartChoiceAlert();
+  Sound('choice');
 }
 
 // "Pay the toll, fight the troll, or ford the river"
@@ -1674,6 +1678,7 @@ function StartSplurge(resume, only) {
   $.each(ev.lines, function (i, text) {
     game.queue.push('scene|3|' + text + '|' + (i == ev.lines.length - 1 ? 'event' : 'ev'));
   });
+  Sound('splurge');
   return true;
 }
 
@@ -2419,6 +2424,7 @@ function Defeated(fight) {
     game.queue.push('task|4|You are dragged back to town by ' + rescuer);
     game.queue.push('heal|' + RecoveryTime() + '|Convalescing at ' + temple);
   }
+  Sound('defeat');
   game.wounded = D.WoundedFights;
   game.caution = Min(D.CautionMax, (game.caution || 0) + D.CautionPerDefeat);
   ShowCondition();
@@ -2988,6 +2994,7 @@ function WinEquip(power, shopping) {
   game.bestequip = name;
   if (posn > 1) game.bestequip += ' ' + Equips.label(posn);
   ShowGearPower();
+  Sound('item');   // (better gear: sound.js)
   return true;
 }
 
@@ -3073,6 +3080,7 @@ function CompleteQuest() {
   QuestBar.reset(50 + Random(100));
   if (Quests.length()) {
     if (typeof Gossip == "function") Gossip('quest', { done: game.bestquest });
+    Sound('victory');
     game.questsDone = (game.questsDone || 0) + 1;
     Log('Quest completed: ' + game.bestquest);
     Quests.CheckAll();
@@ -3171,6 +3179,7 @@ function toArabic(s) {
 }
 
 function CompleteAct() {
+  Sound('victory');
   if (typeof Gossip == "function") Gossip('act', { act: ActCaption(game.act) });
   Plots.CheckAll();
   game.act += 1;
@@ -3279,6 +3288,7 @@ function LevelUp() {
   var lv = GetI(Traits,'Level');
   if (lv % K.PerkEvery == 0 && lv <= K.PerkLast) game.perkDue = (game.perkDue || 0) + 1;
   Announce("Level " + lv + ".");
+  Sound('levelup');
   Brag('l');
   CheckForCheating();
 }
@@ -4045,7 +4055,13 @@ window.onerror = function(message, source, lineno, colno, error) {
   $("#bsod_error").text(error && error.stack ? error.stack : '');
 
   $("#bsodmom").show();
+  Sound('error');
 };
+
+// A sound effect (sound.js), where there's one to play
+function Sound(key) {
+  if (typeof PlaySound == "function") PlaySound(key);
+}
 
 function FormKeyDown(e) {
   $("#bsodmom").hide();

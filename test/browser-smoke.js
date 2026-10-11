@@ -186,6 +186,29 @@ function step(name, ok, detail) {
     return said.win;
   });
 
+  await tryStep("sound effects: a splurge, better gear, a quest, an error; the most important wins a tie; Settings mutes them", async () => {
+    const heard = await page.evaluate(async () => {
+      const wait = () => new Promise((r) => setTimeout(r, 120));
+      const played = [], real = PlaySoundNow;
+      PlaySoundNow = (k) => played.push(k);
+      _soundLast = {};
+      try {
+        ToggleFeed(false);
+        WinEquip(GetI(Traits, "Level") + 500); await wait();               // better gear
+        Add(Inventory, "Gold", 1000000); StartSplurge("", "horse"); await wait();
+        game.queue = []; game.event = null;
+        WinEquip(GetI(Traits, "Level") + 900); CompleteQuest(); await wait();   // gear and a quest at once: the quest
+        WinBox({ title: "Test", icon: "error", text: "A test error." }); await wait();
+        $("dialog.win95[open]").each(function () { this.close(); this.remove(); });
+        SettingSet("sound", "0"); CompleteQuest(); await wait(); SettingSet("sound", null);
+        return played;
+      } finally { PlaySoundNow = real; }
+    });
+    const want = ["item", "splurge", "victory", "error"];
+    if (JSON.stringify(heard) != JSON.stringify(want)) throw new Error("heard " + JSON.stringify(heard) + ", not " + JSON.stringify(want));
+    return heard.join(", ");
+  });
+
   await tryStep("Scrollr: R opens the feed, newest first, and clears the count", async () => {
     await page.evaluate(() => {
       ToggleFeed(false);

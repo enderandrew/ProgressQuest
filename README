@@ -808,6 +808,30 @@ Settings live in the browser (localStorage, "pq.*"), for every hero, and
 never in a save: they change how you watch, not how the game goes.
 
 
+Sound effects
+-------------
+
+sound.js plays a short sound at a few moments (PlaySound; K.Sounds names
+the files, which go next to index.html):
+
+  splurge.mp3   a gold sink splurge (StartSplurge)
+  item.mp3      better gear equipped: shop, quest, Act, elite, enchanter (WinEquip)
+  victory.mp3   a quest or an Act completed
+  error.mp3     a blue screen (the crash screen, stop screens) or an error box
+
+More are wired up and silent until their file is named in K.Sounds:
+levelup, defeat (YOU DIED, in New Game−), elite (one appears), choice (an
+event waits for you), achievement, finale (the Old Bastard™ falls) and
+death (Hardcore). A missing file is silent too.
+
+When several fall in the same moment (a quest done that also hands out
+gear) only the most important plays (K.SoundPriority), and the same
+sound waits 1.5 seconds before it plays again. Nothing plays while time
+away is caught up, or in a background tab unless Settings > Sound says
+so; Settings > Sound (or View > Sound Effects) turns them off and sets
+the volume. The Konami code keeps its own song.
+
+
 Accessibility
 -------------
 
