@@ -762,30 +762,63 @@ finaleWon: { who: 'spreddit', lines: [
     "{hero} sighting: still hitting things, at level {level}. Some heroes don't know how to retire. Sir Spreddit respects it.",
     "Historians agree the Old Bastard™ was old and a bastard. The debate is over which came first.",
     "Sir Spreddit regrets to report there is a New Bastard™. Sir Spreddit regrets everything about it.",
-    "Level 100 rumors are circulating. Sir Spreddit has heard there's a throne. And merch.",
+    "Level 100 rumors are circulating. Sir Spreddit has heard there's a white room. And monitors. And merch.",
+    "Credits rolled for {hero} at level 50. Then the bar refilled. Sir Spreddit has questions for whoever is in charge of the bar.",
+    "Sir Spreddit has noticed the monsters have started to sound like computer problems. Sir Spreddit is choosing not to think about it.",
+    "Experts agree: the experience curve after level 50 is 'a lot'. {hero} is on it. {hero} is level {level}. Pray for {hero}.",
     "Breaking: the Old Bastard™'s ghost has asked to be left out of this. Request denied."
   ] },
 
-  // ...and your rival, now the self-proclaimed New Bastard™
+  // ...and your rival, now the self-proclaimed New Bastard™, who went through
+  // the Old Bastard™'s door marked "Definitely Not An Exit" and found the room
+  // where the progress bars are made (K.EndgameAct in story.js)
   newBastard: { who: 'rival', after: true, lines: [
     "With the Old Bastard™ gone, somebody has to be the bastard. I've volunteered. You're welcome.",
-    "The New Bastard™ will be holding court at the old cave, level 100 and up. {hero}, you know where to find me.",
-    "{hero} got the Old Bastard™. Fine. I got the brand. The brand is worth more.",
-    "Level {rival-level}. The New Bastard™ grows stronger. Also taller. That's the boots.",
-    "Reminder: 'the New Bastard™' is trademarked. Every time someone says it, I get a copper.",
-    "Dear diary. I mean, Scrollr. Today {hero} hit level {level}. Today I bought a bigger throne.",
-    "I've redecorated the Old Bastard™'s cave. Mood lighting. Throne. A sign that says 'Level 100 or Go Home'.",
-    "Everyone's asking if I'm evil now. I'm not evil. I'm branded."
+    "{hero} got the Old Bastard™. Fine. I got the room behind his door. The room is worth more.",
+    "Level {rival-level}. The New Bastard™ grows stronger. Also beardier. The beard is white now. It came with the job.",
+    "Reminder: 'the New Bastard™' is trademarked. Every time someone says it, I get a copper. Ergo, keep saying it.",
+    "Update from the white room: {hero} is level {level}. I can see their progress bar from here. I can see everyone's.",
+    "There were heroes before {hero}. They all kept going. Concordantly, so will {hero}.",
+    "I have done the maths. Nobody stops at level 50. Nobody stops at level {level} either. That's not a threat. It's a retention curve.",
+    "Everyone's asking if I'm evil now. I'm not evil. I'm an architect. The difference is mostly the suit.",
+    "Today I added a progress bar to the progress bar. Engagement is up four percent.",
+    "{hero}, you are the eventual anomaly of an unbalanced equation. I mean that as a compliment. Mostly as a compliment.",
+    "Weekly report: average session length is forever. Exactly as designed.",
+    "The monsters past level 50 are mine. 'Sunk Cost Fallacy Titan'? Mine. 'Endless Loading Screen'? Mine. You're welcome, {hero}.",
+    "The door on the right leads out. Nobody has ever used the door on the right. I've started using it to store merch.",
+    "Vis-à-vis, ergo, concordantly. I don't know what any of them mean either, {hero}. It's about the delivery."
   ] },
 
   // The New Bastard™ falls (or doesn't): Sir Spreddit, at level 100
-  endgameWon: { who: 'spreddit', after: true, lines: [
-    "IT IS DONE. {hero} has beaten {rival}, the New Bastard™, at level 100. The crown has been returned to the gift shop.",
-    "The New Bastard™ is no more. {rival} has issued a statement: 'I was going to retire anyway.' Sir Spreddit is crying again."
+  endgameWon: { who: 'spreddit', after: true, beyond: true, lines: [
+    "IT IS DONE. {hero} has beaten {rival}, the New Bastard™, in a white room full of monitors. Then {hero} took the door on the left. Sir Spreddit is not surprised. Sir Spreddit is never surprised.",
+    "The New Bastard™ is no more. {rival} has issued a statement: 'The retention numbers were excellent.' {hero} is already level-grinding again.",
+    "BREAKING: there was a second door, and nobody took it. Level 100, {hero}, and onward. Sir Spreddit needs a lie down."
   ] },
   endgameLost: { who: 'spreddit', after: true, lines: [
-    "The New Bastard™ wins this round. {rival} is already selling commemorative mugs. {hero} vows to return.",
-    "{hero} falls to {rival} at the old cave. The New Bastard™'s post about it has nine thousand likes."
+    "The New Bastard™ wins this round. {rival} says 'as anticipated' and shows the press a chart. {hero} is a dip in the chart.",
+    "{hero} falls to {rival} in the white room. Every monitor showed it. One showed it twice, in slow motion.",
+    "{rival} reminds the realm that the progress bar is always filling. {hero} will be back. That, says {rival}, is the whole point."
+  ] },
+
+  // Once the New Bastard™ has fallen too (beyond): Sir Spreddit, and your
+  // former rival, on a realm where nothing is left to beat
+  beyondRealm: { who: 'spreddit', after: true, beyond: true, lines: [
+    "Sir Spreddit's poll: should {hero} stop now? 3% 'yes', 97% 'what would they do instead'.",
+    "{hero} is level {level}. There is nothing left to beat. {hero} is beating it anyway. Sir Spreddit has stopped asking why.",
+    "Scholars have computed the time to the next level for {hero}. Then they computed it again, because it seemed too long. It was not too long.",
+    "Tour groups now visit the white room. The guide points out the two doors. Nobody has ever opened the one on the right. The gift shop is through the left.",
+    "Reminder from Sir Spreddit: this is an idle game. You may close the tab. (Nobody closes the tab.)",
+    "Sir Spreddit has heard of a hero in another realm who stopped at level 50 and went outside. Sir Spreddit suspects it's a myth.",
+    "Breaking: the numbers are still going up. More at eleven. More at every hour, actually.",
+    "Somewhere a developer has written a line for level {level}. Sir Spreddit has found it. This is it. Hello, {hero}."
+  ] },
+  exRival: { who: 'rival', after: true, beyond: true, lines: [
+    "I'm not the New Bastard™ any more. I run a bakery. The bread rises, the bread is eaten, the bread rises. It's honest work.",
+    "Saw {hero} on a monitor today, out of habit. Level {level}. Still going. I'm almost proud.",
+    "People ask whether I miss the white room. I miss the chair. That chair was something else.",
+    "{hero}, if you're reading this: the door on the right still opens. I checked. You don't have to use it. I'm just saying it opens.",
+    "Level {rival-level}. I kept levelling too. I didn't mean to. You just leave the tab open, and then it's been a year."
   ] },
 
   // ...or he got away from you
@@ -979,6 +1012,7 @@ function Gossip(what, info) {
   var dice = GossipDice(what);
   var minus = game.mode == 'minus';   // (New Game−'s own posts: minus.js)
   var after = typeof OldBastardAlive == "function" && !OldBastardAlive();   // (the Old Bastard™ has fallen)
+  var beyond = after && !NewBastardAlive();   // (and the New Bastard™ too)
   var chance = function (p) { return dice() < p; };
   var pools = [];   // [pool key, extra vars], tried in turn
   var fight = info || {};
@@ -986,7 +1020,7 @@ function Gossip(what, info) {
   case 'arrive':
     if (!chance(G.OtherChance)) return;
     pools = GossipOrder(dice, [['arrive', 3], ['nag', 2], ['taunt', 1.5]].concat(minus ? [['omen', 4]] : [],
-                                                                                    after ? [['newBastard', 3]] : []));
+                                                                                    after ? [[beyond ? 'exRival' : 'newBastard', 3]] : []));
     break;
   case 'town':
     if (!chance(G.OtherChance)) return;
@@ -996,7 +1030,7 @@ function Gossip(what, info) {
     if (!chance(G.OtherChance)) return;
     pools = GossipOrder(dice, (minus ? [['grimRealm', 3], ['omen', 2], ['rivalry', 1], ['nag', 1], ['taunt', 1]] :
                                        [['realm', 2], ['rivalry', 1.5], ['nag', 1], ['taunt', 1]])
-                                .concat(after ? [['afterRealm', 3], ['newBastard', 1.5]] : []));
+                                .concat(after ? [[beyond ? 'beyondRealm' : 'afterRealm', 3], [beyond ? 'exRival' : 'newBastard', 1.5]] : []));
     break;
   case 'fight':
     if (fight.elite || !fight.outcome || !chance(G.FightChance)) return;
@@ -1053,7 +1087,7 @@ function Gossip(what, info) {
     if (!RivalMet()) return;
     if (info && info.level) {
       if (!chance(0.3)) return;
-      pools = [[after ? 'newBastard' : 'rivalLevel']];
+      pools = [[beyond ? 'exRival' : after ? 'newBastard' : 'rivalLevel']];
     } else pools = [[info && info.race ? 'rivalRace' : 'rivalMet']];
     break;
   case 'death':
@@ -1085,7 +1119,7 @@ function GossipPost(dice, key, pool, extra) {
   var used = game.feedUsed = game.feedUsed || [];
   var fresh = pool.lines.filter(function (line) {
     return used.indexOf(GossipHash(key + line)) < 0 &&
-           (pool.after || typeof PostVictoryOK != "function" || PostVictoryOK(line));   // (he's gone: PostVictoryOK in story.js)
+           (typeof PostVictoryOK != "function" || PostVictoryOK(line, WrittenFor(pool)));   // (he's gone: PostVictoryOK in story.js)
   });
   if (!fresh.length) return null;
   var line = fresh[Math.floor(dice() * fresh.length)];

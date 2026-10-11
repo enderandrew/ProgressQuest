@@ -125,6 +125,7 @@ events.forEach((e, n) => {
   if ("rival" in e && e.rival !== true) error(`${name}: rival should be true (or left out)`);
   if ("minus" in e && e.minus !== true) error(`${name}: minus should be true (or left out)`);
   if ("after" in e && e.after !== true) error(`${name}: after should be true (or left out)`);
+  if ("beyond" in e && (e.beyond !== true || e.after !== true)) error(`${name}: beyond should be true, with after: true (or left out)`);
   if (e.minLevel && e.maxLevel && e.minLevel > e.maxLevel) error(`${name}: minLevel is above maxLevel`);
   const raceNames = (K.Races || []).map((x) => x.split("|")[0]), klassNames = (K.Klasses || []).map((x) => x.split("|")[0]);
   if (e.race && raceNames.indexOf(e.race) < 0) error(`${name}: race "${e.race}" isn't in K.Races (check the spelling)`);
@@ -363,7 +364,7 @@ if (K.Rival) {
     if (RIVAL_WORDS.indexOf(p.slice(1, -1)) < 0) error(`K.Rival.Intro: unknown placeholder ${p} in "${line}"`);
   }));
 }
-const FINALE_WORDS = STORY_WORDS.concat(["taunt", "tries", "hours", "raceending", "classending"]);
+const FINALE_WORDS = STORY_WORDS.concat(["taunt", "tries", "hours", "level", "raceending", "classending"]);
 Object.keys(K.EndgameStory || {}).forEach((part) => (K.EndgameStory[part] || []).forEach((line) =>
   (line.match(/\{[^}]*\}/g) || []).forEach((p) => {
     if (FINALE_WORDS.indexOf(p.slice(1, -1)) < 0) error(`K.EndgameStory.${part}: unknown placeholder ${p} in "${line}"`);

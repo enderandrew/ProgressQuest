@@ -223,7 +223,8 @@
       <h2><span aria-hidden="true">&#x1F527;</span> Custom Run</h2>
       <p>Roll a hero your way. A <b>seed</b> fixes the stats and every roll after,
          so two people with the same seed (and the same choices) play the same game.
-         <b>Mutators</b> are bad ideas you can opt into.</p>
+         <b>Mutators</b> are bad ideas you can opt into. A <b>pace</b> in the link
+         makes it a race at the same speed.</p>
       <div class="custom-grid">
         <label for="customSeed">Seed</label>
         <input type="text" id="customSeed" maxlength="64" placeholder="leave blank for a random game" spellcheck="false">
@@ -234,6 +235,13 @@
           <label id="customMinusLabel"><input type="radio" name="customMode" value="minus"> New Game&minus;</label>
           <label><input type="radio" name="customMode" value="hardcore"> &#x2620; Hardcore</label>
         </span>
+        <label for="customPace">Pace</label>
+        <select id="customPace">
+          <option value="">chosen when you roll</option>
+          <option value="sonic">Sonic (Gotta Go Fast: about a week to level 50)</option>
+          <option value="saga">Saga (about 75 days to level 50)</option>
+          <option value="slow">Classic / Slow (about eight months to level 50)</option>
+        </select>
         <span>Mutators</span>
         <span id="customMutators"></span>
       </div>

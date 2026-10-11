@@ -171,7 +171,9 @@ function FrontPage(l) {
   $('<p>').text(ChronicleFill(ChroniclePick(seconds, key + 'x'), v)).appendTo(story);
   if (l.endgame)   // (the end game: K.Endgame)
     $('<p>').text('Fifty levels later they beat their rival, ' + (l.endgame.rival ? l.endgame.rival + ', ' : '') +
-      'the New Bastard™, at level ' + l.endgame.level + '. The crown is in the gift shop.').appendTo(story);
+      'the New Bastard™, at level ' + l.endgame.level + ', in a white room full of monitors. There were two doors. ' +
+      (l.level > l.endgame.level ? 'They took the one on the left, as everyone does, and found the one on the right at level ' + l.level + '.' :
+                                   'They took the one on the right, which nobody does.')).appendTo(story);
   if (l.bestspell || l.beststat)
     $('<p>').text('Colleagues remember ' + [l.bestspell ? 'their ' + l.bestspell : '', l.beststat ? 'a ' + l.beststat : '']
       .filter(Boolean).join(' and ') + ', and little else.').appendTo(story);

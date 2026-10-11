@@ -147,8 +147,8 @@ function MakeDaily(date) {
     act: 0, bestplot: "Prologue",
     Quests: [], questmonster: "",
     kill: "Loading....",
-    ExpBar: { position: 0, max: LevelUpTime(L, 'classic') },
-    pace: 'classic',   // (a Daily is a day)
+    ExpBar: { position: 0, max: LevelUpTime(L, 'sonic') },
+    pace: 'sonic',   // (a Daily is a day)
     EncumBar: { position: 0, max: carry },
     PlotBar: { position: 0, max: 26 },
     QuestBar: { position: 0, max: 1 },

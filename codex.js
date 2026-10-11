@@ -32,12 +32,18 @@ K.Achievements = [
     value: function (c) { return c.bestLevel; }, goal: 25 },
   { key: "level50", icon: "🌟", label: "The Big Five-Oh", help: "Reach level 50.",
     value: function (c) { return c.bestLevel; }, goal: 50 },
+  { key: "level75", icon: "🪨", label: "Sunk Cost", help: "Reach level 75. You've come this far.",
+    value: function (c) { return c.bestLevel; }, goal: 75 },
+  { key: "level101", icon: "🚪", label: "The Door on the Left", help: "Reach level 101. Everyone chooses the left.",
+    value: function (c) { return c.bestLevel; }, goal: 101 },
   { key: "boss", icon: "💀", label: "Vengeance Is Mine (Eventually)", help: "Beat the Old Bastard™.",
     value: function (c) { return c.flag("boss"); }, goal: 1 },
   { key: "bossfirst", icon: "🎯", label: "One and Done", help: "Beat the Old Bastard™ on the first try.",
     value: function (c) { return c.flag("bossfirst"); }, goal: 1 },
   { key: "touchgrass", icon: "🌿", label: "Touch Grass", help: "Play one hero for 24 hours.",
     value: function (c) { return Math.floor(c.bestHours); }, goal: 24 },
+  { key: "sisyphus", icon: "🪨", label: "One Must Imagine Sisyphus Happy", help: "Play one hero for a whole year.",
+    value: function (c) { return Math.floor(c.bestHours); }, goal: 24 * 365 },
 
   // The Hall
   { key: "retire", icon: "🏆", label: "Gold Watch", help: "Retire a hero to the Hall of Legends.",
@@ -58,7 +64,7 @@ K.Achievements = [
     value: function (c) { return c.flag("bosshc"); }, goal: 1 },
   // New Game− (minus.js)
   // The end game (K.Endgame): your rival, the New Bastard™, at level 100
-  { key: "endgame", icon: "\uD83D\uDC51", label: "Bastard, Junior", help: "Beat your rival, the New Bastard™, at level 100.",
+  { key: "endgame", icon: "\uD83D\uDC51", label: "Bastard, Junior", help: "Beat your rival, the New Bastard™, in the white room at level 100.",
     value: function (c) { return c.flag("endgame"); }, goal: 1 },
   { key: "minusboss", icon: "\uD83D\uDD6F", label: "Prepare to Die (Edition)", help: "Beat the Old Bastard™ in New Game−.",
     value: function (c) { return c.flag("bossminus"); }, goal: 1 },

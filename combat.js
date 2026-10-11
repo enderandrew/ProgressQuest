@@ -346,6 +346,10 @@ K.Boss = {
 // The end game: your rival, the New Bastard™, at level 100 (Act L, K.Acts in
 // story.js), for a hero who beat the Old Bastard™ and kept going. Fought
 // like him (BeginBoss in main.js), a little tougher; told by K.EndgameStory.
+// They balanced the fight themselves: they fight at your effective level
+// (EffectiveLevel: the level whose typical stats are yours; past 60 or so
+// a hero falls behind the monsters, most of all at the slower paces, and
+// picks easier fights), no higher than Level, plus BossLevelGap.
 K.Endgame = {
   Level: 100,
   BossLevelGap: 1,
@@ -394,6 +398,16 @@ function CarryFor(str) {
 function ExpectedStat(level) {
   level = Math.max(1, level);
   return 9.5 + 0.45 * level + 0.133 * Math.pow(1.15, level);
+}
+
+// The level a hero's stats are typical of (ExpectedStat): their prime
+// stats' average, as a level
+function EffectiveLevel(stats) {
+  var sum = 0, n = 0;
+  $.each(K.PrimeStats, function (i, s) { sum += +(stats && stats[s]) || 0; ++n; });
+  var avg = n ? sum / n : 0, L = 1;
+  while (L < 999 && ExpectedStat(L + 1) <= avg) ++L;
+  return L;
 }
 
 // What a typical character's HP Max / MP Max is at a given level.

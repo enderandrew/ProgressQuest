@@ -111,8 +111,8 @@ function NewGuyFormLoad() {
   RollEm();
   ShowRunOptions();
   // the pace: the last one chosen, unless the address says
-  try { var pace = localStorage.getItem("pq.pace"); if (K.Pace[pace]) $("#Pace").val(pace); } catch (e) {}
-  if (K.Pace[UrlParam("pace")]) $("#Pace").val(UrlParam("pace")).prop("disabled", true);
+  try { var pace = PaceKey(localStorage.getItem("pq.pace")); if (pace) $("#Pace").val(pace); } catch (e) {}
+  if (PaceKey(UrlParam("pace"))) $("#Pace").val(PaceKey(UrlParam("pace"))).prop("disabled", true);
   $("#Pace").on("change", function () { try { localStorage.setItem("pq.pace", this.value); } catch (e) {} });
   GenClick();
 
@@ -190,7 +190,7 @@ function sold() {
     choiceLog: [],
     perks: [perkRoll],
     mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : NewGameMinus() ? "minus" : "normal",
-    pace: RunPace(),   // (Saga or Classic: K.Pace in config.js)
+    pace: RunPace(),   // (sonic, saga or slow: K.Pace in config.js)
     lifeId: NewLifeId(),   // who they are in storage, and to the Hardcore ledger
     saveGen: 0,
     legacy: (NewGamePlus() || Hardcore()) && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } :
@@ -292,15 +292,14 @@ function sold() {
 // newguy.html?seed=...: every roll of the run follows from it
 function RunSeed() { return UrlParam("seed").slice(0, 64); }
 
-// The pace (K.Pace in config.js): from the page's address (newguy.html?pace=classic),
+// The pace (K.Pace in config.js): from the page's address (newguy.html?pace=slow),
 // else the choice beside Sold (remembered), else the default. The simulator,
-// which has no page, plays Classic unless told otherwise (it keeps the tests quick).
+// which has no page, plays Sonic unless told otherwise (it keeps the tests quick).
 function RunPace() {
-  var p = UrlParam("pace");
-  if (K.Pace[p]) return p;
-  if (!document) return 'classic';
-  var v = $("#Pace").val();
-  return K.Pace[v] ? v : K.PaceDefault;
+  var p = PaceKey(UrlParam("pace"));
+  if (p) return p;
+  if (!document) return 'sonic';
+  return PaceKey($("#Pace").val()) || K.PaceDefault;
 }
 
 // newguy.html?mut=nospells,glasscannon

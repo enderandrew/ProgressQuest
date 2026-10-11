@@ -593,9 +593,9 @@ function ShareLinkBox(opts) {
 //
 // No server, so everything a friend needs is in the link:
 //
-//   index.html#custom/<seed>/<mutators>[/<mode>]
+//   index.html#custom/<seed>/<mutators>[/<mode>][/<pace>]
 //       a Custom Run (Challenge Modes) filled in: the same seed rolls the
-//       same hero, and with the same choices plays the same game
+//       same hero, and with the same choices (and pace) plays the same game
 //   index.html#vs/<code>[/<code>]
 //       heroes side by side (the Daily, or the same custom run). With one
 //       code, the menu puts your own hero from the same challenge beside it.
@@ -603,9 +603,10 @@ function ShareLinkBox(opts) {
 // A versus code is a small sealed summary of a hero (VersusPayload), packed
 // like a character sheet's share code.
 
-function ChallengeUrl(seed, mutators, mode) {
+function ChallengeUrl(seed, mutators, mode, pace) {
   var parts = ["custom", encodeURIComponent(seed || ""), (mutators || []).join(",")];
   if (mode) parts.push(mode);
+  if (PaceKey(pace)) parts.push(PaceKey(pace));
   return new URL("index.html#" + parts.join("/"), window.location.href).href;
 }
 
@@ -637,7 +638,7 @@ function VersusPayload(g) {
     w: g.wins || 0, d: g.deaths || 0, qd: g.questsDone || 0, el: Math.floor(g.elapsed || 0),
     gp: K.Equips.reduce(function (t, e) { return t + ((g.EquipPower || {})[e] || 0); }, 0),
     sp: (g.Spells || []).length, best: g.bestequip || "",
-    pk: g.perks || [], mut: g.mutators || [], seed: g.runSeed || "", mode: g.mode || "normal",
+    pk: g.perks || [], mut: g.mutators || [], seed: g.runSeed || "", mode: g.mode || "normal", pc: PaceOf(g),
     fin: g.finale && g.finale.state == "won" ? g.finale.wonLevel : 0,
     dead: g.dead ? (g.dead.cause || "dead") : "",
     ch: g.cheater ? g.cheater.reason : "", uv: g.unverified || "",
@@ -660,10 +661,11 @@ function VersusPayloadFromBook(e) {
 }
 
 // Do two heroes share a challenge? "daily", "seed" (a custom run with the
-// same seed and mutators), or ""
+// same seed, mutators and pace: codes from before paces had none), or ""
 function SameChallenge(a, b) {
   if (a.dy && b.dy) return a.dy.date == b.dy.date ? "daily" : "";
   if (a.dy || b.dy || !a.seed) return "";
+  if (a.pc && b.pc && PaceKey(a.pc) != PaceKey(b.pc)) return "";
   return a.seed == b.seed && (a.mut || []).slice().sort().join() == (b.mut || []).slice().sort().join() ? "seed" : "";
 }
 
@@ -688,7 +690,7 @@ function ShareChallenge(g) {
                    "Start a Custom Run with a seed (Challenge Modes) for a run you can share." });
     return;
   }
-  var url = ChallengeUrl(g.runSeed, g.mutators, ["hardcore", "plus", "minus"].indexOf(g.mode) >= 0 ? g.mode : "");
+  var url = ChallengeUrl(g.runSeed, g.mutators, ["hardcore", "plus", "minus"].indexOf(g.mode) >= 0 ? g.mode : "", PaceOf(g));
   ShareCodeFor(VersusPayload(g)).then(function (code) {
     var vs = VersusUrl([code]);
     var box = WinBox({ title: "Share This Run", icon: "info", wide: true,

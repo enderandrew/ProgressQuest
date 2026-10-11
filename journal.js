@@ -87,8 +87,9 @@ function JournalKingdom() {
 
 // One of the lines (not one that has the Old Bastard™ still around, once
 // he isn't: PostVictoryLines in story.js)
-function JournalPick(list, keep) {
-  if (!keep && !list.post && typeof PostVictoryLines == "function") list = PostVictoryLines(list);
+// (exempt: what the list was written for, 'post' or 'beyond': WrittenFor)
+function JournalPick(list, exempt) {
+  if (exempt !== true && typeof PostVictoryLines == "function") list = PostVictoryLines(list, exempt || WrittenFor(list));
   return list[Math.floor(JournalRandom()() * list.length)];
 }
 
@@ -150,7 +151,7 @@ function JournalAside(chance, pool, extra) {
   var fresh = [];
   pool.forEach(function (line) { if (used.indexOf(line.slice(0, 40)) < 0) fresh.push(line); });
   if (!fresh.length) return;
-  var line = JournalPick(fresh, pool.post);   // (a pool for after him says what it likes)
+  var line = JournalPick(fresh, WrittenFor(pool));   // (a pool for after him says what it likes)
   used.push(line.slice(0, 40));
   JournalAdd('aside', JournalText(line, extra));
 }
@@ -237,7 +238,8 @@ function JournalSplurge(ev) {
 // A named elite (K.Elite in combat.js): always worth a line, won or lost
 function JournalElite(fight, item) {
   var e = fight.elite, won = !!item;
-  var extra = { elite: e.name, kind: e.kind, item: item ? item.name : "", slot: item ? item.slot.toLowerCase() : "" };
+  var extra = { elite: e.name, kind: e.kind, 'a-kind': typeof Indefinite == "function" ? Indefinite(e.kind, 1) : "a " + e.kind,
+                item: item ? item.name : "", slot: item ? item.slot.toLowerCase() : "" };
   JournalAdd('elite', JournalText(won ? JournalPick(K.JournalEliteWon) :
                                   fight.outcome == 'flee' ? JournalPick(K.JournalEliteFled) : JournalPick(K.JournalEliteLost), extra));
   if (won && !game.journalEliteAside) {
@@ -557,7 +559,26 @@ K.JournalLevelAsides = {
   80: "Level 80. I asked the progress bar if it ever gets tired. It filled up, which I'm taking as a no.",
   90: "Level 90. Somewhere a developer assumed nobody would get this far. Hello, developer. Bet you didn't write anything for level 91.",
   99: "Level 99. The old Progress Quest hall of fame had heroes at this level. They're legends. They also never went outside.",
-  100: "Level 100. Three digits. I've run out of fingers, toes, and patience. Yours, apparently, is infinite."
+  100: "Level 100. Three digits. I've run out of fingers, toes, and patience. Yours, apparently, is infinite.",
+  // (the monsters, weapons and armor past 50 are about computers, and about not stopping)
+  52: "Level 52. A merchant offered me a shield called the Terms of Service Wall. Nobody has ever got past it, because nobody has ever read it.",
+  58: "Level 58. Saw a sword in a shop window called the Friday 4:45 PM All-Hands Meeting Broadsword. I felt it in my soul before I felt it in my hand.",
+  64: "Level 64. The monsters don't bleed any more. They throw exceptions.",
+  67: "Level 67. Fought an Unskippable 40-Minute Cutscene. It didn't fight back. It just went on, and on. I knew exactly how it felt.",
+  70: "Level 70. Met a Sunk Cost Fallacy Titan. It said I'd come too far to stop now. It was very convincing. I'm still here, aren't I?",
+  73: "Level 73. I am wearing a Carpal-Tunnel-Proof Titanium Compression Onesie, or I will be, at some point. It's that kind of level.",
+  76: "Level 76. An Endless Loading Screen attacked me. I won, I think. It's hard to tell. It's still spinning.",
+  85: "Level 85. Someone is selling a shield called the Sunk Cost Protective Bubble. I bought two. I've come this far.",
+  88: "Level 88. Met the Physical Concept of Outside today. It was very bright and smelled of grass. I fled. I'm not proud. I'm level 88.",
+  92: "Level 92. A RuneScape player once told me this is halfway to 99. I laughed. Then I did the sums. I stopped laughing.",
+  95: "Level 95. Fought the Developer Who Stopped Balancing Content at Level 50. It apologized the whole time. I accepted the apology. Then I took the XP.",
+  97: "Level 97. Somewhere up here there's armor called Clean Clothes Suitable for Going Outside. They say it's very rare. I'm in no hurry to find it.",
+  98: "Level 98. The Infinite Monolith of Arbitrary Numbers was waiting at the top of a hill. It was just a counter, going up. I watched it for an hour. It was beautiful.",
+  101: "Level 101. They say the best hero of the original Progress Quest got here after twenty-four years. I hope they were happy. I hope they went outside.",
+  110: "Level 110. Nobody wrote anything for level 110, so I'm writing this myself. Hello. It's quiet up here.",
+  128: "Level 128. A round number, if you're a computer. I've started thinking like one. The monsters seem to like it.",
+  150: "Level 150. I've been doing this so long that the experience bar has started to look like a horizon.",
+  200: "Level 200. The developer would like me to remind you that this is an idle game, and that you are allowed to stop. I'd like to remind you that you won't."
 };
 
 K.JournalActAsides = [
@@ -729,25 +750,44 @@ K.JournalAfterAsides = [
   "The bards have run out of rhymes for my name. They've started on {rival}'s. Unacceptable.",
   "I keep a list of things that are still older than me. It's getting short.",
   "Level {level}. Somewhere around level 100 I get to stop hearing about the New Bastard™. Probably.",
-  "I visited the old cave. {rival} has put up a gift shop. The fudge is good. I hate that the fudge is good."
+  "I visited the old cave. {rival} has put up a gift shop. The fudge is good. I hate that the fudge is good.",
+  "{rival} writes that they've found the room where the progress bars are made. They want me to come and see it. They used the word “ergo”. They never used to say “ergo”.",
+  "Level {level}. The monsters have started having names like error messages. Fought a Memory Leak Behemoth today. It kept getting bigger. So does my experience bar. We have that in common.",
+  "I've started to suspect the numbers are the point. Not the quest, not the Old Bastard™. The numbers. I'm trying not to think about it, which means I'm thinking about it.",
+  "Every level takes longer than the last. The bards call it endgame content. I call it the rest of my life.",
+  "My weapon is called {weapon} now. I didn't name it. Nobody names anything up here. Things just drop out of monsters with names already on.",
+  "The credits rolled at level 50. I sat through all of them. There was a name I didn't recognize at the end: “and you, for not closing the tab”."
 ];
 K.JournalEndAsides = [
   "Level {level}. Nothing left to beat. I beat things anyway. It's what I'm for.",
   "{rival} sent a fruit basket. It was a nice fruit basket. We're not friends. It was a nice fruit basket.",
   "The numbers keep going up. I've stopped asking why. I've started enjoying it, which is worse.",
-  "Somebody somewhere has a level higher than mine. I've decided not to look."
+  "Somebody somewhere has a level higher than mine. I've decided not to look.",
+  "Level {level}. I chose the door on the left. I'll choose it again tomorrow. Nobody is making me. That's the worst part.",
+  "Sisyphus at least got to walk back down the hill. I just get a new progress bar.",
+  "I tried to stop once, for an afternoon. The bar kept filling. It doesn't need me. I'm not sure I ever needed it either, and yet.",
+  "The numbers have got so big they've stopped meaning anything. I've decided that makes them art.",
+  "Whoever's reading this should get some sleep. I mean you. With the tab.",
+  "Somewhere there's a level with nothing after it. I've stopped believing in it, the way you stop believing in the last bus.",
+  "Sometimes I wonder whether I'm playing the game, or the game is playing me, or you're the one being played. Then a monster attacks and I stop wondering. That's probably the design.",
+  "{rival} sends bread now. Every week, a loaf. It's good bread. We don't talk about the white room.",
+  "Level {level}. I worked out how long the next one will take. Then I worked it out again. Then I lay down for a while."
 ];
 // (written for after him: they can mention him, in the past)
 K.JournalAfterAsides.post = K.JournalEndAsides.post = true;
 
 K.JournalEndgameWon = [
-  "Beat {rival}, the New Bastard™, on try number {tries}. They took it well. Then they posted about it badly. Level 100, and nobody left to chase.",
-  "It's over. {rival} handed me their crown, said it was a hat, and left. Level 100. I don't know what comes after a hundred. More, probably."
+  "Beat {rival}, the New Bastard™, on try number {tries}. There was a white room, and monitors, and two doors. I chose the left one. Of course I chose the left one. Level 100, and the bar's filling again.",
+  "It's over. {rival} took off the beard and told me there were heroes before me, and they all kept going. I said I wasn't like them. My experience bar disagreed.",
+  "Try number {tries}, and {rival} is down. They said the retention numbers were excellent. I said I'd retire. Then I looked at the door on the left for a long time. I'm writing this from level 100 and a bit."
 ];
 K.JournalEndgameLost = [
-  "Lost to {rival}, the New Bastard™. They were very gracious about it, in a post titled “GRACIOUS”.",
-  "{rival} beat me at level 100. I'll be back. They know. They've already scheduled the post."
+  "Lost to {rival}, the New Bastard™. They said “as anticipated” and showed me a chart. I was on the chart. I was a dip in it.",
+  "{rival} beat me at level 100, in a white room full of monitors. One of the monitors was showing me losing. I watched myself lose live, then on replay.",
+  "{rival} won again. “Come back when the bar is full,” they said. “It is always filling.” I hate that they're right."
 ];
+// (written as the New Bastard™ falls: they can mention them)
+K.JournalEndgameWon.beyond = true;
 
 K.JournalRivalBeaten = "As for {rival}: they showed up a minute late and said they'd softened him up. Let them have that. I have everything else.";
 K.JournalRivalWatched = "{rival} watched the whole thing from behind a rock. I could hear them taking notes.";
@@ -779,7 +819,7 @@ K.JournalGhostwriter = [
 K.JournalEliteWon = [
   "Slew {elite}, an elite {kind}. They had a name and a title and everything. Took {item} off them; it's my {slot} now.",
   "{elite} is no more. Somebody will have to update the local signage. I've got {item} now.",
-  "Fought {elite}, a {kind} with a reputation. The reputation lost. Kept {item} as a souvenir.",
+  "Fought {elite}, {a-kind} with a reputation. The reputation lost. Kept {item} as a souvenir.",
   "Beat {elite}. Their title is vacant, if anyone's interested. The pay is bad and a hero shows up eventually. I'm wearing their {slot}: {item}.",
   "{elite} gave a speech before the fight. I didn't. I think that was the difference. Took {item}.",
   "I've always wanted a {slot} with a backstory. {item} has one: it used to belong to {elite}, until about ten minutes ago.",
@@ -800,7 +840,7 @@ K.JournalEliteLost = [
   "Lost to {elite}. In my defense, they had a name. Monsters with names cheat.",
   "{elite} beat me. Somewhere, a bard is already writing it down, and I am not the hero of that song.",
   "Woke up at the temple. The priest asked who did it. I said “{elite}” and he nodded like that explained everything. It does.",
-  "Note to self: when a {kind} has a title, a hometown and a business card, maybe don't."
+  "Note to self: when {a-kind} has a title, a hometown and a business card, maybe don't."
 ];
 
 K.JournalEliteAside = [

@@ -1809,14 +1809,108 @@ K.Events = K.Events.concat([
     effect: { stat: 'random' } },
 
   { key: 'newbastard-decree', after: true, rival: true, where: ['town'], weight: 2,
-    lines: ['A herald in {kingdom} reads a decree from {rival}, the New Bastard™',
-            'Taxes on heroes are doubled. Taxes on rivals are abolished',
-            'Nobody pays it. You pay {gold} gold, by accident, out of habit'],
+    lines: ['A herald in {kingdom} reads a memo from {rival}, the New Bastard™',
+            '“Effective immediately, every progress bar shall contain a smaller progress bar, for engagement”',
+            'Nobody understands it. You pay a {gold} gold convenience fee anyway, out of habit'],
     effect: { gold: -1 } },
 
   { key: 'newbastard-merch', after: true, rival: true, where: ['road'], weight: 2,
     lines: ['A merchant is selling New Bastard™ merchandise: mugs, banners, a commemorative {boring}',
-            'Every item has {rival}’s face on it',
+            'Every item has {rival}’s face on it, in a white suit, with a white beard',
             'You buy a mug, ironically. It’s a good mug. You hate that it’s a good mug'],
-    effect: { stat: 'CHA' } }
+    effect: { stat: 'CHA' } },
+
+  // The New Bastard™ is an architect now (K.EndgameAct in story.js): the
+  // system, and keeping you in it
+  { key: 'newbastard-survey', after: true, rival: true, where: ['town'], weight: 2,
+    lines: ['A clerk in {kingdom} hands you a survey from {rival}, the New Bastard™',
+            '“On a scale of one to ten, how likely are you to keep playing forever?”'],
+    ask: 'What do you put?',
+    choices: [
+      { label: 'Ten',
+        lines: ['The clerk nods. “They all say ten.” Somewhere, a small bar ticks up'],
+        effect: { xp: 0.04 } },
+      { label: 'One',
+        lines: ['The clerk writes down ten anyway. “It’s a rounding thing,” they explain'],
+        effect: { stat: 'WIS' } } ] },
+
+  { key: 'newbastard-monitor', after: true, rival: true, where: ['rest'], weight: 1.5,
+    lines: ['At your campfire you find a small monitor propped on a rock',
+            'It shows your experience bar. Under it, in neat handwriting: “Still here? Ergo. —{rival}”',
+            'You turn it to face the other way. It keeps filling'],
+    effect: { xp: 0.02 } },
+
+  // The grind past level 50, and the realm starting to notice it's a game
+  { key: 'after-loading', after: true, where: ['field'], weight: 1.5,
+    lines: ['The Killing Fields™ freeze. A spinning circle appears in the sky',
+            'Everyone waits: you, the monsters, a confused bird',
+            'The world finishes loading. The fight resumes as if nothing happened'],
+    effect: { heal: true } },
+
+  { key: 'after-patch', after: true, where: ['town'], weight: 1.5,
+    lines: ['A crier in {kingdom} reads out the latest patch notes',
+            '“Heroes past level 50 now take slightly longer to level. This is intended”',
+            'The crowd boos. You don’t. You knew'],
+    effect: { stat: 'WIS' } },
+
+  { key: 'after-sisyphus', after: true, where: ['road'], weight: 1.5,
+    lines: ['On the road you meet a man pushing a boulder uphill',
+            '“Lend a hand?” asks Sisyphus'],
+    ask: 'What do you do?',
+    choices: [
+      { label: 'Push',
+        lines: ['You push. The boulder reaches the top, and rolls all the way back down. Sisyphus thanks you warmly',
+                'Your arms are stronger. Your outlook is not'],
+        effect: { stat: 'STR' } },
+      { label: 'Show him your experience bar',
+        lines: ['He studies it for a long time, then pats your shoulder',
+                '“At least mine stays the same size,” he says'],
+        effect: { stat: 'WIS' } } ] },
+
+  { key: 'after-prestige', after: true, where: ['town'], weight: 1,
+    lines: ['In the square in {kingdom} there is a big shiny button marked RESET',
+            'A sign says: “Start again at level 1. Everything five percent shinier!”'],
+    ask: 'Press it?',
+    choices: [
+      { label: 'Walk past',
+        lines: ['You walk past. The button dims, disappointed. It will be here tomorrow'],
+        effect: { stat: 'WIS' } },
+      { label: 'Polish it',
+        lines: ['You polish the button without pressing it. It is the most satisfying thing you have done in levels',
+                'A passer-by tips you {gold} gold for the show'],
+        effect: { gold: 1 } } ] }
+]);
+
+// After the New Bastard™ too (beyond: only once they've fallen): nothing left
+// to beat, and the numbers still going up
+K.Events = K.Events.concat([
+  { key: 'beyond-doors', after: true, beyond: true, where: ['rest'], weight: 2,
+    lines: ['Two doors appear beside your campfire. One says Retire. The other says Next Level',
+            'You sleep with your back to the one on the right',
+            'In the morning the one on the left is open, and your boots are already on'],
+    effect: { xp: 0.03 } },
+
+  { key: 'beyond-bread', after: true, beyond: true, rival: true, where: ['road'], weight: 1.5,
+    lines: ['A cart rattles past, loaded with bread',
+            'The baker is {rival}. They toss you a loaf without a word',
+            'It is good bread. You eat it in silence, and go on levelling, slowly'],
+    effect: { heal: true } },
+
+  { key: 'beyond-grass', after: true, beyond: true, where: ['field'], weight: 1.5,
+    lines: ['In the middle of a fight you notice a patch of real grass at the edge of the Killing Fields™'],
+    ask: 'What do you do?',
+    choices: [
+      { label: 'Touch it',
+        lines: ['You touch the grass. It is cool and quiet and gives no experience at all',
+                'You feel strangely better'],
+        effect: { heal: true } },
+      { label: 'Keep fighting',
+        lines: ['You keep fighting. The grass waits. Grass is patient'],
+        effect: { xp: 0.04 } } ] },
+
+  { key: 'beyond-statue', after: true, beyond: true, where: ['town'], weight: 1.5,
+    lines: ['A statue in {kingdom} shows a hero whose face is a counter, and the number keeps going up',
+            'The plaque says: “To whoever is still playing”',
+            'You leave {gold} gold at its feet, out of respect'],
+    effect: { gold: -1 } }
 ]);

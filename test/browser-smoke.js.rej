@@ -1,0 +1,27 @@
+--- test/browser-smoke.js
++++ test/browser-smoke.js
+@@ -72,10 +72,11 @@ function step(name, ok, detail) {
+     const frame = await (await page.waitForSelector("#newguyFrame")).contentFrame();
+     await frame.waitForSelector("#Sold");
+     // the same hero every run (a seeded roll, as a Custom Run makes)
+-    // (the roller offers a pace, Saga unless chosen; this hero is Classic, so the rest of
+-    // the steps can count on what a Classic hero does)
+-    const pace = await frame.evaluate(() => ({ choice: $("#Pace").val(), options: $("#Pace option").length }));
+-    if (pace.choice != "saga" || pace.options < 2) throw new Error("the pace choice: " + JSON.stringify(pace));
++    // (the roller offers a pace, Saga unless chosen; this hero is Sonic, so the rest of
++    // the steps can count on what a Sonic hero does. The address says "classic", the
++    // fast pace's first name, which old links still carry: K.PaceAlias)
++    const pace = await frame.evaluate(() => ({ choice: $("#Pace").val(), options: $("#Pace option").map(function () { return this.value; }).get().join() }));
++    if (pace.choice != "saga" || pace.options != "sonic,saga,slow") throw new Error("the pace choice: " + JSON.stringify(pace));
+     await frame.goto(BASE + "newguy.html?embed&seed=smoketest&pace=classic");
+     await frame.waitForSelector("#Sold");
+     await frame.fill("#Name", "Smoketest");
+@@ -83,7 +84,7 @@ function step(name, ok, detail) {
+     await page.waitForURL(/main\.html#/);
+     await page.waitForFunction(() => window.game && game.Traits && !IsPaused(), null, { timeout: 15000 });
+     const hero = await page.evaluate(() => ({ what: game.Traits.Race + " " + game.Traits.Class, pace: game.pace }));
+-    if (hero.pace != "classic") throw new Error("the pace from the address didn't stick: " + hero.pace);
++    if (hero.pace != "sonic") throw new Error("the pace from the address didn't stick: " + hero.pace);
+     return hero.what;
+   });
+ 

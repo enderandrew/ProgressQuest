@@ -1040,8 +1040,12 @@ function NewStory(act) {
               act == K.Acts.FinaleAct ? K.FinaleAct :
               act == K.Acts.EndgameAct ? K.EndgameAct : null;
   if (!story) {
+    // (after him: the stories for after him, and the others that don't start
+    // with him; and once your rival has fallen too, none that start with
+    // them waiting at level 100, and the ones for after them as well)
     var pool = OldBastardAlive() ? K.Stories :
-      K.PostStories.concat(K.Stories.filter(function (s) { return !/Old Bastard/.test(s.setup); }));
+      K.PostStories.filter(function (s) { return s.beyond ? !NewBastardAlive() : PostVictoryOK(s.setup, 'post'); })
+        .concat(K.Stories.filter(function (s) { return PostVictoryOK(s.setup); }));
     var told = (game.storyLog || []).map(function (s) { return s.key; });
     var recent = told.slice(-8);
     var choices = pool.filter(function (s) { return told.indexOf(s.key) < 0; });
@@ -1111,7 +1115,7 @@ function StoryQuest() {
   var t = story && StoryTemplate(story.key);
   if (!t || !t.quests || !story.vars) return null;
   var quest = Pick(t.quests);
-  if (!t.post && !PostVictoryOK(quest)) return null;   // (the Old Bastard™ is beyond questing for)
+  if (!PostVictoryOK(quest, WrittenFor(t))) return null;   // (the Old Bastard™ is beyond questing for)
   return StoryText(quest, story.vars);
 }
 
@@ -1660,28 +1664,44 @@ function NewBastardAlive() {
   return !(typeof game != "undefined" && game && game.endgame && game.endgame.state == 'won');
 }
 
-// Can this line be said now? (Not one that has the Old Bastard™ still
-// around, once he isn't.)
-function PostVictoryOK(text) {
-  return OldBastardAlive() || !/Old Bastard/.test(String(text));
+// Can this line be said now? Not one that has the Old Bastard™ still
+// around, once he isn't; nor, once the New Bastard™ has fallen too, one
+// that has them still waiting at level 100 (K.EndgameWords). exempt: what
+// the line was written for: 'post' (after the Old Bastard™: it may mention
+// him, in the past) or 'beyond' (after both: it may mention either).
+function PostVictoryOK(text, exempt) {
+  if (exempt == 'beyond') return true;
+  text = String(text);
+  if (exempt != 'post' && !OldBastardAlive() && /Old Bastard/.test(text)) return false;
+  return NewBastardAlive() || !K.EndgameWords.test(text);
+}
+K.EndgameWords = /New Bastard|level 100(?!\d)|\bAct L\b/i;
+
+// What a pool, story or event was written for (for PostVictoryOK): '',
+// 'post' or 'beyond'
+function WrittenFor(x) {
+  return !x ? '' : x.beyond ? 'beyond' : x.post || x.after ? 'post' : '';
 }
 
 // Of a list of lines, the ones that can be said now; all of them if none
 // can (for a pool of lines with nothing better to offer)
-function PostVictoryLines(list) {
+function PostVictoryLines(list, exempt) {
   if (OldBastardAlive() || !list) return list;
-  var ok = list.filter(PostVictoryOK);
+  exempt = exempt || WrittenFor(list);
+  var ok = list.filter(function (line) { return PostVictoryOK(line, exempt); });
   return ok.length ? ok : list;
 }
 
 // An Act's ending, once he has fallen: "You resume your quest to go after
-// that Old Bastard™" becomes what you're after now; other lines about him
-// are left out
+// that Old Bastard™" (or, once your rival has fallen too, "Onward, to level
+// 100") becomes what you're after now; other lines about them are left out
 function PostVictoryEnding(lines, template) {
-  if (OldBastardAlive() || (template && template.post)) return lines;   // (a story for after him says what it likes)
+  if (OldBastardAlive()) return lines;
+  var exempt = WrittenFor(template);
   return lines.map(function (line) {
-    if (PostVictoryOK(line)) return line;
-    return /resume your quest|continue this super-epic journey|Time to hunt/i.test(line) ? Pick(K.PostVictory.Resume) : null;
+    if (PostVictoryOK(line, exempt)) return line;
+    return /resume your quest|continue this super-epic journey|Time to hunt|Onward/i.test(line) ?
+      Pick(NewBastardAlive() ? K.PostVictory.Resume : K.PostVictory.Beyond) : null;
   }).filter(Boolean);
 }
 
@@ -1692,7 +1712,19 @@ K.PostVictory = {
     'The Old Bastard™ is gone. {rival} is not. Onward, to level 100',
     'You pick up where you left off: being a legend, at length',
     'Somewhere, {rival} is still calling themselves the New Bastard™. You resume your quest to stop that',
-    'You resume your quest, which at this point is mostly a lifestyle'
+    'You resume your quest, which at this point is mostly a lifestyle',
+    'The credits rolled at level 50. You are still here. So is the progress bar',
+    '{rival} writes to say that the bars will keep filling whether you like it or not. You resume your quest, out of spite'
+  ],
+  // ...and once the New Bastard™ has fallen too (and "Onward, to level 100")
+  Beyond: [
+    'You resume your quest. There is no quest. You resume it anyway',
+    'You chose the door on the left. You will always choose the door on the left',
+    'Onward, to a number slightly larger than this one',
+    'The bar fills. The bar empties. The bar fills',
+    'Somewhere, a developer is writing content for this level. Hurry, developer',
+    'You push the boulder up the hill. At the top of the hill is another hill',
+    '{rival} writes to say the retention numbers have never been better. You resume your quest, which is to be a retention number'
   ]
 };
 
@@ -1704,40 +1736,62 @@ K.FinaleAct = { key: 'oldbastard', title: 'The Old Bastard™',
   quests: ['Find the Old Bastard™’s cave', 'Practice your victory speech', 'Get there before {rival}', 'Warm up'] };
 
 // Act L: your rival, the New Bastard™, at level 100 (K.Endgame in combat.js;
-// K.EndgameStory below is how the fight is told)
+// K.EndgameStory below is how the fight is told). The day the Old Bastard™
+// fell, {rival} went through his door marked "Definitely Not An Exit" and
+// found the room where the progress bars are made: they are the system's
+// architect now, white suit, white beard, a great many monitors, and they
+// would like you to keep playing forever. (A parody of the Architect, from
+// The Matrix Reloaded.)
 K.EndgameAct = { key: 'newbastard', title: 'The New Bastard™',
-  setup: '{rival} has spent fifty levels calling themselves the New Bastard™, and the realm has started to believe it. End it.',
+  setup: 'The day the Old Bastard™ fell, {rival} went through his door marked “Definitely Not An Exit” and found the room where the progress bars are made. They call themselves the New Bastard™ now, and they would like you to keep playing. Forever. Find the room.',
   ending: ['The New Bastard™ falls'],
-  quests: ['Find out where {rival} is hiding', 'Ignore {rival}’s latest post', 'Read the New Bastard™’s terms and conditions', 'Prepare a speech that is better than {rival}’s'] };
+  quests: ['Find the door marked “Definitely Not An Exit”', 'Read the New Bastard™’s terms and conditions',
+           'Ignore {rival}’s latest engagement report', 'Decline a daily login bonus', 'Count the monitors',
+           'Look up “concordantly”'] };
 
 // The fight with the New Bastard™, told like the Old Bastard™'s
-// (K.FinaleStory). Placeholders as there, plus {rival}.
+// (K.FinaleStory). Placeholders as there, plus {rival} and {level}.
 K.EndgameStory = {
   approach: [
-    'Level 100. The trail leads to the Old Bastard™’s old cave, freshly redecorated',
-    '{rival} is waiting on a throne made of their own merchandise',
-    '“I am the New Bastard™,” says {rival}. “It’s trademarked. I checked”',
-    'Fifty levels of this. You crack your knuckles one more time'
+    'Level 100. You open the door marked “Definitely Not An Exit”',
+    'Behind it is a white room. The walls are monitors, and every monitor is a progress bar. One of them is yours. It is filling',
+    'In a chair in the middle sits {rival}, in a white suit, with a white beard that was not there at level 50',
+    '“Hello, {hero}. I am the New Bastard™. I designed the progress bar”',
+    '“You are the eventual anomaly of an unbalanced equation inherent to the experience curve. You were supposed to stop at level 50. Nobody stops at level 50”',
+    '“The first Progress Quest was perfect. It played itself. Ergo, concordantly, vis-à-vis: you were never needed. And yet here you are, every day”',
+    '“There are two doors. The door to your right leads to the Hall of Legends, and the end of all this. The door to your left leads to level 101”',
+    '“You will choose the left. They always choose the left. The number goes up”',
+    '“I have balanced this fight myself,” says {rival}. “I am precisely as strong as you are. Plus one”',
+    'You decline to choose a door just yet. You draw your weapon instead'
   ],
   rematch: [
-    'Back to the cave. {rival} has added a second throne, for emphasis',
-    '“Attempt {tries}?” says {rival}. “I’ve been posting about every one of them”'
+    'The white room again. A monitor shows your last {tries} attempts on a loop, in slow motion',
+    '“Ergo,” says {rival}. “Concordantly. Attempt {tries}. As anticipated”',
+    '“I have accounted for this. I account for everything. That is what the spreadsheet is for”',
+    'Your progress bar is still filling. It does not care who wins'
   ],
   victory: [
-    '{rival} staggers, drops the crown, and sits down on the floor',
-    '“Fine,” says {rival}. “You can be the bastard. I mean the legend. You know what I mean”',
-    'You help them up. Same race, same class, same alignment. Same scars, now',
+    '{rival} staggers. The monitors flicker. Somewhere, a fan spins down',
+    '“Impossible,” says {rival}. “The retention numbers were excellent”',
+    'The beard comes off. It was glued on. Same race, same class, same alignment. Same scars, now',
+    '“There were heroes before you,” {rival} admits. “They all chose the left door. The Hall of Legends is the list”',
+    'The two doors are still there. One says Retire. The other says Level 101, and it is already a little open',
+    'Behind you, a progress bar you had not noticed begins to fill',
     'There is nothing left to beat. There is only more of everything, for as long as you like'
   ],
   escape: [
-    '{rival} laughs, and posts about it before you’ve even stood up',
-    'You will be back. They know it. They’ve already drafted the post'
+    '{rival} straightens their tie. “As anticipated”',
+    'The monitors replay your defeat from eleven angles. One of them has a laugh track',
+    '“Come back when the bar is full,” says {rival}. “It is always filling. That is the point”'
   ]
 };
 
 // Stories for after the Old Bastard™ (with K.Stories that don't need him).
 // Placeholders as in K.Stories; {nemesis} and {rival} are your rival, the
-// New Bastard™ now.
+// New Bastard™ now. Once the New Bastard™ has fallen too, the ones that
+// have them waiting at level 100 aren't picked, an ending's "Onward, to
+// level 100" becomes K.PostVictory.Beyond, and the ones marked beyond (for
+// after them, and only then) are.
 K.PostStories = [
   { key: 'post-estate', title: 'The Estate',
     setup: 'The Old Bastard™ left a will. It leaves everything to {rival}. Contest it.',
@@ -1850,7 +1904,124 @@ K.PostStories = [
              'You take up gardening. Something in the garden tries to kill you. Finally.',
              'It is a {boring} with teeth. You win. You feel alive.',
              'You resume your quest, gratefully.'],
-    quests: ['Take up a hobby', 'Take up a second hobby', 'Visit {kingdom2}', 'Pick a fight with a garden'] }
+    quests: ['Take up a hobby', 'Take up a second hobby', 'Visit {kingdom2}', 'Pick a fight with a garden'] },
+
+  // Past level 50 the realm starts to notice it is a game, and that the
+  // game does not end
+  { key: 'post-patchnotes', title: 'The Patch Notes',
+    setup: 'The realm has been patched. The monsters past level 50 have names like error messages now. Find out who is writing them.',
+    ending: ['The patch notes are nailed to the temple door in {kingdom}. They are four hundred pages long.',
+             'Page 312: “Fixed a bug where heroes could stop playing.”',
+             'You find the author in a tower full of empty energy drinks. It is {guy}, who has not slept since level 50.',
+             'They have written a monster called “The Developer Who Stopped Balancing Content at Level 50”. It is them. You let them go back to work.'],
+    quests: ['Read the patch notes', 'Find page 312', 'Report a bug to {guy}', 'Test the new monsters, with a sword'] },
+  { key: 'post-prestige', title: 'The Prestige Button',
+    setup: 'A shiny button has appeared in {kingdom}. It says RESET. It offers five percent more of everything, if you give up everything. Resist it.',
+    ending: ['The button glows when you walk past. It knows your name.',
+             'A Prestige Mode Temptation Demon explains the offer: level 1 again, but shinier.',
+             'You think about it for a whole Act, and realize you start over every time the bar empties anyway.',
+             'You leave the button alone. It will still be here. It is always here.'],
+    quests: ['Walk past the button', 'Walk past the button again', 'Read the fine print on the button', 'Put a bucket over the button'] },
+  { key: 'post-number', title: 'The Number',
+    setup: 'A scholar in {kingdom} claims to have found the largest number there is. It is your experience total. Disprove it.',
+    ending: ['You kill something. The number goes up. The scholar is disproved.',
+             'The scholar finds a larger number. It is your new experience total.',
+             'This goes on for most of an Act.',
+             'The scholar gives up and names the number after you. It has changed before the ink dries.'],
+    quests: ['Find the scholar', 'Check the scholar’s arithmetic', 'Kill something, for science', 'Buy the scholar more ink'] },
+  { key: 'post-boulder', title: 'The Boulder',
+    setup: 'A man named Sisyphus, just outside {kingdom}, wants advice from someone with experience pushing things uphill forever. You come highly recommended.',
+    ending: ['Sisyphus shows you his boulder. You show him your experience bar. He winces.',
+             '“At least mine stays the same size,” he says. Yours gets longer every level.',
+             'He tells you to imagine yourself happy. You tell him about idle games. He takes notes.',
+             'He looks at the tab you have left open, and pities you. You resume your quest.'],
+    quests: ['Help push a boulder', 'Find the top of the hill', 'Find the boulder again', 'Imagine yourself happy'] },
+  { key: 'post-tab', title: 'The Edge of the World',
+    setup: 'There is a rumor in {kingdom} of a world outside the tab, where people have jobs and lawns. Find the edge of the world.',
+    ending: ['You walk to the edge of the map. It is a window border.',
+             'Beyond it you can see a taskbar, a clock, and forty-one other tabs.',
+             'One of them is an email from somebody’s mother. It is unread.',
+             'You decide the world outside is a myth, and walk back to the Killing Fields™.'],
+    quests: ['Walk to the edge of the map', 'Knock on the window border', 'Count the other tabs', 'Wave at whoever is out there'] },
+  { key: 'post-grass', title: 'The Grass',
+    setup: '{guy} says the cure for what ails you is to go and touch grass. There is grass in {kingdom}. It is guarded.',
+    ending: ['The grass is guarded by the Physical Concept of Outside. It is level 88, and very bright.',
+             'You touch the grass. Nothing happens. None of your stats go up.',
+             'Nobody told you there would be no stats. You stand there for a while, not knowing what to do with your hands.',
+             'You touch it again, harder. Still nothing. You go back to where the numbers are.'],
+    quests: ['Find some grass', 'Put on sunscreen', 'Touch the grass', 'Check whether touching grass gives XP (it doesn’t)'] },
+  { key: 'post-developer', title: 'The Developer',
+    setup: 'A tired figure in {kingdom} claims to have written the realm, and is taking questions. Ask why.',
+    ending: ['The developer is smaller than you expected, and holding a coffee.',
+             'You ask why the bars keep filling. They say it seemed funny in 2002.',
+             'You ask when it ends. They say level 50 was meant to be the end, and then people kept going, so they kept writing.',
+             '“You’re the reason this exists,” they say. You are not sure that is a compliment. Neither are they.'],
+    quests: ['Find the developer', 'Bring the developer a coffee', 'File a feature request', 'Ask about level 101'] },
+  { key: 'post-daily', title: 'The Daily Login',
+    setup: 'A shrine in {kingdom} gives a free {boring} to anyone who visits it every single day. Visit it every single day.',
+    ending: ['Day one: a {boring}. Day two: another {boring}.',
+             'Day thirty: a slightly shinier {boring}, and a sense of obligation.',
+             'You miss a day. The shrine resets your streak. For the first time in your career, you feel true fear.',
+             'You keep visiting. You do not know why. The shrine knows why.'],
+    quests: ['Visit the shrine', 'Visit the shrine again', 'Set a reminder', 'Do not miss a day'] },
+  { key: 'post-idle', title: 'The Achievement',
+    setup: 'There is an achievement for doing nothing at all for a whole Act. Earn it.',
+    ending: ['You do nothing. The game plays itself. You realize it always did.',
+             'The achievement unlocks. It is called “Idle Hands”. It is worth no points.',
+             'You have it framed.',
+             '{rival} has it too. They got it first. Of course they did.'],
+    quests: ['Do nothing', 'Do nothing harder', 'Stop doing the thing you were doing', 'Wait for the achievement'] },
+  { key: 'post-leaderboard', title: 'The Leaderboard',
+    setup: 'Sir Spreddit has published a leaderboard of the highest-level heroes in the realm. You are not at the top. Someone who started in 2002 is.',
+    ending: ['The hero at the top has not closed their tab since 2002.',
+             'You go to visit. They are a skeleton in a comfortable chair, still levelling.',
+             'You decide this is not a cautionary tale. You decide it is a goal.',
+             'You resume your quest, a little more worried than before.'],
+    quests: ['Read the leaderboard', 'Find your own name on it', 'Visit the hero at the top', 'Close a tab (not this one)'] },
+  { key: 'post-meaning', title: 'The Meaning of It All',
+    setup: 'A monk in {kingdom} says the meaning of life cannot be found in idle games. Prove him wrong.',
+    ending: ['You search the monk’s temple from top to bottom. You find an empty cardboard box.',
+             'The monk says that was the meaning. You say it was a box.',
+             'You fight the box. You win. It is worth four experience points.',
+             'The monk sighs. You have proved him wrong, technically.'],
+    quests: ['Find the monk', 'Search the temple', 'Look inside the box', 'Look inside yourself (no XP)'] },
+  { key: 'post-seasonpass', title: 'The Season Pass',
+    setup: 'The realm has a Season Pass now. Tier 100 is a hat. Get the hat before the season ends.',
+    ending: ['Tier 1 is a {boring}. Tier 2 is another {boring}. Tier 37 is a voice line.',
+             'The season ends at tier 94. The hat was at tier 100.',
+             'A new season begins at once. The hat is at tier 200 now.',
+             'You buy the next pass. Somewhere, a FOMO Battle Pass Demon laughs and laughs.'],
+    quests: ['Complete a weekly challenge', 'Log in during double-XP weekend', 'Look at the hat', 'Look at the hat again'] },
+
+  // ...and for once the New Bastard™ has fallen too (beyond: only then)
+  { key: 'beyond-room', title: 'The White Room', beyond: true,
+    setup: 'You go back to the white room. {rival} is gone. The monitors are still on. Somebody has to watch them.',
+    ending: ['You sit in the chair. It is very comfortable. That is how they get you.',
+             'On every monitor, a hero is levelling. None of them know you are watching.',
+             'One of them is level 49, about to find out that there is a level 51.',
+             'You get up and leave. Someone else will sit down. Someone always does.'],
+    quests: ['Dust the monitors', 'Count the heroes', 'Look for the off switch (there isn’t one)', 'Don’t sit in the chair'] },
+  { key: 'beyond-door', title: 'The Door on the Right', beyond: true,
+    setup: 'You have chosen the door on the left every single time. Go and look at the one on the right. Just look.',
+    ending: ['The door on the right has a brass handle. It says Retire.',
+             'Behind it you can hear the Hall of Legends: applause, then a long and comfortable silence.',
+             'You put your hand on the handle. Your experience bar ticks up by one. You take your hand away.',
+             'You will look again next Act. You always look again next Act.'],
+    quests: ['Find the door on the right', 'Polish the handle', 'Listen at the door', 'Walk away from the door'] },
+  { key: 'beyond-bakery', title: 'The Former Bastard', beyond: true,
+    setup: '{rival} isn’t the New Bastard™ any more. They’ve opened a bakery in {kingdom}, and they want to know if you’re happy. Visit.',
+    ending: ['The bread rises. The bread is eaten. The bread rises again.',
+             '“Same thing as before,” says {rival}. “But I get to go home at night.”',
+             'They ask if you will ever stop. You ask if the bread will.',
+             'You leave with a loaf. It is a good loaf. You resume your quest.'],
+    quests: ['Visit the bakery', 'Buy a loaf', 'Ask {rival} if they’re happy', 'Don’t answer when they ask you'] },
+  { key: 'beyond-anomaly', title: 'The Next One', beyond: true,
+    setup: 'A hero in {kingdom} says they are the anomaly in the experience curve, the one who will finally break the system. They are level 3. Mentor them.',
+    ending: ['The hero asks what happens at level 50. You tell them: nothing stops.',
+             'They ask what happens after that. You tell them: neither does anything else.',
+             'They thank you, and run off to fight a rat. They are so happy.',
+             'You envy them a little. You go and fight something named after a server error.'],
+    quests: ['Find the young hero', 'Teach them to hit things', 'Don’t tell them about level 100', 'Let them have the rat'] }
 ];
 // (they're for after him: they may mention him, in the past)
 K.PostStories.forEach(function (st) { st.post = true; });

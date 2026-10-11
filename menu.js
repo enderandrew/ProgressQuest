@@ -37,7 +37,7 @@ function CloseWindows() {
 // index.html#hall/<id> opens the Hall with that legend highlighted (a hero
 // who just retired); index.html#resume/<life ID> the Resume list with that
 // hero highlighted (the one you just left). Challenge links (transfer.js):
-// #custom/<seed>/<mutators>[/<mode>] and #vs/<code>[/<code>].
+// #custom/<seed>/<mutators>[/<mode>][/<pace>] and #vs/<code>[/<code>].
 var hashTarget = "";
 function WindowFromHash() {
   var parts = (window.location.hash || "").slice(1).split("/");
@@ -52,7 +52,7 @@ function WindowFromHash() {
 
 // The character roller runs in its own page (newguy.html) inside the New
 // Game window. It is reloaded each time, so every visit is a fresh roll.
-// mode: "plus", "minus" or "hardcore" (or none); custom: a Custom Run's { seed, mut }
+// mode: "plus", "minus" or "hardcore" (or none); custom: a Custom Run's { seed, mut, pace }
 function StartNewGame(mode, custom) {
   var q = new URLSearchParams();
   q.set("embed", "");
@@ -60,8 +60,9 @@ function StartNewGame(mode, custom) {
   custom = custom || {};
   if (custom.seed) q.set("seed", custom.seed);
   if (custom.mut && custom.mut.length) q.set("mut", custom.mut.join(","));
+  if (PaceKey(custom.pace)) q.set("pace", PaceKey(custom.pace));   // (fixed for the roll: newguy.js)
   $("#dlgNewTitle").text((ModeLabel(mode) ? "New Character (" + ModeLabel(mode) + ")" : "New Character") +
-                         (custom.seed || (custom.mut || []).length ? " \u2014 custom run" : ""));
+                         (custom.seed || (custom.mut || []).length || custom.pace ? " \u2014 custom run" : ""));
   // (flags without the "=": newguy.html?embed&plus&seed=abc)
   $("#newguyFrame").attr("src", "newguy.html?" + q.toString().replace(/=(?=&|$)/g, ""));
 }
@@ -254,6 +255,7 @@ function ShowVersus(a, b, codes, mine) {
     ["Spells", function (h) { return h.sp ? h.sp : "—"; }],
     ["Perks", function (h) { return (h.pk || []).map(perk).join(", ") || "—"; }],
     ["Mutators", function (h) { return mutators(h) || "—"; }],
+    ["Pace", function (h) { return h.pc && PaceKey(h.pc) ? K.Pace[PaceKey(h.pc)].label : "—"; }],
     ["As of", function (h) { return h.at ? new Date(h.at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—"; }],
     ["Seal", function (h) { return h.ch ? "⚠ Branded a cheater: " + h.ch : h.uv ? "⚠ Unverified" :
                                    verified(h) ? "✔ Straight from the game" : "⚠ Edited after it was shared"; }]
@@ -281,12 +283,12 @@ function ShowVersus(a, b, codes, mine) {
                                   "This hero wasn't on a seeded run, so there's nothing to play alongside.")
            : same == "daily" ? "Same Daily Challenge, same hero to start with: the rest was choices and patience." +
                                (lead ? "" : " Too close to call.")
-           : same == "seed" ? "Same seed and mutators: the same hero to start with." + (lead ? "" : " Neck and neck.")
+           : same == "seed" ? "Same seed, mutators and pace: the same hero to start with." + (lead ? "" : " Neck and neck.")
            : "These two weren't on the same challenge, so there's no winner; here they are anyway.";
   $("#versusNote").text(note);
   $("#versusPlay").toggle(!b && !!a.seed && !a.dy).off("click").on("click", function () {
     window.location.hash = "custom/" + encodeURIComponent(a.seed) + "/" + (a.mut || []).join(",") +
-                           (a.mode == "hardcore" ? "/hardcore" : "");
+                           (a.mode == "hardcore" ? "/hardcore" : "") + (PaceKey(a.pc) ? "/" + PaceKey(a.pc) : "");
   });
   $("#versusDaily").toggle(!b && !!a.dy && a.dy.date == DailyDate());
   var url = VersusUrl(codes.slice(0, b ? 2 : 1));
@@ -342,25 +344,30 @@ function ShowCustomCard() {
     .find("input").prop("disabled", !legendCount);
 }
 
-// A friend's run (index.html#custom/<seed>/<mutators>[/<mode>]): Challenge
-// Modes with the Custom Run filled in, ready to roll
+// A friend's run (index.html#custom/<seed>/<mutators>[/<mode>][/<pace>]):
+// Challenge Modes with the Custom Run filled in, ready to roll. (The mode and
+// pace may come in either order, or alone: each is known by its word.)
 function OpenCustomLink(parts) {
   var seedText = "";
   try { seedText = decodeURIComponent(parts[0] || ""); } catch (e) { seedText = parts[0] || ""; }
   seedText = seedText.slice(0, 64);
   var keys = K.Mutators.map(function (m) { return m.key; });
   var muts = String(parts[1] || "").split(",").filter(function (k) { return keys.indexOf(k) >= 0; });
-  var mode = ["hardcore", "plus", "minus"].indexOf(parts[2]) >= 0 ? parts[2] : "";
+  var rest = parts.slice(2);
+  var mode = rest.filter(function (w) { return ["hardcore", "plus", "minus"].indexOf(w) >= 0; })[0] || "";
+  var pace = rest.map(PaceKey).filter(Boolean)[0] || "";
   OpenWindow("dlgChallenge");
   ShowCustomCard();
   $("#customSeed").val(seedText);
   $("#customMutators input").each(function () { this.checked = muts.indexOf(this.value) >= 0; });
   if ((mode == "plus" || mode == "minus") && !legendCount) mode = "";   // (they need a legend of your own)
   $("input[name=customMode][value='" + mode + "']").prop("checked", true);
+  $("#customPace").val(pace);
   var labels = K.Mutators.filter(function (m) { return muts.indexOf(m.key) >= 0; }).map(function (m) { return m.label; });
   $("#customFromLink").text("Someone sent you this run: " +
     (seedText ? "seed “" + seedText + "”" : "a random seed") +
     (labels.length ? ", " + labels.join(", ") : "") + (mode ? ", " + ModeLabel(mode) : "") +
+    (pace ? ", at the " + K.Pace[pace].label + " pace" : "") +
     ". Same seed, same hero; make the same choices and it's the same game.").show();
   var card = document.querySelector("#dlgChallenge .mode-card.custom");
   if (card) { card.classList.add("from-link"); card.scrollIntoView({ block: "nearest" }); }
@@ -372,12 +379,13 @@ function ShareCustom() {
   var mode = $("input[name=customMode]:checked").val() || "";
   var seedText = String($("#customSeed").val() || "").trim().slice(0, 64);
   var muts = $("#customMutators input:checked").map(function () { return this.value; }).get();
+  var pace = PaceKey($("#customPace").val()) || "";
   if (!seedText) {
     WinBox({ title: "Share This Run", icon: "info",
              text: "Give the run a seed first: without one, every hero is rolled at random and nobody gets the same game." });
     return;
   }
-  ShareLinkBox({ title: "Share This Run", url: ChallengeUrl(seedText, muts, mode),
+  ShareLinkBox({ title: "Share This Run", url: ChallengeUrl(seedText, muts, mode, pace),
     text: "Anyone who opens this link gets the same Custom Run: the same seed rolls the same hero, " +
           "and with the same choices plays the same game. Then send each other your heroes " +
           "(File > Share This Run in the game) to compare them side by side.",
@@ -388,7 +396,7 @@ function StartCustom() {
   var mode = $("input[name=customMode]:checked").val() || "";
   var seedText = String($("#customSeed").val() || "").trim().slice(0, 64);
   var muts = $("#customMutators input:checked").map(function () { return this.value; }).get();
-  OpenWindow("dlgNew", mode, { seed: seedText, mut: muts });
+  OpenWindow("dlgNew", mode, { seed: seedText, mut: muts, pace: PaceKey($("#customPace").val()) });
 }
 
 // How many heroes are in the Hall (New Game+ unlocks at 1), and the menu
@@ -604,7 +612,7 @@ function ShowHall(legends) {
       " \u00b7 defeated " + (l.deaths || 0).toLocaleString() + (l.deaths == 1 ? " time" : " times") +
       " \u00b7 " + Hours(l.played || 0) + " played" +
       (l.endgame ? " \u00b7 \uD83D\uDC51 and beat " + (l.endgame.rival || "their rival") + ", the New Bastard\u2122, at level " + l.endgame.level : "") +
-      (l.pace == "saga" ? " \u00b7 Saga" : ""));
+      (PaceKey(l.pace) && PaceKey(l.pace) != "sonic" ? " \u00b7 " + K.Pace[PaceKey(l.pace)].short : ""));
     row.find(".best").text([l.bestequip, l.bestspell, l.beststat].filter(Boolean).join(" / "));
     row.find(".taunt").text(l.taunt ? "\u201c" + l.taunt + "\u201d (the Old Bastard\u2122, in the Prologue)" : "");
     if (l.id === hashTarget) row.addClass("lit");

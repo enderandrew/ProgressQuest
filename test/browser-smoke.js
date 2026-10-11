@@ -72,10 +72,11 @@ function step(name, ok, detail) {
     const frame = await (await page.waitForSelector("#newguyFrame")).contentFrame();
     await frame.waitForSelector("#Sold");
     // the same hero every run (a seeded roll, as a Custom Run makes)
-    // (the roller offers a pace, Saga unless chosen; this hero is Classic, so the rest of
-    // the steps can count on what a Classic hero does)
-    const pace = await frame.evaluate(() => ({ choice: $("#Pace").val(), options: $("#Pace option").length }));
-    if (pace.choice != "saga" || pace.options < 2) throw new Error("the pace choice: " + JSON.stringify(pace));
+    // (the roller offers a pace, Saga unless chosen; this hero is Sonic, so the rest of
+    // the steps can count on what a Sonic hero does. The address says "classic", the
+    // fast pace's first name, which old links still carry: K.PaceAlias)
+    const pace = await frame.evaluate(() => ({ choice: $("#Pace").val(), options: $("#Pace option").map(function () { return this.value; }).get().join() }));
+    if (pace.choice != "saga" || pace.options != "sonic,saga,slow") throw new Error("the pace choice: " + JSON.stringify(pace));
     await frame.goto(BASE + "newguy.html?embed&seed=smoketest&pace=classic");
     await frame.waitForSelector("#Sold");
     await frame.fill("#Name", "Smoketest");
@@ -83,7 +84,7 @@ function step(name, ok, detail) {
     await page.waitForURL(/main\.html#/);
     await page.waitForFunction(() => window.game && game.Traits && !IsPaused(), null, { timeout: 15000 });
     const hero = await page.evaluate(() => ({ what: game.Traits.Race + " " + game.Traits.Class, pace: game.pace }));
-    if (hero.pace != "classic") throw new Error("the pace from the address didn't stick: " + hero.pace);
+    if (hero.pace != "sonic") throw new Error("the pace from the address didn't stick: " + hero.pace);
     return hero.what;
   });
 
@@ -350,11 +351,13 @@ function step(name, ok, detail) {
     const code = await page.evaluate(() => ShareCodeFor(VersusPayload(game)));
     const menu = await context.newPage();
     watch(menu, "menu");
-    await menu.goto(BASE + "index.html#custom/" + encodeURIComponent("smoke test") + "/glasscannon");
+    await menu.goto(BASE + "index.html#custom/" + encodeURIComponent("smoke test") + "/glasscannon/slow");
     await menu.waitForSelector("#dlgChallenge[open] #customFromLink:visible");
     const filled = await menu.evaluate(() => [$("#customSeed").val(),
-      $("#customMutators input:checked").map(function () { return this.value; }).get().join()]);
-    if (filled.join("|") != "smoke test|glasscannon") throw new Error("the run link filled in " + filled.join(" / "));
+      $("#customMutators input:checked").map(function () { return this.value; }).get().join(), $("#customPace").val()]);
+    if (filled.join("|") != "smoke test|glasscannon|slow") throw new Error("the run link filled in " + filled.join(" / "));
+    const runLink = await menu.evaluate(() => ChallengeUrl("smoke test", ["glasscannon"], "", $("#customPace").val()));
+    if (!/#custom\/smoke%20test\/glasscannon\/slow$/.test(runLink)) throw new Error("the run link made: " + runLink);
     await menu.goto(BASE + "index.html");
     await menu.goto(BASE + "index.html#vs/" + code);
     await menu.waitForSelector("#dlgVersus[open] .versus-table");
@@ -376,11 +379,24 @@ function step(name, ok, detail) {
     await page.click("#roster .row .play");
     await page.waitForURL(/main\.html#/);
     await page.waitForFunction(() => window.game && game.Traits && game.Traits.Name == "Smoketest");
-    await page.evaluate(() => {
+    // (first the end game's victory window: two doors)
+    const doors = await page.evaluate(() => {
       StopTimer();
       game.finale = { state: "won", wonLevel: 50, wonAt: game.elapsed, tries: 1 };
-      Retire();
+      game.endgame = { state: "won", wonLevel: 100, wonAt: game.elapsed, tries: 2 };
+      game.bossKind = "new";
+      ShowFinaleDialog();
+      var d = [$("#FinaleTitle").text(), $("#FinaleRetire").text(), $("#FinaleKeep").text()];
+      document.getElementById("FinaleDialog").close();
+      delete game.endgame; delete game.bossKind;
+      ShowFinaleDialog();
+      d.push($("#FinaleKeep").text());
+      document.getElementById("FinaleDialog").close();
+      return d;
     });
+    if (!/New Bastard/.test(doors[0]) || !/door on the right/.test(doors[1]) || !/door on the left/.test(doors[2]) || doors[3] != "Keep playing")
+      throw new Error("the end game's doors: " + doors.join(" / "));
+    await page.evaluate(() => Retire());
     await page.waitForURL(/index\.html#hall/);
     await page.waitForSelector("#legends .row .sheetlink:not([hidden])");
     return await page.textContent("#legends .row .name");

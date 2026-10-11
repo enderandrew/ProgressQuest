@@ -123,6 +123,7 @@ function Split(s, field, separator) {
 
 function Indefinite(s, qty) {
   if (qty == 1) {
+    if (/^The /.test(s)) return s;   // ("The Heat Death of the Universe": it has one)
     if (Pos(s.charAt(0), 'AEIOUÜaeiouü') > 0)
       return 'an ' + s;
     else
@@ -786,6 +787,7 @@ function FinaleVars() {
   vars.taunt = (prologue && prologue.taunt) || Insult();
   vars.tries = ((game.finale && game.finale.tries) || 0) + 1;
   vars.hours = Math.round((game.elapsed || 0) / 3600);
+  vars.level = GetI(Traits,'Level');
   return vars;
 }
 
@@ -793,6 +795,7 @@ function FinaleVars() {
 // last line can carry a marker for Dequeue.
 function QueueFinale(part, marker, book) {
   var vars = FinaleVars();
+  if (book && book === K.EndgameStory) vars.tries = ((game.endgame && game.endgame.tries) || 0) + 1;   // (the New Bastard™'s count)
   vars.raceending = FinaleEnding(K.FinaleRaceEndings, Get(Traits,'Race'));
   vars.classending = FinaleEnding(K.FinaleClassEndings, Get(Traits,'Class'));
   // (a race or class without a line of its own just skips it)
@@ -855,10 +858,12 @@ function BeginBoss() {
   var B = endgame ? K.Endgame : K.Boss, record = endgame ? game.endgame : game.finale;
   RestoreHealth();   // you rested up for this
   var escapes = record.tries || 0;   // he gets older every time he runs
-  var foe = { name: endgame ? NewBastardName() : 'the Old Bastard\u2122',
-              level: Max(1, B.Level + B.BossLevelGap - Min(B.WeakenMax, escapes * B.WeakenPerEscape)),
-              qty: 1, boss: true, hpMult: B.BossHP, maxRounds: B.BossMaxRounds };
+  // (the New Bastard™ fights at your effective level, no higher than theirs: K.Endgame)
   var hero = HeroSnapshot();
+  var base = endgame ? Min(B.Level, EffectiveLevel(hero)) : B.Level;
+  var foe = { name: endgame ? NewBastardName() : 'the Old Bastard\u2122',
+              level: Max(1, base + B.BossLevelGap - Min(B.WeakenMax, escapes * B.WeakenPerEscape)),
+              qty: 1, boss: true, hpMult: B.BossHP, maxRounds: B.BossMaxRounds };
   var fight = ResolveCombat(hero, foe, Random(0x7fffffff));
   fight.wounded = hero.wounded;
   fight.foe = foe.name;
@@ -959,7 +964,11 @@ function ShowFinaleDialog() {
   $("#FinaleNext").text(f === game.finale ?
     "Kept going? Your rival " + (typeof Rival == "function" && Rival() ? Rival().n + " " : "") + "has already declared themselves the New Bastard\u2122, " +
     "and means to be waiting at level " + K.Endgame.Level + "." :
-    "There's nothing left to beat. There's only more of everything, for as long as you like.");
+    "Two doors. The one on the right goes to the Hall of Legends, and the end of all this. The one on the left goes to level " +
+    (GetI(Traits,'Level') + 1) + ", where the numbers keep going up. The New Bastard\u2122 said you would choose the left. Everyone chooses the left.");
+  // (the end game's two doors: the same buttons)
+  $("#FinaleRetire").text(f === game.finale ? "Retire to the Hall of Legends" : "The door on the right: retire");
+  $("#FinaleKeep").text(f === game.finale ? "Keep playing" : "The door on the left: level " + (GetI(Traits,'Level') + 1));
   CloseEventPopup();
   if (!dlg.open) dlg.showModal();
 }
@@ -1194,7 +1203,8 @@ function MaybeEvent(where, resume) {
       (!e.rival || (typeof RivalMet == "function" && RivalMet())) &&   // (only once you've met your rival)
       (!e.minus || game.mode == 'minus') &&   // (New Game− only: minus.js)
       (!e.after || !OldBastardAlive()) &&     // (only once the Old Bastard™ has fallen)
-      (e.after || !OldBastardOnly(e));        // (and none that need him alive, once he isn't)
+      (!e.beyond || !NewBastardAlive()) &&    // (only once your rival, the New Bastard™, has too)
+      !TooLate(e);                            // (and none that need either alive, once they aren't)
   });
   if (!choices.length) return;
   var total = 0;
@@ -1246,11 +1256,12 @@ function MaybeEvent(where, resume) {
   }
 }
 
-// Does this event need the Old Bastard™ alive? (Worked out once, from its words)
-function OldBastardOnly(e) {
+// Does this event need the Old Bastard™ (or the New Bastard™) alive, now
+// that he isn't? (From its words: PostVictoryOK in story.js)
+function TooLate(e) {
   if (OldBastardAlive()) return false;
-  if (e._ob === undefined) e._ob = /Old Bastard/.test(JSON.stringify([e.lines, e.ask, e.choices]));
-  return e._ob;
+  if (e._words === undefined) e._words = JSON.stringify([e.lines, e.ask, e.choices]);
+  return !PostVictoryOK(e._words, WrittenFor(e));
 }
 
 function EventLine(line, vars) {
@@ -1521,10 +1532,10 @@ function ApplyEventEffect(fx, amt, result) {
     result.push('Wounded for ' + fx.wounded + (fx.wounded == 1 ? ' fight' : ' fights'));
   }
   if (fx.xp) {
-    // a share of a Classic level (K.Pace): at the Saga pace, where a level
+    // a share of a Sonic level (K.Pace): at the slower paces, where a level
     // is far longer and events come far more often in it, a share of the
-    // whole level would do most of the levelling
-    var gained = LevelUpTime(GetI(Traits,'Level'), 'classic') * fx.xp, share = gained / Max(1, ExpBar.Max());
+    // whole level would do most of the levelling (EventLevelXP in config.js)
+    var gained = EventLevelXP(GetI(Traits,'Level'), PaceOf(game)) * fx.xp, share = gained / Max(1, ExpBar.Max());
     ExpBar.increment(gained);
     result.push('+' + (share >= 0.01 ? Math.round(share * 100) : Math.round(share * 1000) / 10) + '% of the way to the next level');
   }
@@ -1932,7 +1943,7 @@ function CompanyChatter(kind, fight) {
   (game.boons || []).forEach(function (b) {
     var talk = BoonLive(b) && K.SinkCompany[b.k];
     var lines = talk && (talk[kind] || (kind == 'close' && talk.win));
-    if (lines) lines = lines.filter(PostVictoryOK);   // (nothing that needs the Old Bastard™ alive, once he isn't)
+    if (lines) lines = lines.filter(function (l) { return PostVictoryOK(l); });   // (nothing that needs the Old Bastard™ alive, once he isn't)
     if (lines && lines.length) options.push({ b: b, lines: lines });
   });
   if (!options.length) return;

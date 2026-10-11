@@ -2,6 +2,9 @@
  * Progress Quest - Matrix Screensaver Controller
  * Activates after 5 minutes of inactivity if the tab is focused.
  * Wakes up immediately upon any mouse movement, click, or keypress.
+ * (Not at all for anyone who asked their system for reduced motion; and the
+ * key that wakes it is swallowed, so it doesn't also act on the game: Q
+ * would quit.)
  */
 (function () {
     const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -15,15 +18,20 @@
         return typeof document.hasFocus === 'function' ? document.hasFocus() && !document.hidden : !document.hidden;
     }
 
-    function recordActivity() {
+    function recordActivity(evt) {
         lastActivityTime = Date.now();
         if (isScreensaverActive) {
+            if (evt && evt.type === 'keydown') { evt.preventDefault(); evt.stopPropagation(); }
             wakeUp();
         }
     }
 
+    function reducedMotion() {
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+
     function startScreensaver() {
-        if (isScreensaverActive) return;
+        if (isScreensaverActive || reducedMotion()) return;
         isScreensaverActive = true;
 
         containerEl = document.createElement('div');
@@ -45,6 +53,7 @@
         const iframe = document.createElement('iframe');
         iframe.id = 'pq-screensaver-frame';
         iframe.src = 'matrix.html';
+        iframe.title = 'Screensaver: move the mouse or press a key to wake';
         iframe.style.cssText = 'width: 100%; height: 100%; border: none; display: block; background: #000;';
 
         iframe.onload = function () {

@@ -18,6 +18,8 @@
 //              exactly too
 //   elites     named elites turn up and give up uniques
 //   replays    a hero's game replays exactly, and an edited one doesn't
+//   paces      Sonic, Saga and Classic / Slow; what can be said after the
+//              Old Bastard™ and the New Bastard™
 //   balance    heroes reach level 50 in a sensible time, winning most fights
 //              (the limits are in Balance below: change them when you change
 //              the balance on purpose)
@@ -378,15 +380,60 @@ if (!QUICK) test("an Act every two levels, the Old Bastard™'s Act XXV, and aft
   check(finaleAct && finaleAct.key == "oldbastard", "Act XXV isn't the Old Bastard™'s: " + JSON.stringify(finaleAct));
   const after = log.filter((s) => s.act > 25);
   check(after.length >= 2, "no Acts after him: " + log.map((s) => s.act + ":" + s.key).join(" "));
-  check(after.every((s) => !/Old Bastard/.test(s.purpose) || /^post-/.test(s.key)), "an Act after him needs him: " + JSON.stringify(after));
+  check(after.every((s) => !/Old Bastard/.test(s.purpose) || /^(post-|beyond-|newbastard$)/.test(s.key)), "an Act after him needs him: " + JSON.stringify(after));
   check(after.every((s) => !(s.ending || []).some((l) => /go after that Old Bastard/.test(l))), "an ending after him sends you after him");
   check(!oldOnly.length, "events that need him alive happened after he fell: " + oldOnly.join(", "));
   check(h.endgame && h.endgame.tries >= 1, "the end game never happened: " + JSON.stringify(h.endgame));
   check(log.some((s) => s.key == "newbastard"), "no Act for the New Bastard™");
+  if (h.endgame.state == "won") {
+    const beyond = log.filter((s) => s.act > 27);
+    check(beyond.every((s) => !/level 100|New Bastard/.test(s.purpose) || /^beyond-/.test(s.key)), "an Act after the New Bastard™ needs them: " + JSON.stringify(beyond));
+    check(beyond.every((s) => !(s.ending || []).some((l) => /to level 100/.test(l))), "an ending after the New Bastard™ sends you to level 100");
+  }
   check((h.feed || []).length > 0 && (h.journal || []).some((e) => /New Bastard/.test(e.x)), "the journal never mentions the New Bastard™");
   check(sagaXP[0] < sagaXP[1] && sagaXP[1] < sagaXP[2], "the Saga levels don't grow: " + sagaXP);
   note(`Old Bastard™ in Act XXV; after him: ${after.map((s) => s.title).join(", ")}; ` +
        `the New Bastard™: ${h.endgame.state} after ${h.endgame.tries} ${h.endgame.tries == 1 ? "try" : "tries"}`);
+});
+
+test("three paces, and what can be said once the Old Bastard™ and the New Bastard™ are gone (K.Pace, PostVictoryOK)", () => {
+  let ctx = null;
+  play({ levels: 3, seed: "test-paces", onLevel(g, c) { ctx = c; } });
+  check(ctx, "the game never levelled");
+  const T = ctx.LevelUpTime;
+  // Sonic is the curve this Remix always had; heroes saved as 'classic' (its first name) keep it
+  [1, 20, 50, 70].forEach((l) => check(T(l, "sonic") == Math.round((3 + Math.pow(1.15, l)) * 60) && T(l, "classic") == T(l, "sonic") && T(l) == T(l, "sonic"),
+    "Sonic isn't the original curve at level " + l));
+  check(ctx.PaceOf({ pace: "classic" }) == "sonic" && ctx.PaceOf({}) == "sonic" && ctx.PaceOf({ pace: "slow" }) == "slow", "PaceOf: old heroes");
+  // Classic / Slow: the Saga curve, longer, and past 50 the wall
+  const S = ctx.K.Pace.slow;
+  check(T(50, "slow") == Math.round(S.XP * Math.pow(50, S.Power)), "the slow curve at 50");
+  check(Math.abs(T(60, "slow") / (S.XP * Math.pow(60, S.Power)) - Math.pow(S.Wall, 10)) < 1e-6, "no wall past 50");
+  const days = (pace, to) => { let t = 0; for (let l = 1; l < to; l++) t += T(l, pace); return t / 86400; };
+  const order = [days("sonic", 50), days("saga", 50), days("slow", 50)];
+  check(order[0] < order[1] && order[1] < order[2] && order[2] > 2.5 * order[1], "the paces to 50 (days of fighting): " + order.map(Math.round));
+  check(days("slow", 101) / 365 > 10, "Classic / Slow to 101 is only " + Math.round(days("slow", 101) / 365) + " years");
+  [10, 50].forEach((l) => check(Math.abs(ctx.QuestScale(l, "slow") * T(l, "sonic") - T(l, "slow")) < 1, "QuestScale at " + l));
+  // (past 60 or so a Sonic level is the longer one: quests no shorter than Sonic's, events no more than a level)
+  check(ctx.QuestScale(90, "saga") == 1 && ctx.EventLevelXP(90, "saga") == T(50, "sonic") && ctx.EventLevelXP(20, "saga") == T(20, "sonic") &&
+        ctx.EventLevelXP(90, "sonic") == T(90, "sonic") && ctx.EventLevelXP(5, "slow") == T(5, "sonic"), "past the crossover");
+  check(ctx.PaceRare({ pace: "slow" }) > ctx.PaceRare({ pace: "saga" }) && ctx.PaceRare({}) == 1, "PaceRare");
+  // what can be said: while they live, after the Old Bastard™, and after both
+  const ok = ctx.PostVictoryOK, g = ctx.game;
+  const lines = ["The Old Bastard™ grins", "Onward, to level 100", "Level 101, then", "A rat"];
+  check(lines.every((l) => ok(l)), "a line was held back while both live");
+  g.finale = { state: "won" };
+  check(!ok(lines[0]) && ok(lines[0], "post") && ok(lines[1]) && ok(lines[2]), "after the Old Bastard™");
+  g.endgame = { state: "won" };
+  check(!ok(lines[0]) && ok(lines[0], "post") && !ok(lines[1]) && !ok(lines[1], "post") && ok(lines[1], "beyond") && ok(lines[2]) && ok(lines[3]), "after the New Bastard™");
+  const ending = ctx.PostVictoryEnding(["You find {rival}", "Onward, to level 100."], ctx.StoryTemplate("post-tour"));
+  check(ending.length == 2 && !/level 100/.test(ending[1]) && ctx.K.PostVictory.Beyond.indexOf(ending[1]) >= 0, "the ending after both: " + JSON.stringify(ending));
+  // the stories that can start now
+  const stories = ctx.K.PostStories.filter((s) => s.beyond ? !ctx.NewBastardAlive() : ok(s.setup, "post"));
+  check(stories.some((s) => s.beyond) && !stories.some((s) => /level 100/.test(s.setup)), "the stories for after both");
+  note(`to level 50 (days of fighting): Sonic ${order[0].toFixed(1)}, Saga ${Math.round(order[1])}, Classic / Slow ${Math.round(order[2])}; ` +
+       `to 101: Saga ${(days("saga", 101) / 365).toFixed(1)} years, Classic / Slow ${Math.round(days("slow", 101) / 365)}, Sonic ${Math.round(days("sonic", 101) / 365)}; ` +
+       `${stories.length} stories after both`);
 });
 
 // ---- the chronicle ----------------------------------------------------------------

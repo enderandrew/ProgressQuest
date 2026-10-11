@@ -881,10 +881,78 @@ function Div(dividend, divisor) {
   return Math.trunc(dividend / divisor);
 }
 
-function LevelUpTime(level) {  // seconds
-  // Normally 20 minutes for level 1. Set to 3 for testing
-  // exponential increase after that
+// ---- Pace ------------------------------------------------------------------------
+//
+// How long the climb takes, chosen when a hero is rolled (game.pace):
+//
+//   sonic    Sonic (Gotta Go Fast): about a week to level 50, the pace this
+//            Remix has always had (the original exponential curve: most of
+//            it is the last ten levels, and past 50 it is a wall, level 100
+//            being some seventeen years off). Daily Challenges, and heroes
+//            from before there was a choice.
+//   saga     about 75 days of play to level 50, a level every few hours at
+//            first and every few days by the end; and on past it, toward
+//            level 100 (a year or two more). For idling.
+//   slow     Classic / Slow: about eight months to level 50, the way the
+//            original felt, and past 50 the original's wall as well: each
+//            level about 5% longer again than the curve, so that level 101
+//            is something like 24 years away, as it was for the original's
+//            best (an extrapolation: nobody has simulated 24 years).
+//
+// (Heroes rolled while the fast pace was called 'classic' keep it: PaceKey.)
+//
+// A level takes LevelUpTime XP, which is earned in seconds of fighting.
+// What a hero gets per level (quests and their prizes: QuestScale) is the
+// same at every pace (to level 60 or so: QuestScale), so a level 30 hero is
+// as strong at any; the slower heroes just spend longer there. Acts come every two levels at every
+// pace (K.Acts in story.js).
+// (K.Pace and K.PaceDefault are with the other settings, below)
+
+// How much rarer per hour (K.Pace above): 1 at the Sonic pace
+function PaceRare(sheet) {
+  var P = K.Pace[PaceOf(sheet)];
+  return (P && P.Rare) || 1;
+}
+
+// A pace's key, old names included (K.PaceAlias); undefined if it isn't one
+function PaceKey(p) {
+  if (K.PaceAlias[p]) p = K.PaceAlias[p];
+  return K.Pace[p] ? p : undefined;
+}
+
+function PaceOf(sheet) {
+  return PaceKey(sheet && sheet.pace) || 'sonic';   // (heroes from before the choice)
+}
+
+function LevelUpTime(level, pace) {  // XP (seconds of fighting)
+  var P = K.Pace[PaceKey(pace)];
+  if (P && P.XP) {
+    var t = P.XP * Math.pow(level, P.Power);
+    if (P.Wall && level > P.WallFrom) t *= Math.pow(P.Wall, level - P.WallFrom);
+    return Math.round(t);
+  }
+  // Sonic: the original curve, 4 minutes at level 1 and growing 15% a level
   return Math.round((3 + Math.pow(1.15, level)) * 60);
+}
+
+// How much longer a quest takes at this pace and level, so there are as
+// many quests (and quest prizes) per level as at the Sonic pace. Never
+// shorter than Sonic's: past level 60 or so a Sonic level is the longer
+// one (it's exponential), and quests a few seconds long would hand out
+// prizes by the hundred.
+function QuestScale(level, pace) {
+  var P = K.Pace[PaceKey(pace)];
+  return P && P.XP ? Math.max(1, LevelUpTime(level, pace) / LevelUpTime(level, 'sonic')) : 1;
+}
+
+// What a level means to an event that gives "a share of a level" (fx.xp).
+// Sonic: its own level, as always. The slower paces: a Sonic level, no
+// higher than level 50's (events come by the hour, and a level past 50
+// takes many hours; a share of a growing level, or of the exponential
+// Sonic one, would soon do all the levelling), nor than this pace's.
+function EventLevelXP(level, pace) {
+  if (PaceKey(pace) == 'sonic' || !PaceKey(pace)) return LevelUpTime(level, 'sonic');
+  return Math.min(LevelUpTime(Math.min(level, 50), 'sonic'), LevelUpTime(level, pace));
 }
 
 let RevString = '&rev=6';
@@ -1083,9 +1151,27 @@ K.Guard = {
 // Progress while the game is closed (CatchUp in main.js): time away shorter
 // than MinSeconds is ignored, and no more than MaxHours of it is played
 // (0 turns it off)
+// The paces (see LevelUpTime above), in the order the roller offers them
+K.Pace = {
+  // XP: what level L takes is XP × L^Power (fitted to the days to level 50
+  // on simulated heroes); Wall: and past level WallFrom, that many times
+  // more again for each level beyond it; Rare: how much rarer, per hour, the
+  // things that make a hero stronger and come by the clock rather than by
+  // the level (gold sink splurges, named elites), so a slow hero at level 30
+  // is about as strong as a Sonic one
+  sonic: { label: 'Sonic (Gotta Go Fast)', short: 'Sonic',
+           help: 'About a week to level 50. The pace this Remix has had all along. Past 50, the original\u2019s wall.' },
+  saga: { label: 'Saga', short: 'Saga', XP: 820, Power: 1.5, Rare: 13,
+          help: 'About 75 days to level 50, if you leave it running, and a year or two more to 100. For idling.' },
+  slow: { label: 'Classic / Slow', short: 'Classic', XP: 2450, Power: 1.5, Wall: 1.047, WallFrom: 50, Rare: 39,
+          help: 'About eight months to level 50, like the original, and the original\u2019s wall past it: level 100 is decades off. For the truly patient.' }
+};
+K.PaceDefault = 'saga';
+K.PaceAlias = { classic: 'sonic' };   // (what the fast pace was called at first)
+
 K.CatchUp = {
   MinSeconds: 60,
-  MaxHours: 12
+  MaxHours: 72   // (three days: an idler can close the tab for a weekend)
 };
 
 // Replays (see replay.js and game.replay in main.js)
