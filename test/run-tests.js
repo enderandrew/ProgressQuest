@@ -22,6 +22,7 @@
 //              (the limits are in Balance below: change them when you change
 //              the balance on purpose)
 //   journal    it stays small
+//   New Game−  cursed, harsher, its own words and events, and it replays
 //   rival      met at the end of Act I, then the nemesis; changes nothing
 //   Scrollr    the feed never changes the game, never repeats, stays small
 //
@@ -347,6 +348,52 @@ test("the journal starts at level 1, and keeps to its budget however long a hero
   check(flooded.finale, "the finale was dropped");
   note(`first entry at level 1 (task ${first.tasks}); flooded with 6,000 entries: ${flooded.entries} kept, ` +
        `${Math.round(flooded.chars / 1000)}k characters`);
+});
+
+// ---- New Game− ------------------------------------------------------------------
+
+test("New Game−: cursed by the Hall, harsher rules, its own captions and events, and it replays (minus.js)", () => {
+  const names = (l) => l.map((x) => x.split("|")[0]);
+  let rules = null, caption = null, own = null, normalOwn = "untried";
+  // (a Hall where everyone is honored: the curse is capped)
+  const fullHall = (ctx) => {
+    const races = names(ctx.K.Races), klasses = names(ctx.K.Klasses);
+    ctx.hall = { races, klasses, bonus: ctx.LegacyBonus(races, klasses) };
+  };
+  const onlyMinus = (ctx) => {
+    const all = ctx.K.Events, chance = ctx.K.EventChance;
+    ctx.K.Events = all.filter((e) => e.minus);
+    ctx.K.EventChance = { rest: 1, road: 1, town: 1, field: 1 };
+    ctx.game.lastEvent = -1e9;
+    try { ctx.MaybeEvent("rest", "rest"); } finally { ctx.K.Events = all; ctx.K.EventChance = chance; }
+    const ev = ctx.game.event;
+    ctx.game.event = null; ctx.game.queue = [];
+    return ev;
+  };
+  const h = play({ levels: 12, seed: "test-minus", mode: "minus", setup: fullHall, onTask(ctx) {
+    const g = ctx.game;
+    if (!rules) rules = { listed: ctx.Modifiers().indexOf(ctx.K.Minus.Rules) >= 0, taken: ctx.MutatorProduct("takenMult") };
+    const list = [].concat(...Object.values(ctx.K.Minus.Captions));
+    if (!caption && list.indexOf(g.kill.replace(/\.\.\.$/, "")) >= 0) caption = g.kill;
+    if (!own && !g.event && !g.queue.length && +g.Traits.Level >= 3) own = onlyMinus(ctx) || "none";
+  } });
+  play({ levels: 3, seed: "test-minus-normal", onTask(ctx) {
+    if (normalOwn == "untried" && !ctx.game.event && !ctx.game.queue.length && +ctx.game.Traits.Level >= 2) normalOwn = onlyMinus(ctx);
+  } });
+  check(h.mode == "minus", "the hero's mode is " + h.mode);
+  const L = h.legacy || {};
+  check(L.curse && L.bonus && L.bonus.STR < 0, "no curse: " + JSON.stringify(L));
+  check(Object.values(L.bonus || {}).every((v) => v >= -0.2 && v <= 0), "the curse isn't capped at 20%: " + JSON.stringify(L.bonus));
+  check(rules && rules.listed && rules.taken >= 1.2, "the harsher rules don't apply: " + JSON.stringify(rules));
+  check(caption, "no New Game− task captions");
+  check(own && own !== "none" && /^m-/.test(own.key), "no New Game− event: " + JSON.stringify(own && own.key));
+  check(!normalOwn, "a plain hero got a New Game− event: " + (normalOwn && normalOwn.key));
+  check((h.journal || []).some((e) => /New Game−/.test(e.x)), "the journal doesn't say it's a New Game−");
+  // (a hero nobody poked at: the one above had events forced on it)
+  const clean = play({ levels: 10, seed: "test-minus-replay", mode: "minus", setup: fullHall });
+  const r = replayFile(tmpFile("minus.json", clean));
+  check(r.status === "match", "a New Game− hero's replay came out " + r.status + ": " + (r.detail || ""));
+  note(`curse ${Math.round(L.bonus.STR * 100)}% STR; ${caption}; ${own.key}`);
 });
 
 // ---- your rival -----------------------------------------------------------------

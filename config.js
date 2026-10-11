@@ -1093,7 +1093,7 @@ K.Replay = {
   Every: 500,           // tasks between checkpoints
   MaxInputs: 5000,      // choices and tactics changes in one stretch of replay
   Since: 14,            // heroes born from this save version on always have one
-  Files: ["config.js", "story.js", "events.js", "combat.js", "main.js"]   // the code that decides a game
+  Files: ["config.js", "story.js", "events.js", "minus.js", "combat.js", "main.js"]   // the code that decides a game
 };
 
 // The game code's fingerprint (a hash of K.Replay.Files), or null where the
@@ -1251,11 +1251,27 @@ function LegacyFromHall(legends) {
   return { races: races, klasses: klasses, bonus: LegacyBonus(races, klasses) };
 }
 
-// "+15% STR, +7.5% CON..." (attributes with a bonus, in the usual order)
+// "+15% STR, +7.5% CON..." (attributes with a bonus, in the usual order;
+// a New Game− curse is "−15% STR...")
 function LegacySummary(bonus) {
-  return K.Stats.filter(function (s) { return bonus && bonus[s] > 0; })
-    .map(function (s) { return "+" + Math.round(bonus[s] * 1000) / 10 + "% " + s; })
+  return K.Stats.filter(function (s) { return bonus && bonus[s]; })
+    .map(function (s) { var v = Math.round(bonus[s] * 1000) / 10; return (v < 0 ? "\u2212" + -v : "+" + v) + "% " + s; })
     .join(", ");
+}
+
+// New Game− (minus.js): the same legacy, as a penalty. { races, klasses,
+// bonus (negative), curse: true }
+function MinusLegacy(hall) {
+  var penalty = (K.Minus && K.Minus.Penalty) || 1, cap = (K.Minus && K.Minus.MaxCurse) || 0.2, bonus = {};
+  K.Stats.forEach(function (s) {
+    bonus[s] = -Math.round(Math.min(cap, ((hall.bonus || {})[s] || 0) * penalty) * 10000) / 10000;
+  });
+  return { races: hall.races, klasses: hall.klasses, bonus: bonus, curse: true };
+}
+
+// "New Game+", "New Game−", "☠ Hardcore", or "" (game.mode)
+function ModeLabel(mode) {
+  return mode == "plus" ? "New Game+" : mode == "minus" ? "New Game\u2212" : mode == "hardcore" ? "\u2620 Hardcore" : "";
 }
 
 // Average bonus across the 8 attributes

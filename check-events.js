@@ -24,7 +24,7 @@ const warn = (msg) => { warnings++; console.log("warning " + msg); };
 
 // 1. Does every script parse?
 const scripts = ["config.js", "story.js", "combat.js", "events.js", "daily.js", "codex.js", "transfer.js", "replay.js", "menubar.js", "sheet.js",
-                 "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js", "journal.js", "gossip.js", "settings.js"];
+                 "main.js", "newguy.js", "menu.js", "guard.js", "desktop.js", "journal.js", "gossip.js", "minus.js", "settings.js"];
 for (const file of scripts) {
   const full = path.join(dir, file);
   if (!fs.existsSync(full)) continue;
@@ -46,7 +46,7 @@ const sandbox = { console, window: {}, document: null, navigator: { userAgent: "
 sandbox.window = sandbox;
 sandbox.$ = sandbox.jQuery = Object.assign(function () { return {}; }, { extend: Object.assign, each: () => {} });
 const ctx = vm.createContext(sandbox);
-for (const file of ["config.js", "story.js", "combat.js", "events.js"].concat(fs.existsSync(path.join(dir, "gossip.js")) ? ["gossip.js"] : [])) {
+for (const file of ["config.js", "story.js", "combat.js", "events.js"].concat(["gossip.js", "minus.js"].filter((f) => fs.existsSync(path.join(dir, f))))) {
   try {
     vm.runInContext(fs.readFileSync(path.join(dir, file), "utf8"), ctx, { filename: file });
   } catch (e) {
@@ -123,6 +123,7 @@ events.forEach((e, n) => {
   else where.forEach((w) => { if (WHERE.indexOf(w) < 0) error(`${name}: unknown where "${w}" (known: ${WHERE.join(", ")})`); });
   if ("weight" in e && !(e.weight >= 0)) error(`${name}: weight should be a number`);
   if ("rival" in e && e.rival !== true) error(`${name}: rival should be true (or left out)`);
+  if ("minus" in e && e.minus !== true) error(`${name}: minus should be true (or left out)`);
   if (e.minLevel && e.maxLevel && e.minLevel > e.maxLevel) error(`${name}: minLevel is above maxLevel`);
   const raceNames = (K.Races || []).map((x) => x.split("|")[0]), klassNames = (K.Klasses || []).map((x) => x.split("|")[0]);
   if (e.race && raceNames.indexOf(e.race) < 0) error(`${name}: race "${e.race}" isn't in K.Races (check the spelling)`);
@@ -247,11 +248,11 @@ Object.keys(K.SinkCompany || {}).forEach((key) => {
 });
 
 // 2d. Scrollr (gossip.js): every line's placeholders mean something
-const GOSSIP_WORDS = ["rival", "rival-full", "rival-level", "hero", "race", "klass", "a-klass", "level", "alignment", "weapon", "gear", "spell", "wins",
+const GOSSIP_WORDS = ["rival", "rival-full", "rival-level", "next", "hero", "race", "klass", "a-klass", "level", "alignment", "weapon", "gear", "spell", "wins",
                       "deaths", "kingdom", "kingdom2", "giver", "nemesis", "nemesis2", "guy", "guy2", "boring",
                       "item", "race-one", "insult", "act", "quest", "foe", "a-foe", "monsters", "loot", "rounds",
                       "done", "thing", "gold", "event", "where", "choice", "seconds", "elite", "kind", "cause"];
-const GOSSIP_WHO = ["spreddit", "crier", "monster", "elite", "giver", "merchant", "rival", "townsfolk"];
+const GOSSIP_WHO = ["spreddit", "crier", "monster", "elite", "giver", "merchant", "rival", "message", "townsfolk"];
 let gossipLines = 0;
 function checkGossip(name, lines) {
   if (!Array.isArray(lines) || !lines.length) { error(`${name} should be a list of lines`); return; }
@@ -268,12 +269,27 @@ function checkGossip(name, lines) {
     if (/[{}]/.test(line.replace(/\{[^}]*\}/g, ""))) error(`${name}: an unmatched { or } in "${line}"`);
   });
 }
+// Some placeholders only mean something in some kinds of post (what the
+// post is about); anywhere else they'd show up as "{loot}"
+const FIGHT_POOLS = ["lost", "fled", "beat", "youDied"];
+// ({gold} and {elite} have stand-ins elsewhere: a made-up price, "elite Giant Orc")
+const GOSSIP_CONTEXT = { loot: FIGHT_POOLS, rounds: FIGHT_POOLS, done: ["thanks"], thing: ["markup", "sinks"], event: ["event"], where: ["event"], choice: ["chose", "fate"],
+                         seconds: ["chose", "fate"], kind: ["eliteWon", "eliteHeld"], cause: ["death"] };
+function checkGossipContext(name, key, lines) {
+  (lines || []).forEach((line) => (String(line).match(/\{[^}]*\}/g) || []).forEach((p) => {
+    const only = GOSSIP_CONTEXT[p.slice(1, -1)];
+    if (only && only.indexOf(key) < 0) error(`${name}: ${p} in "${line}" only means something in ${only.join(", ")}`);
+  }));
+}
 if (K.GossipPools) {
   Object.keys(K.GossipPools).forEach((key) => {
     const pool = K.GossipPools[key];
     if (GOSSIP_WHO.indexOf(pool.who) < 0) error(`K.GossipPools.${key}: who should be one of ${GOSSIP_WHO.join(", ")}`);
     checkGossip(`K.GossipPools.${key}`, pool.lines);
+    checkGossipContext(`K.GossipPools.${key}`, key, pool.lines);
   });
+  Object.keys(K.GossipSinks || {}).forEach((key) => checkGossipContext(`K.GossipSinks.${key}`, "sinks", K.GossipSinks[key]));
+  checkGossipContext("K.GossipReplies", "replies", K.GossipReplies);
   Object.keys(K.GossipSinks || {}).forEach((key) => {
     if (!sinkByKey[key]) error(`K.GossipSinks.${key}: there's no gold sink "${key}"`);
     checkGossip(`K.GossipSinks.${key}`, K.GossipSinks[key]);
@@ -357,6 +373,7 @@ console.log(`\n${storyCount} stories (${Object.keys(K.RaceStories || {}).length}
 console.log(`\n${(K.Perks || []).length} perks, ${(K.Sinks || []).length} gold sinks, ` +
             `${Object.keys(K.SinkCompany || {}).length} with a word to say and ${events.filter((e) => e.sink).length} events of their own.`);
 console.log(`Your rival: ${events.filter((e) => e.rival).length} events, ${(K.Rival && K.Rival.Titles || []).length} titles.`);
+if (K.Minus) console.log(`New Game\u2212: ${events.filter((e) => e.minus).length} events of its own.`);
 if (K.GossipPools) console.log(`Scrollr: ${gossipLines} lines, never posted twice.`);
 console.log(`\n${events.length} events, ${withChoices} with choices` +
             ` (${Math.round(withChoices / Math.max(1, events.length) * 100)}%).` +

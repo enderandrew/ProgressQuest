@@ -783,7 +783,8 @@ function QueueFinale(part, marker) {
   vars.raceending = FinaleEnding(K.FinaleRaceEndings, Get(Traits,'Race'));
   vars.classending = FinaleEnding(K.FinaleClassEndings, Get(Traits,'Class'));
   // (a race or class without a line of its own just skips it)
-  var lines = (K.FinaleStory[part] || []).filter(function (line) {
+  var story = game.mode == 'minus' && K.MinusFinale && K.MinusFinale[part] ? K.MinusFinale : K.FinaleStory;
+  var lines = (story[part] || []).filter(function (line) {
     return !/^\{(race|class)ending\}$/.test(line) || vars[line.slice(1, -1)];
   });
   $.each(lines, function (i, line) {
@@ -843,6 +844,7 @@ function FinishBoss() {
     CodexFlag('boss');
     if (f.tries == 1) CodexFlag('bossfirst');
     if (game.mode == 'hardcore') CodexFlag('bosshc');
+    if (game.mode == 'minus') { CodexFlag('bossminus'); MinusBanner('OLD BASTARD FELLED', 'felled'); }
     $.each(game.mutators || [], function (i, m) { CodexFlag('boss:' + m); });
     QueueFinale('victory', 'victory');
     ShowRetire();
@@ -851,6 +853,7 @@ function FinishBoss() {
     f.nextTry = (game.elapsed || 0) + K.Boss.RetryMinutes * 60;
     if (typeof JournalFinale == "function") JournalFinale(false, f.tries);
     if (typeof Gossip == "function") Gossip('finale', { won: false });
+    if (fight.outcome != 'defeat') MinusBanner('YOU DIED', 'died');   // (New Game−; a defeat has already said so)
     QueueFinale('escape');
   }
 }
@@ -1099,7 +1102,8 @@ function MaybeEvent(where, resume) {
       (!e.minLevel || level >= e.minLevel) && (!e.maxLevel || level <= e.maxLevel) &&
       (!e.race || e.race == Get(Traits,'Race')) && (!e.klass || e.klass == Get(Traits,'Class')) &&
       (!e.sink || !!LiveBoon(e.sink)) &&   // (only with what the gold bought: K.SinkCompany)
-      (!e.rival || (typeof RivalMet == "function" && RivalMet()));   // (only once you've met your rival)
+      (!e.rival || (typeof RivalMet == "function" && RivalMet())) &&   // (only once you've met your rival)
+      (!e.minus || game.mode == 'minus');   // (New Game− only: minus.js)
   });
   if (!choices.length) return;
   var total = 0;
@@ -1551,9 +1555,11 @@ function Mutators() {
 // until the hero, or any of those, change.
 var _modifiers = { key: null, list: null, products: {} };
 function Modifiers() {
-  var key = (game.lifeId || '') + '|' + (game.perks || []).join(',') + '|' + (game.mutators || []).join(',') +
+  var key = (game.lifeId || '') + '|' + (game.mode || '') + '|' + (game.perks || []).join(',') + '|' + (game.mutators || []).join(',') +
             '|' + (game.boons || []).map(function (b) { return b.k + (b.c || 1); }).join(',');
-  if (_modifiers.key !== key) _modifiers = { key: key, list: Mutators().concat(Perks(), BoonModifiers()), products: {} };
+  if (_modifiers.key !== key)
+    _modifiers = { key: key, list: Mutators().concat(Perks(), BoonModifiers(),
+                                                    game.mode == 'minus' && K.Minus ? [K.Minus.Rules] : []), products: {} };
   return _modifiers.list;
 }
 
@@ -1871,6 +1877,33 @@ function EffStat(stat) {
   return GetI(Stats, stat) + BuffAmount(stat) + LegacyAmount(stat);
 }
 
+// ---- New Game− (minus.js) ---------------------------------------------------------
+
+// A task's caption, New Game− style (K.Minus.Captions). Picked by the task
+// count, not the dice, so it changes nothing but the words.
+function MinusCaption(caption) {
+  if (typeof K.Minus == "undefined") return caption;
+  var n = game.tasks || 0, list = K.Minus.Captions[caption];
+  if (list) return list[n % list.length];
+  if (caption.indexOf('Executing ') == 0)
+    return K.Minus.FightVerbs[n % K.Minus.FightVerbs.length] + caption.slice(9);
+  return caption;
+}
+
+// A big banner across the game, for a moment: "YOU DIED" (cls 'died') or
+// "OLD BASTARD FELLED" ('felled'). Only for show, and not while catching up.
+function MinusBanner(text, cls) {
+  if (!document || _catchingUp || game.mode != 'minus') return;
+  var el = document.getElementById("MinusBanner");
+  if (!el) return;
+  el.className = cls;
+  el.textContent = text;
+  void el.offsetWidth;   // (restart the animation)
+  el.classList.add("show");
+  clearTimeout(MinusBanner.timer);
+  MinusBanner.timer = setTimeout(function () { el.classList.remove("show"); }, 4200);
+}
+
 // ---- New Game+ legacy (see K.Legacy in config.js) ----------------------------
 
 // This hero's legacy share for an attribute (0.15 is +15%)
@@ -1897,16 +1930,21 @@ function ShowLegacy() {
   var L = game.legacy;
   var n = L ? (L.races || []).length + (L.klasses || []).length : 0;
   if (!n) { $("#Legacy").text("").attr("title", ""); return; }
-  $("#Legacy").text("New Game+ legacy: " + n + (n == 1 ? " race or class" : " races and classes") +
-                    " (+" + Math.round(LegacyAverage(L.bonus) * 1000) / 10 + "% on average)")
-    .attr("title", "From the Hall of Legends, fixed when this hero was created. " +
+  var avg = Math.round(LegacyAverage(L.bonus) * 1000) / 10;
+  $("#Legacy").text((L.curse ? "New Game\u2212 curse: " : "New Game+ legacy: ") + n + (n == 1 ? " race or class" : " races and classes") +
+                    " (" + (avg < 0 ? "\u2212" + -avg : "+" + avg) + "% on average)")
+    .toggleClass("cursed", !!L.curse)
+    .attr("title", (L.curse ? "Every legend in the Hall of Legends, cursing you. Fixed when this hero was created; " +
+                              "harsher rules besides (monsters hit harder, you hit softer, loot sells for less, " +
+                              "defeats cost more, bonfires are slow). " :
+                              "From the Hall of Legends, fixed when this hero was created. ") +
           LegacySummary(L.bonus) + ". Core stats get a share of what is typical for your level; " +
           "HP Max and MP Max a share of your own." +
           (L.races.length ? "\nRaces: " + L.races.join(", ") : "") +
           (L.klasses.length ? "\nClasses: " + L.klasses.join(", ") : ""));
   $("#Stats tr").each(function () {
     var pct = LegacyPct(Key(this));
-    $(this).toggleClass("legacy", pct > 0);
+    $(this).toggleClass("legacy", pct > 0).toggleClass("cursed", pct < 0);
   });
 }
 
@@ -2369,8 +2407,18 @@ function Defeated(fight) {
   var rescuer = Indefinite(Split(Pick(K.Races), 0) + ' ' + Split(Pick(K.Klasses), 0), 1);
   var temple = 'the Temple of ' + Pick(K.ImpressiveTitles) + ' ' + GenerateName();
   game.queue.push('task|4|' + ProperName(fight.foe) + ' leaves you for dead' + robbed);
-  game.queue.push('task|4|You are dragged back to town by ' + rescuer);
-  game.queue.push('heal|' + RecoveryTime() + '|Convalescing at ' + temple);
+  if (game.mode == 'minus' && K.Minus) {
+    // New Game−: YOU DIED, and a bonfire (the rescuer and temple were still
+    // rolled, so the dice run the same)
+    var n = game.deaths;
+    game.queue.push('task|4|' + K.Minus.Rescue[n % K.Minus.Rescue.length]);
+    game.queue.push('heal|' + RecoveryTime() + '|' + K.Minus.Convalesce[n % K.Minus.Convalesce.length]);
+    MinusBanner('YOU DIED', 'died');
+    Announce('You died.');
+  } else {
+    game.queue.push('task|4|You are dragged back to town by ' + rescuer);
+    game.queue.push('heal|' + RecoveryTime() + '|Convalescing at ' + temple);
+  }
   game.wounded = D.WoundedFights;
   game.caution = Min(D.CautionMax, (game.caution || 0) + D.CautionPerDefeat);
   ShowCondition();
@@ -3150,6 +3198,7 @@ function Log(line) {
 }
 
 function Task(caption, msec) {
+  if (game.mode == 'minus') caption = MinusCaption(caption);   // (New Game−: minus.js)
   game.kill = caption + "...";
   if (Kill)
     Kill.text(game.kill).attr("title", game.kill);
@@ -3900,6 +3949,7 @@ function LoadGame(sheet) {
   ShowLegacy();
   ShowPerks();
   ShowRival();
+  if (document) $("body").toggleClass("ng-minus", game.mode == 'minus');   // (minus.css)
   ShowOwned();
   if (typeof ShowFeed == "function") ShowFeed(true);
   ShowDaily();

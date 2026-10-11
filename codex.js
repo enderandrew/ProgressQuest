@@ -56,6 +56,9 @@ K.Achievements = [
     value: function (c) { return c.bestHardcore; }, goal: 25 },
   { key: "hcboss", icon: "☠", label: "Death Takes a Holiday", help: "Beat the Old Bastard™ in Hardcore.",
     value: function (c) { return c.flag("bosshc"); }, goal: 1 },
+  // New Game− (minus.js)
+  { key: "minusboss", icon: "\uD83D\uDD6F", label: "Prepare to Die (Edition)", help: "Beat the Old Bastard™ in New Game−.",
+    value: function (c) { return c.flag("bossminus"); }, goal: 1 },
   { key: "fallen1", icon: "🪦", label: "Press F", help: "Lose a hero in Hardcore.",
     value: function (c) { return c.fallen; }, goal: 1 },
   { key: "fallen10", icon: "🪦", label: "Graveyard Shift", help: "Have 10 heroes in the Hall of the Fallen.",
@@ -714,6 +717,7 @@ function CodexJournalPane(pane, b, keep) {
       (ev.klass ? " · " + ev.klass + " heroes only" : "") +
       (ev.sink ? " · only with " + CodexSinkLabel(ev.sink) : "") +
       (ev.rival ? " · once you've met your rival" : "") +
+      (ev.minus ? " · New Game\u2212 only" : "") +
       (found ? " · " + e.n.toLocaleString() + (e.n == 1 ? " time" : " times") + " · first: " + CodexWhen(e) : "")));
     card.append(head);
     if (ev.choices && ev.choices.length) {

@@ -168,7 +168,7 @@ if (typeof importScripts == "function" && typeof document == "undefined") {
     self.setTimeout = function (fn) { fn(); return 0; };
     self.clearTimeout = function () {};
 
-    importScripts("config.js", "story.js", "events.js", "combat.js", "codex.js", "main.js");
+    importScripts("config.js", "story.js", "events.js", "minus.js", "combat.js", "codex.js", "main.js");
     self.timeGetTime = function () { return _replayClock; };
 
     self.onmessage = function (e) {

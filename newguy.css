@@ -95,6 +95,7 @@ html.embedded #newguy.window { border: 0; padding: 0; margin: 0 auto; height: au
   border-radius: 2px;
 }
 #legacy.hardcore #LegacyMode { color: #900; }
+#legacy.minus #LegacyMode { color: #5a0000; font-weight: bold; letter-spacing: 1px; }
 #RunOptions { font-size: 8pt; color: #806000; margin-right: 8px; }
 
 /* ---- Narrow screens (a phone, or the New Game window on one) ------------------

@@ -12,6 +12,8 @@ function OpenWindow(id, mode, custom) {
   // Hardcore (from Challenge Modes) is the roller too.
   var plus = id == "dlgPlus" && legendCount > 0;
   if (plus) { id = "dlgNew"; mode = "plus"; }
+  // New Game− likewise (minus.js): the legacy as a curse
+  if (id == "dlgMinus" && legendCount > 0) { id = "dlgNew"; mode = "minus"; }
   if (id == "dlgHardcore") { id = "dlgNew"; mode = "hardcore"; }
   var dlg = document.getElementById(id);
   if (!dlg) return;
@@ -31,7 +33,7 @@ function CloseWindows() {
   $("dialog[open]").each(function () { this.close(); });
 }
 
-// index.html#resume, #new, #plus, #hall, #challenge, #codex, #faq, #github
+// index.html#resume, #new, #plus, #minus, #hall, #challenge, #codex, #faq, #github
 // index.html#hall/<id> opens the Hall with that legend highlighted (a hero
 // who just retired); index.html#resume/<life ID> the Resume list with that
 // hero highlighted (the one you just left). Challenge links (transfer.js):
@@ -43,14 +45,14 @@ function WindowFromHash() {
   if (name == "custom") { OpenCustomLink(parts.slice(1)); return; }
   if (name == "vs") { OpenVersus(parts.slice(1).filter(Boolean).slice(0, 2)); return; }
   hashTarget = DecodeName(parts[1] || "");
-  var ids = { "new": "dlgNew", resume: "dlgResume", plus: "dlgPlus", hall: "dlgHall",
+  var ids = { "new": "dlgNew", resume: "dlgResume", plus: "dlgPlus", minus: "dlgMinus", hall: "dlgHall",
               challenge: "dlgChallenge", hardcore: "dlgHardcore", codex: "dlgCodex", faq: "dlgFaq", github: "dlgGitHub" };
   if (ids[name]) OpenWindow(ids[name]);
 }
 
 // The character roller runs in its own page (newguy.html) inside the New
 // Game window. It is reloaded each time, so every visit is a fresh roll.
-// mode: "plus" or "hardcore" (or none); custom: a Custom Run's { seed, mut }
+// mode: "plus", "minus" or "hardcore" (or none); custom: a Custom Run's { seed, mut }
 function StartNewGame(mode, custom) {
   var q = new URLSearchParams();
   q.set("embed", "");
@@ -58,8 +60,7 @@ function StartNewGame(mode, custom) {
   custom = custom || {};
   if (custom.seed) q.set("seed", custom.seed);
   if (custom.mut && custom.mut.length) q.set("mut", custom.mut.join(","));
-  $("#dlgNewTitle").text((mode == "plus" ? "New Character (New Game+)" :
-                          mode == "hardcore" ? "New Character (\u2620 Hardcore)" : "New Character") +
+  $("#dlgNewTitle").text((ModeLabel(mode) ? "New Character (" + ModeLabel(mode) + ")" : "New Character") +
                          (custom.seed || (custom.mut || []).length ? " \u2014 custom run" : ""));
   // (flags without the "=": newguy.html?embed&plus&seed=abc)
   $("#newguyFrame").attr("src", "newguy.html?" + q.toString().replace(/=(?=&|$)/g, ""));
@@ -335,8 +336,8 @@ function ShowCustomCard() {
       box.append($("<label>").attr("title", m.help)
         .append($("<input type=checkbox>").val(m.key)).append(" " + m.label));
     });
-  // New Game+ needs a legend in the Hall
-  $("#customPlusLabel").toggleClass("disabled", !legendCount)
+  // New Game+ and New Game− need a legend in the Hall
+  $("#customPlusLabel, #customMinusLabel").toggleClass("disabled", !legendCount)
     .attr("title", legendCount ? "" : "Retire a hero to the Hall of Legends first")
     .find("input").prop("disabled", !legendCount);
 }
@@ -349,17 +350,17 @@ function OpenCustomLink(parts) {
   seedText = seedText.slice(0, 64);
   var keys = K.Mutators.map(function (m) { return m.key; });
   var muts = String(parts[1] || "").split(",").filter(function (k) { return keys.indexOf(k) >= 0; });
-  var mode = parts[2] == "hardcore" || parts[2] == "plus" ? parts[2] : "";
+  var mode = ["hardcore", "plus", "minus"].indexOf(parts[2]) >= 0 ? parts[2] : "";
   OpenWindow("dlgChallenge");
   ShowCustomCard();
   $("#customSeed").val(seedText);
   $("#customMutators input").each(function () { this.checked = muts.indexOf(this.value) >= 0; });
-  if (mode == "plus" && !legendCount) mode = "";   // (New Game+ needs a legend of your own)
+  if ((mode == "plus" || mode == "minus") && !legendCount) mode = "";   // (they need a legend of your own)
   $("input[name=customMode][value='" + mode + "']").prop("checked", true);
   var labels = K.Mutators.filter(function (m) { return muts.indexOf(m.key) >= 0; }).map(function (m) { return m.label; });
   $("#customFromLink").text("Someone sent you this run: " +
     (seedText ? "seed “" + seedText + "”" : "a random seed") +
-    (labels.length ? ", " + labels.join(", ") : "") + (mode ? ", " + (mode == "plus" ? "New Game+" : "Hardcore") : "") +
+    (labels.length ? ", " + labels.join(", ") : "") + (mode ? ", " + ModeLabel(mode) : "") +
     ". Same seed, same hero; make the same choices and it's the same game.").show();
   var card = document.querySelector("#dlgChallenge .mode-card.custom");
   if (card) { card.classList.add("from-link"); card.scrollIntoView({ block: "nearest" }); }
@@ -402,6 +403,9 @@ function ShowLegendCount(legends) {
     .attr("title", legends.length ? "Races and classes honored. New Game+ heroes start with " +
           LegacySummary(hall.bonus) : "");
   $("#plusLocked").toggle(!legends.length);
+  $("#minusLocked").toggle(!legends.length);
+  $("#minusCount").text(legends.length ? "\u2212" + Math.round(LegacyAverage(hall.bonus) * 1000) / 10 + "%" : "")
+    .attr("title", legends.length ? "New Game\u2212 heroes start cursed: " + LegacySummary(MinusLegacy(hall).bonus) : "");
 }
 
 // ---- Resume: saved characters ----------------------------------------------
@@ -439,8 +443,7 @@ function ShowRoster(heroes) {
                             (c.alignment ? c.alignment + " " : "") + c.klass +
                             (c.bestplot ? " · " + c.bestplot : "") +
                             (c.won ? " · Beat the Old Bastard\u2122, ready to retire" : "") +
-                            (c.mode == "plus" ? " \u00b7 New Game+" : "") +
-                            (c.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
+                            (ModeLabel(c.mode) ? " \u00b7 " + ModeLabel(c.mode) : "") +
                             RunTags(c.daily && c.daily.date, c.mutators, c.runSeed) +
                             (c.cheater ? " \u00b7 \u26a0 branded a cheater" :
                              c.unverified ? " \u00b7 unverified" : ""))
@@ -592,8 +595,7 @@ function ShowHall(legends) {
     row.find(".what").text("the " + l.race);
     var when = l.retired ? new Date(l.retired).toLocaleDateString([], { year: "numeric", month: "short", day: "numeric" }) : "";
     row.find(".where").text("Level " + l.level + " " + (l.alignment ? l.alignment + " " : "") + l.klass +
-                            (l.mode == "plus" ? " \u00b7 New Game+" : "") +
-                            (l.mode == "hardcore" ? " \u00b7 \u2620 Hardcore" : "") +
+                            (ModeLabel(l.mode) ? " \u00b7 " + ModeLabel(l.mode) : "") +
                             RunTags(l.daily, l.mutators, l.runSeed) +
                             (when ? " \u00b7 retired " + when : ""));
     row.find(".feat").text("Beat the Old Bastard\u2122 at level " + l.wonLevel + ", " + Hours(l.wonAt || 0) +

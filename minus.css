@@ -1,0 +1,124 @@
+/* New Game− (minus.js): the same game, in the dark. Everything here is
+   scoped to body.ng-minus, which main.js sets for a New Game− hero. Bone
+   on soot, ember and dried blood; text keeps WCAG AA contrast. */
+
+body.ng-minus {
+  --w95-face: #2a2622;
+  --w95-light: #4d453c;
+  --w95-shadow: #12100e;
+  --w95-dark: #000;
+  --w95-select: #5a1414;
+  --ngm-bg: #1d1a17;
+  --ngm-box: #141210;
+  --ngm-line: #4d4136;
+  --ngm-text: #ddd2bc;
+  --ngm-dim: #b3a68e;
+  --ngm-ember: #d39a4a;
+  --ngm-blood: #e07070;
+  background: radial-gradient(ellipse at 50% 30%, #2b221a 0%, #0c0a08 75%) fixed;
+  color: var(--ngm-text);
+}
+body.ng-minus #desktop { filter: grayscale(0.8) brightness(0.6); }
+
+/* the window */
+body.ng-minus .window { background-color: var(--ngm-bg); border-color: var(--ngm-line); color: var(--ngm-text); }
+body.ng-minus #titlebar {
+  background: linear-gradient(to bottom, #4a0e0e, #1c0505);
+  color: #eadcc0;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.06em;
+}
+body.ng-minus #MenuRow { color: var(--ngm-text); }
+body.ng-minus .menu-top, body.ng-minus .menu-pop > li { color: var(--ngm-text); }
+body.ng-minus .menu-pop > li.disabled { color: #7d7262; }
+body.ng-minus .label, body.ng-minus .head, body.ng-minus .panel-toggle { color: var(--ngm-text); }
+
+/* lists and tables */
+body.ng-minus .listbox { background-color: var(--ngm-box); border-color: var(--ngm-line); color: var(--ngm-text); }
+body.ng-minus th { background-color: #2a2420; color: var(--ngm-text); }
+body.ng-minus td { color: var(--ngm-text); }
+body.ng-minus #Story { background-color: #231b12; }
+body.ng-minus #RecentEvent { background-color: #1b1714; }
+body.ng-minus #RecentEvent.empty { background-color: var(--ngm-box); color: var(--ngm-dim); }
+body.ng-minus #RecentResult, body.ng-minus #EventResult { color: #9ccf7a; }
+body.ng-minus #CombatLog { background-color: var(--ngm-box); color: var(--ngm-text); }
+body.ng-minus #CombatLog .fight-result, body.ng-minus #CombatLog .fight-aside { color: var(--ngm-dim); }
+
+/* the lines under things */
+body.ng-minus div.profile, body.ng-minus #FightBar, body.ng-minus #Company, body.ng-minus #RecentAge { color: var(--ngm-dim); }
+body.ng-minus div.profile#Legacy, body.ng-minus div.profile#Legacy.cursed { color: var(--ngm-blood); font-weight: bold; }
+body.ng-minus #Stats tr.cursed td:first-child { color: var(--ngm-blood); }
+body.ng-minus div.profile#Condition.wounded, body.ng-minus #FightLine.defeat { color: #ff7a7a; }
+body.ng-minus div.profile#Buffs, body.ng-minus #Stats tr.buffed td:last-child { color: #9ccf7a; }
+body.ng-minus div.profile#Boons { color: #c9a0e8; }
+body.ng-minus div.profile#Owned, body.ng-minus #RetireLink, body.ng-minus #Equips tr.unique td:last-child { color: var(--ngm-ember); }
+body.ng-minus div.profile#DailyLine { color: #8fb2ec; }
+body.ng-minus #LinkBar a { color: var(--ngm-ember); }
+
+/* the bars: embers, blood, and a cold blue */
+body.ng-minus div.progress-container { background: #0f0d0b; border-color: var(--ngm-line); }
+body.ng-minus div.progress-container > div.bar { background-color: #9a6a24; }
+body.ng-minus div.progress-container#HPBar > div.bar { background-color: #9b1f1f; }
+body.ng-minus div.progress-container#MPBar > div.bar { background-color: #2d4f86; }
+body.ng-minus div.hint { color: #f1e6d0; text-shadow: 0 0 3px #000; }
+
+/* Equipment | Scrollr */
+body.ng-minus .feed-tabs [role=tab] { background: #2a2622; color: var(--ngm-text); border-color: var(--ngm-line); }
+body.ng-minus .feed-tabs [role=tab][aria-selected=true] { background: var(--ngm-box); border-bottom-color: var(--ngm-box); }
+body.ng-minus .feed-tabs [role=tab]:focus-visible { outline-color: var(--ngm-text); }
+body.ng-minus #FeedNew { color: #ff7a7a; }
+body.ng-minus #Feed .post { border-bottom-color: #2e2924; }
+body.ng-minus #Feed .post-sub, body.ng-minus #Feed .post-foot, body.ng-minus #Feed .feed-empty { color: var(--ngm-dim); }
+body.ng-minus #Feed .post-reply { color: #cdbfa5; border-left-color: var(--ngm-line); }
+body.ng-minus #Feed .post-s .post-head b { color: #e8c27a; }
+body.ng-minus #Feed .post-head b { color: var(--ngm-text); }
+body.ng-minus #Feed .post-m .post-head b, body.ng-minus #Feed .post-e .post-head b,
+body.ng-minus #Feed .post-r .post-head b, body.ng-minus #Feed .post-n .post-head b { color: #ff8a8a; }
+body.ng-minus #Feed .post-o .post-text { font-family: Georgia, "Times New Roman", serif; font-style: italic; color: #f0d79a; }
+
+/* the dock (phones) and the panels' buttons */
+body.ng-minus #Dock { background: var(--ngm-bg); border-top-color: var(--ngm-line); }
+body.ng-minus #DockStats { color: var(--ngm-text); }
+@media (max-width: 699px) {
+  body.ng-minus .panel-toggle { background: #2a2622; border-color: var(--ngm-line) #0c0a08 #0c0a08 var(--ngm-line); }
+  body.ng-minus .panel.collapsed .panel-toggle { background: #221e1b; }
+}
+
+/* windows and pop-ups */
+body.ng-minus dialog.win95, body.ng-minus .pq-dialog { background-color: var(--ngm-bg); color: var(--ngm-text); }
+body.ng-minus .win95-title, body.ng-minus .pq-dialog .dlg-title { background: linear-gradient(to right, #4a0e0e, #1c0505); color: #eadcc0; }
+body.ng-minus .event-choice .choice-timer, body.ng-minus .event-choice .picked { color: var(--ngm-ember); }
+body.ng-minus :focus-visible { outline-color: var(--ngm-text); }
+
+/* YOU DIED, and OLD BASTARD FELLED (MinusBanner in main.js) */
+#MinusBanner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 38%;
+  padding: 26px 0 30px;
+  text-align: center;
+  font: normal 56px/1 Georgia, "Times New Roman", serif;
+  letter-spacing: 0.12em;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.82) 25%, rgba(0, 0, 0, 0.82) 75%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 1000;
+  transition: opacity 1.2s ease, letter-spacing 4s ease, visibility 0s linear 1.2s;
+}
+#MinusBanner.died { color: #a51c1c; text-shadow: 0 0 18px rgba(165, 28, 28, 0.5); }
+#MinusBanner.felled { color: #d8b45a; text-shadow: 0 0 18px rgba(216, 180, 90, 0.5); }
+#MinusBanner.show { opacity: 1; visibility: visible; letter-spacing: 0.2em; transition: opacity 1.2s ease, letter-spacing 4s ease, visibility 0s; }
+@media (max-width: 699px) { #MinusBanner { font-size: 34px; } }
+
+/* achievements still unlock, grimly */
+body.ng-minus .achievement-toast { background: #1d1a17; color: var(--ngm-text); border-color: var(--ngm-line); }
+body.ng-minus .achievement-toast .ach-head { color: var(--ngm-ember); }
+body.ng-minus .achievement-toast .ach-help { color: var(--ngm-dim); }
+
+/* the highlighted row, and an event's question */
+body.ng-minus .selected { background-color: #5a4414; color: #f3e6c8; }
+body.ng-minus .selected td { color: #f3e6c8; }
+body.ng-minus .event-choice { background: #241d14; border-color: #6a5636; }
+body.ng-minus .event-choice .ask { color: var(--ngm-text); }

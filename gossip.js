@@ -35,7 +35,7 @@ K.Gossip = {
 // hero fights; {foe}, {a-foe}), 'elite', 'giver' (the Act's quest giver), 'merchant'
 // or 'rival' (yours, K.Rival in story.js: {rival}, {rival-full},
 // {rival-level}; {nemesis} is them too). The lines can say {hero}, {race} and {klass}
-// (the hero's; {a-klass}: "a Barbarian"), {level}, {alignment}, {weapon}, {gear}, {spell}, {wins},
+// (the hero's; {a-klass}: "a Barbarian"), {level} ({next}: the one after), {alignment}, {weapon}, {gear}, {spell}, {wins},
 // {deaths}, {kingdom} (the Act's), {kingdom2}, {giver}, {nemesis}, {guy},
 // {boring}, {item}, {race-one}, {act}, {quest} (the quest under way,
 // "fetch me a cheese"), {foe} ("Giant Orc"), {a-foe} ("a Giant Orc") and
@@ -813,9 +813,10 @@ K.GossipReplies = [
 ];
 
 // Who posted, in the saved post (p.w), and the icon beside their name
-K.GossipCodes = { spreddit: 's', crier: 'c', monster: 'm', elite: 'e', giver: 'g', merchant: '$', rival: 'r', townsfolk: 't' };
+K.GossipCodes = { spreddit: 's', crier: 'c', monster: 'm', elite: 'e', giver: 'g', merchant: '$', rival: 'r',
+                  message: 'o', townsfolk: 't' };
 K.GossipIcons = { s: '\uD83D\uDCEF', c: '\uD83D\uDD14', m: '\uD83D\uDC79', e: '\uD83D\uDC51', g: '\uD83D\uDCDC',
-                  $: '\uD83D\uDCB0', r: '\uD83D\uDE24', n: '\uD83D\uDE08', t: '\uD83D\uDCAC' };
+                  $: '\uD83D\uDCB0', r: '\uD83D\uDE24', o: '\uD83D\uDD6F', n: '\uD83D\uDE08', t: '\uD83D\uDCAC' };
 
 // A merchant's sign-off ("Gorbo, Purveyor of Fine Goods")
 K.GossipMerchants = ['Purveyor of Fine Goods', 'Licensed Merchant', 'Merchant (Verified)', 'Wholesale Dealer',
@@ -859,6 +860,8 @@ function GossipVars(dice, info) {
     vars.monsters = Plural(m);
     vars.townsfolk = GenerateName();
     vars.merchant = GenerateName() + ", " + Pick(K.GossipMerchants);
+    // (a price, for a post that isn't about a splurge: "cost {gold} gold")
+    vars.gold = ((1 + Random(9)) * 10 * Math.max(1, GetI(Traits, 'Level'))).toLocaleString();
     return vars;
   });
   var story = (game.story && game.story.vars) || {};
@@ -867,6 +870,7 @@ function GossipVars(dice, info) {
   v.race = Get(Traits, 'Race');
   v.klass = Get(Traits, 'Class');
   v.level = GetI(Traits, 'Level');
+  v.next = v.level + 1;
   v.alignment = Get(Traits, 'Alignment') || 'Unaligned';
   v.weapon = Get(Equips, 'Weapon') || 'bare hands';
   v.gear = game.bestequip || 'nothing much';
@@ -878,6 +882,7 @@ function GossipVars(dice, info) {
   v.quest = quest ? quest.charAt(0).toLowerCase() + quest.slice(1) : '';
   for (var k in info || {}) if (info[k] !== undefined && info[k] !== null) v[k] = info[k];
   v['a-klass'] = Indefinite(v.klass, 1);
+  if (v.elite === undefined) v.elite = 'elite ' + v.foe;   // (outside an elite's own posts: "an elite Giant Orc")
   v['a-foe'] = /^the /i.test(v.foe) ? 'the ' + v.foe.slice(4) : Indefinite(v.foe, 1);
   return v;
 }
@@ -897,28 +902,31 @@ function Gossip(what, info) {
     if (game.feedAt !== undefined && now - game.feedAt < gap) return;
   }
   var dice = GossipDice(what);
+  var minus = game.mode == 'minus';   // (New Game−'s own posts: minus.js)
   var chance = function (p) { return dice() < p; };
   var pools = [];   // [pool key, extra vars], tried in turn
   var fight = info || {};
   switch (what) {
   case 'arrive':
     if (!chance(G.OtherChance)) return;
-    pools = GossipOrder(dice, [['arrive', 3], ['nag', 2], ['taunt', 1.5]]);
+    pools = GossipOrder(dice, [['arrive', 3], ['nag', 2], ['taunt', 1.5]].concat(minus ? [['omen', 4]] : []));
     break;
   case 'town':
     if (!chance(G.OtherChance)) return;
-    pools = GossipOrder(dice, [['town', 3], ['nag', 1]]);
+    pools = GossipOrder(dice, [['town', 3], ['nag', 1]].concat(minus ? [['omen', 2]] : []));
     break;
   case 'rest':
     if (!chance(G.OtherChance)) return;
-    pools = GossipOrder(dice, [['realm', 2], ['rivalry', 1.5], ['nag', 1], ['taunt', 1]]);
+    pools = GossipOrder(dice, minus ? [['grimRealm', 3], ['omen', 2], ['rivalry', 1], ['nag', 1], ['taunt', 1]] :
+                                      [['realm', 2], ['rivalry', 1.5], ['nag', 1], ['taunt', 1]]);
     break;
   case 'fight':
     if (fight.elite || !fight.outcome || !chance(G.FightChance)) return;
     var kind = fight.kind || '';
     var x = { foe: kind || undefined, monsters: kind ? Plural(kind) : undefined, loot: fight.loot || 'lunch money',
               rounds: fight.rounds + (fight.rounds == 1 ? ' round' : ' rounds') };
-    pools = [[fight.outcome == 'defeat' ? 'beat' : fight.outcome == 'flee' ? 'fled' : 'lost', x]];
+    pools = fight.outcome == 'defeat' && minus ? GossipOrder(dice, [['youDied', 2], ['beat', 1]]).map(function (p) { return [p[0], x]; }) :
+            [[fight.outcome == 'defeat' ? 'beat' : fight.outcome == 'flee' ? 'fled' : 'lost', x]];
     break;
   case 'quest':
     if (!chance(0.35)) return;
@@ -1010,6 +1018,7 @@ function GossipPost(dice, key, pool, extra) {
   else if (who == 'giver') { by = v.giver; sub = town; }
   else if (who == 'merchant') { by = v.merchant; sub = town; }
   else if (who == 'rival') { by = v['rival-full'] || v.nemesis; sub = 's/all'; }
+  else if (who == 'message') { by = 'A message on the ground'; sub = 's/TheAbyss'; }   // (New Game−: minus.js)
   else { by = v.townsfolk; sub = town; }
 
   // likes: more for Sir Spreddit, and for a hero people have heard of

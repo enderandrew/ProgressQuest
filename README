@@ -1091,6 +1091,48 @@ It is a strong reward. Simulated heroes (6 each, to level 40):
   all 48 (+45%)      24 h          71      99.4%
 
 
+New Game−
+---------
+
+For anyone who found New Game+ too kind: New Game− (minus.js), unlocked
+with New Game+ and started from its own (dark) button in the main menu.
+It is New Game+ backwards, and a parody of the grim, punishing kind of
+fantasy game where you die a great deal and are told so in large red
+letters.
+
+- The legacy is a curse: every race and class in the Hall takes away what
+  New Game+ would give (game.legacy with curse: true and a negative
+  bonus), up to K.Minus.MaxCurse (20%) from any one attribute. Shown in
+  red under the stats; the cursed stats are red too.
+- Harsher rules besides (K.Minus.Rules, counted like a perk): monsters
+  hit 20% harder, you hit 10% softer, loot sells for 20% less, a defeat
+  costs half again as much, and the bonfires (resting) are slow.
+- Its own words. Task captions ("Getting parried by a Giant Orc",
+  "Resting at a bonfire. Every monster respawns"; picked by the task
+  count, so no dice), and after a defeat you wake at a bonfire instead of
+  a temple. 12 events of its own (minus: true in K.Events): messages on
+  the ground ("try jumping"), mimics, a fog wall with a health bar across
+  the sky, a knight who praises the sun, a knight shaped like an onion, a
+  bald merchant with a shortcut. On Scrollr, messages left on the ground
+  (s/TheAbyss) and a hollowed Sir Spreddit who reports every death. In the
+  journal, a New Game− first page and grimmer level-ups. And a finale of
+  its own (K.MinusFinale): a fog wall, phases, OLD BASTARD FELLED.
+- A darker look (minus.css: body.ng-minus): soot and bone, ember and
+  blood, still WCAG AA. YOU DIED across the screen at every defeat (and
+  OLD BASTARD FELLED, in gold, at the end); the achievement "Prepare to
+  Die (Edition)" for beating him in New Game−.
+
+Simulated heroes, to beat the Old Bastard™:
+
+  hero         normal    New Game−, full Hall (−20%)   his tries
+  pq           5.3 days   8.8 days, 11% of fights lost        6
+  alpha        5.5 days  15.3 days, 23% of fights lost       18
+
+(Uncapped, a full Hall's −45% lost alpha nine fights in ten.) The rules
+are code that decides a game, so minus.js is in K.Replay.Files and the
+replays load it; node sim.js --mode minus plays one.
+
+
 Cheating
 --------
 

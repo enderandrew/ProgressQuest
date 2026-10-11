@@ -67,6 +67,7 @@ function ShowSheet(p) {
   if (p.died) notes.push("In the Hall of the Fallen");
   if (p.mode == "hardcore") notes.push("☠ Hardcore");
   if (p.mode == "plus") notes.push("New Game+");
+  if (p.mode == "minus") notes.push("New Game\u2212");
   if (p.leg) notes.push("Legacy of " + p.leg + (p.leg == 1 ? " race or class" : " races and classes"));
   if (p.daily) notes.push("📅 Daily Challenge " + p.daily);
   var perks = (p.pk || []).map(function (k) { return typeof PerkByKey == "function" && PerkByKey(k); }).filter(Boolean);

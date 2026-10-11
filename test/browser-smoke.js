@@ -362,6 +362,38 @@ function step(name, ok, detail) {
     return unique;
   });
 
+  await tryStep("New Game−: its own window, a hero in the dark, who dies in large red letters", async () => {
+    await page.goto(BASE + "index.html");
+    await page.waitForSelector("#menu button");
+    await page.click("#menu button[data-open=dlgMinus]");
+    await page.waitForSelector("dialog[open]");
+    const open = await page.$eval("dialog[open]", (d) => d.id), counts = await page.evaluate(() => legendCount);
+    // (as with New Game+: the smoke test's legend didn't beat the Old Bastard™, so it doesn't unlock it)
+    if (open != (counts ? "dlgNew" : "dlgMinus")) throw new Error("New Game− opened " + open + " with " + counts + " legends that count");
+    if (!counts) await page.evaluate(() => OpenWindow("dlgNew", "minus"));
+    await page.waitForSelector("#dlgNew[open]");
+    const title = await page.textContent("#dlgNewTitle");
+    if (title.indexOf("New Game\u2212") < 0) throw new Error("the window says " + title);
+    const frame = await (await page.waitForSelector("#newguyFrame")).contentFrame();
+    await frame.waitForSelector("#Sold");
+    const curse = await frame.evaluate(() => $("#LegacyBonus").text());
+    await frame.click("#Sold");
+    await page.waitForURL(/main\.html/);
+    await page.waitForFunction(() => window.game && game.Traits && game.tasks > 0);
+    const seen = await page.evaluate(() => {
+      Task("Catching your breath", 1000);
+      const caption = game.kill;
+      MinusBanner("YOU DIED", "died");
+      return { mode: game.mode, dark: document.body.classList.contains("ng-minus"), curse: !!(game.legacy && game.legacy.curse),
+               legacy: $("#Legacy").text(), caption, banner: document.getElementById("MinusBanner").className };
+    });
+    if (seen.mode != "minus" || !seen.dark) throw new Error("not a dark New Game− hero: " + JSON.stringify(seen));
+    if (counts && (!seen.curse || seen.legacy.indexOf("curse") < 0)) throw new Error("no curse: " + seen.legacy + " (the roller said " + curse + ")");
+    if (/^Catching your breath/.test(seen.caption)) throw new Error("the task caption wasn't swapped");
+    if (!/show/.test(seen.banner)) throw new Error("no YOU DIED banner");
+    return (seen.legacy || "no legend counts, so no curse") + "; " + seen.caption;
+  });
+
   await browser.close();
   server.close();
 

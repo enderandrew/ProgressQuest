@@ -185,10 +185,11 @@ function sold() {
     tactics: { fights: "normal", resting: "normal", spells: "normal" },
     choiceLog: [],
     perks: [perkRoll],
-    mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : "normal",
+    mode: Hardcore() ? "hardcore" : NewGamePlus() ? "plus" : NewGameMinus() ? "minus" : "normal",
     lifeId: NewLifeId(),   // who they are in storage, and to the Hardcore ledger
     saveGen: 0,
-    legacy: (NewGamePlus() || Hardcore()) && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } : null,
+    legacy: (NewGamePlus() || Hardcore()) && hall ? { races: hall.races, klasses: hall.klasses, bonus: hall.bonus } :
+            NewGameMinus() && hall ? MinusLegacy(hall) : null,   // (New Game−: the legacy as a curse)
     queue: [
       "scene|6|Experiencing an enigmatic and foreboding night vision... The Old Bastard™ appears and sneers: “" + prologue.taunt + "”",
 	  "scene|6|That Old Bastard™ will pay! You set out on a quest to right this particular wrong",
@@ -229,7 +230,8 @@ function sold() {
                        taunt: prologue.taunt, ending: prologueScenes }];
   newguy.deaths = 0;
   newguy.wounded = 0;
-  // A New Game+ legacy raises HP Max and MP Max from the start
+  // A New Game+ legacy raises HP Max and MP Max from the start (a New Game−
+  // curse lowers them)
   if (newguy.legacy) {
     $.each(["HP Max", "MP Max"], function (i, pool) {
       var bar = pool == "HP Max" ? newguy.HPBar : newguy.MPBar;
@@ -313,6 +315,12 @@ function NewGamePlus() {
   return UrlFlag("plus");
 }
 
+// New Game− (newguy.html?minus, the main menu's New Game−): the legacy as
+// a curse, and harsher rules (minus.js)
+function NewGameMinus() {
+  return UrlFlag("minus");
+}
+
 // Hardcore (newguy.html?hardcore, from the main menu's Challenge Modes):
 // one life, with the Hall's legacy
 function Hardcore() {
@@ -344,11 +352,16 @@ function ShowLegacyPanel() {
   var plus = NewGamePlus() || Hardcore();
   var n = hall.races.length + hall.klasses.length;
   var total = K.Races.length + K.Klasses.length;
-  $("#legacy").toggleClass("plus", plus).toggleClass("hardcore", Hardcore());
-  $("#LegacyMode").text(Hardcore() ? "\u2620 Hardcore" : plus ? "New Game+" : "New Game");
-  $("#LegacyCount").text(n + " of " + total + " honored");
+  $("#legacy").toggleClass("plus", plus).toggleClass("hardcore", Hardcore()).toggleClass("minus", NewGameMinus());
+  $("#LegacyMode").text(Hardcore() ? "\u2620 Hardcore" : plus ? "New Game+" : NewGameMinus() ? "New Game\u2212" : "New Game");
+  $("#LegacyCount").text(n + " of " + total + (NewGameMinus() ? " cursing you" : " honored"));
   var avg = Math.round(LegacyAverage(hall.bonus) * 1000) / 10;
-  if (plus) {
+  if (NewGameMinus()) {
+    var curse = MinusLegacy(hall);
+    $("#LegacyBonus").text(n ? "\u2212" + avg + "% on average, and worse rules" : "Nothing honored, somehow")
+      .attr("title", n ? "This hero starts cursed: " + LegacySummary(curse.bonus) +
+                         ". Monsters hit harder, you hit softer, loot sells for less, defeats cost more." : "");
+  } else if (plus) {
     $("#LegacyBonus").text(n ? "+" + avg + "% on average" : "Nothing honored yet")
       .attr("title", n ? "This hero starts with: " + LegacySummary(hall.bonus) : "");
   } else {

@@ -162,6 +162,7 @@ function JournalBegin(isNew) {
     var prologue = StoryFor(0);
     JournalAdd('begin', JournalText(JournalPick(K.JournalBegin), { taunt: (prologue && prologue.taunt) || "Thou fool" }));
     JournalAdd('aside', JournalText(K.JournalFirstAside));
+    if (game.mode == 'minus' && K.JournalMinusBegin) JournalAdd('aside', JournalText(JournalPick(K.JournalMinusBegin)));   // (minus.js)
   } else {
     JournalAdd('begin', JournalText(JournalPick(K.JournalLateStart)));
   }
@@ -185,6 +186,8 @@ function JournalLevel() {
   if (special) JournalAdd('aside', JournalText(special));
   else if (typeof LiveBoon == "function" && LiveBoon('memoir'))
     JournalAside(K.Journal.GhostNoteChance, K.JournalGhostNotes, { who: BoonWho(LiveBoon('memoir')) });   // (the ghostwriter's still about)
+  else if (game.mode == 'minus' && K.JournalMinusAsides && JournalChance(0.5))
+    JournalAside(1, K.JournalMinusAsides);   // (New Game−: minus.js)
   else if (typeof RivalMet == "function" && RivalMet() && JournalChance(K.Journal.RivalChance))
     JournalAside(1, K.JournalRivalAsides);   // (that rival again)
   else JournalAside();

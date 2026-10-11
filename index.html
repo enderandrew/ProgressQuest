@@ -31,6 +31,7 @@
 <script src="story.js"></script>
 <script src="combat.js"></script>
 <script src="events.js"></script>
+<script src="minus.js"></script>
 <script src="daily.js"></script>
 <script src="codex.js"></script>
 <script src="transfer.js"></script>
@@ -55,6 +56,7 @@
       <button class="xp-button big" data-open="dlgNew"><span class="ico" aria-hidden="true">&#x2694;</span>New Game</button>
       <button class="xp-button big" data-open="dlgResume"><span class="ico" aria-hidden="true">&#x25B6;</span>Resume<span class="count" id="resumeCount"></span></button>
       <button class="xp-button big" data-open="dlgPlus"><span class="ico" aria-hidden="true">&#x2795;</span>New Game+<span class="count gold" id="plusCount"></span><span class="soon" id="plusLocked">locked</span></button>
+      <button class="xp-button big minus" data-open="dlgMinus"><span class="ico" aria-hidden="true">&#x1F56F;</span>New Game&minus;<span class="count" id="minusCount"></span><span class="soon" id="minusLocked">locked</span></button>
       <button class="xp-button big" data-open="dlgHall"><span class="ico" aria-hidden="true">&#x1F3C6;</span>Hall of Legends<span class="count gold" id="hallCount"></span></button>
       <button class="xp-button big" data-open="dlgChallenge"><span class="ico" aria-hidden="true">&#x1F3B2;</span>Challenge Modes</button>
       <button class="xp-button big" data-open="dlgCodex"><span class="ico" aria-hidden="true">&#x1F4D6;</span>Codex<span class="count" id="codexCount"></span></button>
@@ -110,6 +112,25 @@
        24 classes; pick new pairings and it takes 24 heroes to collect them all, for +45% to
        every attribute.</p>
     <p>A plain New Game always starts without a legacy, if you'd rather do it the hard way.</p>
+    <div class="xp-actions"><button class="xp-button" data-close>OK</button></div>
+  </div>
+</dialog>
+
+<dialog class="xp-window" id="dlgMinus" aria-labelledby="dlgMinusTitle">
+  <div class="xp-titlebar">
+    <img src="swords.gif" alt="">
+    <span id="dlgMinusTitle">New Game&minus;</span>
+    <button class="xp-close" aria-label="Close" data-close></button>
+  </div>
+  <div class="xp-body">
+    <h2>Locked. Of course it is.</h2>
+    <p>Beat the Old Bastard&trade; and retire a hero to the Hall of Legends, as for New Game+.
+       Then, if you must, there is New Game&minus;.</p>
+    <p>A New Game&minus; hero inherits a legacy from every race and class in the Hall, the same as
+       New Game+, except backwards: a <em>penalty</em> for each one. Monsters hit harder, you hit softer,
+       loot sells for less, defeats cost more, and the bonfires are slow. Everyone you meet has
+       read the same grim fantasy games you have. You will die. It will say so, in large red letters.</p>
+    <p>Praise the sun. Or don't. It hasn't been out in weeks.</p>
     <div class="xp-actions"><button class="xp-button" data-close>OK</button></div>
   </div>
 </dialog>
@@ -207,6 +228,7 @@
         <span>
           <label><input type="radio" name="customMode" value="" checked> Normal</label>
           <label id="customPlusLabel"><input type="radio" name="customMode" value="plus"> New Game+</label>
+          <label id="customMinusLabel"><input type="radio" name="customMode" value="minus"> New Game&minus;</label>
           <label><input type="radio" name="customMode" value="hardcore"> &#x2620; Hardcore</label>
         </span>
         <span>Mutators</span>

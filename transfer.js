@@ -687,7 +687,7 @@ function ShareChallenge(g) {
                    "Start a Custom Run with a seed (Challenge Modes) for a run you can share." });
     return;
   }
-  var url = ChallengeUrl(g.runSeed, g.mutators, g.mode == "hardcore" || g.mode == "plus" ? g.mode : "");
+  var url = ChallengeUrl(g.runSeed, g.mutators, ["hardcore", "plus", "minus"].indexOf(g.mode) >= 0 ? g.mode : "");
   ShareCodeFor(VersusPayload(g)).then(function (code) {
     var vs = VersusUrl([code]);
     var box = WinBox({ title: "Share This Run", icon: "info", wide: true,

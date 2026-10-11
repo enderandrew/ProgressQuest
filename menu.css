@@ -147,6 +147,17 @@ a { color: var(--xp-link); }
 }
 #menu .count { background: #2e7a2e; }
 #menu .count:empty { display: none; }
+/* New Game− (minus.js): the one dark button */
+#menu .xp-button.big.minus {
+  background: linear-gradient(to bottom, #3a302a, #1a1512);
+  color: #ead9b8;
+  border-color: #5a4a3a;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.04em;
+}
+#menu .xp-button.big.minus:hover { background: linear-gradient(to bottom, #4a3c33, #241c17); }
+#menu .xp-button.big.minus .count { background: #7a1414; }
+#menu .xp-button.big.minus .soon { background: #4a4038; }
 
 /* ---- Dialogs ------------------------------------------------------------- */
 

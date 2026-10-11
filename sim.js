@@ -16,6 +16,8 @@
 //   --race RACE     race, e.g. "4chan Troll"                  (default random)
 //   --class CLASS   class, e.g. "Barbarian Pretzel"           (default random)
 //   --mut KEYS      challenge mutators, e.g. noshop,glasscannon (K.Mutators)
+//   --mode MODE     plus, minus or hardcore (New Game+ and New Game− without
+//                   a Hall of Legends have no legacy)
 //   --perks KEYS    the hero's perks, e.g. packmule,miser (K.Perks), instead
 //                   of the rolled one, and no more are offered ("" for none)
 //   --daily DATE    play that day's Daily Challenge hero, e.g. 2026-10-07
@@ -50,6 +52,7 @@ function parseArgs(argv) {
       case "--race":   opts.race = next(); break;
       case "--class":  opts.klass = next(); break;
       case "--mut":    opts.mut = next(); break;
+      case "--mode":   opts.mode = next(); break;
       case "--perks":  opts.perks = next().split(",").filter(Boolean); break;
       case "--daily":  opts.daily = next(); break;
       case "--replay": opts.replay = next(); break;
@@ -156,6 +159,7 @@ function run(opts) {
   load(ctx, opts.dir, "main.js");
   if (fs.existsSync(path.join(opts.dir, "journal.js"))) load(ctx, opts.dir, "journal.js");
   if (fs.existsSync(path.join(opts.dir, "gossip.js"))) load(ctx, opts.dir, "gossip.js");
+  if (fs.existsSync(path.join(opts.dir, "minus.js"))) load(ctx, opts.dir, "minus.js");   // (after gossip.js: it adds to Scrollr)
   load(ctx, opts.dir, "newguy.js");
   if (opts.setup) opts.setup(ctx);   // (for tests: change the rules first)
 
@@ -174,7 +178,11 @@ function run(opts) {
       "storage.saveHero(__d, function () {}); window.location.href = 'main.html#' + EncodeName(__d.lifeId);");
   } else {
   // (the roller reads its mutators from the page's address, as in the browser)
-  if (opts.mut) ctx.location.search = "?mut=" + encodeURIComponent(opts.mut);
+  // (and New Game+, New Game− or Hardcore from a flag: newguy.html?minus)
+  const query = [];
+  if (opts.mut) query.push("mut=" + encodeURIComponent(opts.mut));
+  if (opts.mode) query.push(opts.mode);
+  if (query.length) ctx.location.search = "?" + query.join("&");
   g("seed = new Alea(__seed); RollEm(); GenClick();" +
     "fill(null, K.Races, 'Race'); fill(null, K.Klasses, 'Class');");
   }
@@ -272,8 +280,8 @@ function run(opts) {
 // Replay a saved hero (a .pqw backup or its JSON) and check it
 function replay(file, dir) {
   const ctx = makeSandbox();
-  for (const f of ["config.js", "story.js", "events.js", "combat.js", "codex.js", "main.js", "replay.js"])
-    load(ctx, dir, f);
+  for (const f of ["config.js", "story.js", "events.js", "minus.js", "combat.js", "codex.js", "main.js", "replay.js"])
+    if (f != "minus.js" || fs.existsSync(path.join(dir, f))) load(ctx, dir, f);
   let text = fs.readFileSync(file, "utf8").trim(), save;
   try { save = JSON.parse(text); }
   catch (e) { save = JSON.parse(Buffer.from(text.replace(/\s/g, ""), "base64").toString("utf8")); }
