@@ -352,9 +352,10 @@ function Dequeue() {
     } else if (game.task == 'rest' || game.task == 'heal') {
       if (game.task == 'heal') PayTemple();
       RestoreHealth();
-      if (game.task == 'rest') MaybeEvent('rest', 'rest');
+      if (game.task == 'rest') { game.rests = (game.rests || 0) + 1; MaybeEvent('rest', 'rest'); }
       if (game.task == 'rest' && typeof Gossip == "function") Gossip('rest');
     } else if (game.task == 'heading') {
+      game.trips = (game.trips || 0) + 1;   // (walked, in circles: chronicle.js)
       MaybeEvent('road', 'heading');
       if (typeof Gossip == "function") Gossip('arrive');
     } else if (Split(game.task,0) == 'event') {
@@ -369,12 +370,14 @@ function Dequeue() {
       var offer = ShopPower();
       if (WinEquip(offer, true)) {
         Add(Inventory,'Gold',-ShopPrice(offer));
+        game.shopSpent = (game.shopSpent || 0) + ShopPrice(offer);
       } else {
         game.shopped = true;  // nothing worth buying until next trip
       }
     } else if ((game.task == 'market') || (game.task == 'sell')) {
       if (game.task == 'market') {
         RestoreHealth();  // a night at the inn
+        game.trips = (game.trips || 0) + 1;
         game.lastMarket = game.elapsed || 0;
         BankPurse();
         game.shopped = false;
@@ -387,6 +390,7 @@ function Dequeue() {
           amt *= (1+RandomLow(10)) * (1+RandomLow(GetI(Traits,'Level')));
         amt = Math.round(amt * ChaFactor(K.Loot.PriceSlope, K.Loot.PriceMin, K.Loot.PriceMax) * MutatorProduct('goldMult'));
         Inventory.remove1();
+        game.sold = (game.sold || 0) + 1;
         Add(Inventory, 'Gold', amt);
         game.goldEarned = (game.goldEarned || 0) + amt;
         CodexBump('gold', amt);
@@ -625,6 +629,7 @@ function FinishFight() {
   if (fight.outcome == 'win' || fight.outcome == 'close') {
     game.wins = (game.wins || 0) + 1;
     game.streak = (game.streak || 0) + 1;
+    game.bestStreak = Max(game.bestStreak || 0, game.streak);   // (for the Hall's ridicule: chronicle.js)
     CodexBump('wins', 1);
   } else {
     game.streak = 0;   // a defeat or running away ends a winning streak
@@ -731,7 +736,9 @@ function MakeObituary(fight) {
     cause: (fight.boss ? 'Slain by the Old Bastard\u2122 himself' : 'Slain by ' + foe) + ' at level ' + level,
     lastWords: O.lastWords.length ? StoryText(Pick(O.lastWords), vars) : '',
     epitaph: O.epitaphs.length ? StoryText(Pick(O.epitaphs), vars) : '',
-    cheater: game.cheater ? game.cheater.reason : null
+    cheater: game.cheater ? game.cheater.reason : null,
+    // the gravestone's statistics (chronicle.js)
+    ridicule: typeof RidiculeStats == "function" ? RidiculeStats('died', fight) : null
   };
   // their character sheet as it was (the Hall of the Fallen links to it:
   // FallenSheet). (transfer.js isn't loaded in the simulator.)
@@ -754,6 +761,8 @@ function ShowDeath(obit) {
     (obit.legacy ? " Carried the legacy of " + obit.legacy + (obit.legacy == 1 ? " legend." : " legends.") : ""));
   $("#DeathWords").text(obit.lastWords ? "Last words: \u201c" + obit.lastWords + "\u201d" : "");
   $("#DeathEpitaph").text(obit.epitaph);
+  if (typeof RidiculeBox == "function" && obit.ridicule)   // (it scrolls: the keyboard can reach it)
+    $("#DeathRidicule").empty().append(RidiculeBox(obit.ridicule).attr({ tabindex: 0, "aria-label": "Itemized Ridicule" }));
   if (!dlg.open) dlg.showModal();
 }
 
@@ -981,7 +990,10 @@ function MakeLegend() {
     cheater: game.cheater ? game.cheater.reason : null,
     unverified: game.unverified || null,
     // their character sheet as it was (the Hall links to it: LegendSheet)
-    sheet: SharePayload(game, { retired: new Date().toISOString() })
+    sheet: SharePayload(game, { retired: new Date().toISOString() }),
+    // the front page's statistics, and their rival (chronicle.js, story.js)
+    ridicule: typeof RidiculeStats == "function" ? RidiculeStats('retired') : null,
+    rival: typeof RivalMet == "function" && RivalMet() ? RivalFull() : ''
   };
 }
 
@@ -2380,6 +2392,10 @@ function ToggleCombatLog() {
 function Defeated(fight) {
   var D = K.Defeat;
   game.deaths = (game.deaths || 0) + 1;
+  // the most humiliating: the monster furthest below you ever to beat you
+  // (on a tie, the lowest level)
+  if (!fight.boss && WorseDefeat(fight.foeLevel || GetI(Traits,'Level'), GetI(Traits,'Level'), game.worstDefeat))
+    game.worstDefeat = { foe: fight.foe, level: fight.foeLevel || GetI(Traits,'Level'), at: GetI(Traits,'Level') };
 
   // Pockets: a share of the purse and of each stack of loot
   var lostGold = 0, lostItems = 0, loss = MutatorProduct('lossMult');
@@ -2428,6 +2444,13 @@ function Defeated(fight) {
   game.wounded = D.WoundedFights;
   game.caution = Min(D.CautionMax, (game.caution || 0) + D.CautionPerDefeat);
   ShowCondition();
+}
+
+// Is losing to a level `level` monster at level `at` worse than `worst`?
+function WorseDefeat(level, at, worst) {
+  if (!worst) return true;
+  var gap = at - level, was = worst.at - worst.level;
+  return gap > was || (gap == was && level < worst.level);
 }
 
 // Seconds at the temple: longer at higher levels, shorter with more CON
@@ -3454,6 +3477,9 @@ function FormCreate() {
     $("#DeathMenu").on("click", function () { window.location.href = "index.html"; });
     $("#DeathJournal, #JournalLink").on("click", function (e) { e.preventDefault(); OpenJournal(); });
     $("#RetireJournal").on("click", function (e) { e.preventDefault(); DownloadJournal(); });
+    // their life as a bad fantasy novel (chronicle.js)
+    $("#RetireNovel").on("click", function (e) { e.preventDefault(); DownloadNovel({ retiring: true }); });
+    $("#DeathNovel").on("click", function (e) { e.preventDefault(); DownloadNovel(); });
     $("#RetireNo").on("click", function () { this.closest("dialog").close(); });
     $("#DailyOk").on("click", function () { this.closest("dialog").close(); });
     $("#DailyMenu").on("click", function () { window.location.href = "index.html#challenge"; });

@@ -160,6 +160,7 @@ function run(opts) {
   if (fs.existsSync(path.join(opts.dir, "journal.js"))) load(ctx, opts.dir, "journal.js");
   if (fs.existsSync(path.join(opts.dir, "gossip.js"))) load(ctx, opts.dir, "gossip.js");
   if (fs.existsSync(path.join(opts.dir, "minus.js"))) load(ctx, opts.dir, "minus.js");   // (after gossip.js: it adds to Scrollr)
+  if (fs.existsSync(path.join(opts.dir, "chronicle.js"))) load(ctx, opts.dir, "chronicle.js");   // (the Hall's ridicule)
   load(ctx, opts.dir, "newguy.js");
   if (opts.setup) opts.setup(ctx);   // (for tests: change the rules first)
 

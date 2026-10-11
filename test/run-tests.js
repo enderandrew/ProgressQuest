@@ -22,6 +22,7 @@
 //              (the limits are in Balance below: change them when you change
 //              the balance on purpose)
 //   journal    it stays small
+//   chronicle  the Hall's ridicule and the bad fantasy novel
 //   New Game−  cursed, harsher, its own words and events, and it replays
 //   rival      met at the end of Act I, then the nemesis; changes nothing
 //   Scrollr    the feed never changes the game, never repeats, stays small
@@ -348,6 +349,30 @@ test("the journal starts at level 1, and keeps to its budget however long a hero
   check(flooded.finale, "the finale was dropped");
   note(`first entry at level 1 (task ${first.tasks}); flooded with 6,000 entries: ${flooded.entries} kept, ` +
        `${Math.round(flooded.chars / 1000)}k characters`);
+});
+
+// ---- the chronicle ----------------------------------------------------------------
+
+test("the Hall's ridicule and the bad fantasy novel (chronicle.js)", () => {
+  let novel = null, rows = null, game = null;
+  play({ levels: 30, seed: "test-novel", onTask(ctx) {
+    const g = ctx.game;
+    if (!novel && g.act >= 2 && !g.event && !g.queue.length) {
+      novel = ctx.NovelText({ retiring: true });
+      rows = ctx.RidiculeStats("retired");
+      game = { trips: g.trips, rests: g.rests, sold: g.sold, worst: g.worstDefeat, best: g.bestStreak };
+    }
+  } });
+  check(novel, "never reached Act II");
+  check(game.trips > 0 && game.rests > 0 && game.sold > 0 && game.best > 0, "the counters didn't count: " + JSON.stringify(game));
+  check(rows.length >= 10 && rows.every((r) => r[0] && r[1] && !/undefined|NaN|\{/.test(r[1])), "the ridicule: " + JSON.stringify(rows));
+  check(/Primary Cause of Retirement/.test(JSON.stringify(rows)), "no primary cause");
+  ["## Prologue", "## Chapter I:", "## Chapter II:", "## Epilogue", "## Appendix A: Itemized Ridicule", "retired to the Hall of Legends"]
+    .forEach((part) => check(novel.indexOf(part) >= 0, "the novel has no " + part));
+  check(!/\{[a-z][a-z0-9-]*\}/i.test(novel), "a placeholder wasn't filled in: " + (novel.match(/.{30}\{[a-z][a-z0-9-]*\}.{10}/i) || [""])[0]);
+  check(!/undefined|NaN/.test(novel), "the novel says undefined or NaN");
+  note(`${novel.length.toLocaleString()} characters; ${(novel.match(/^## Chapter .*/m) || [""])[0]}; ` +
+       `${rows[3][0]}: ${rows[3][1]}`);
 });
 
 // ---- New Game− ------------------------------------------------------------------

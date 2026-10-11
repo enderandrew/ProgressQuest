@@ -259,6 +259,7 @@ var MenuBar = [
   { label: "&Journal", items: [
     { label: "&Read the Journal…", key: "J", action: function () { OpenJournal(); } },
     { label: "&Download as Text", action: function () { DownloadJournal(); } },
+    { label: "Export as &Bad Fantasy Novel", action: function () { DownloadNovel(); } },
     "-",
     { label: "&What Gets Written Down", action: function () {
       WinBox({ title: "The Journal", icon: "info",

@@ -1,0 +1,106 @@
+/* The front page and the gravestone (chronicle.js), in a window of their own */
+
+dialog.chronicle-dlg {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-width: min(760px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+dialog.chronicle-dlg::backdrop { background: rgba(10, 8, 4, 0.6); }
+.chronicle-close {
+  position: sticky;
+  top: 6px;
+  float: right;
+  margin: 6px 6px -34px 0;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  font: bold 18px/1 Georgia, serif;
+  color: #222;
+  background: #fff;
+  border: 1px solid #555;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.chronicle-close:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
+
+/* ---- The front page ---------------------------------------------------------- */
+.frontpage {
+  background: #f6efdc;
+  color: #1d1a14;
+  padding: 18px 22px 20px;
+  font-family: Georgia, "Times New Roman", serif;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+}
+.fp-mast {
+  text-align: center;
+  font: bold 38px/1.1 "Old English Text MT", "UnifrakturMaguntia", Georgia, serif;
+  letter-spacing: 0.02em;
+  border-bottom: 3px double #1d1a14;
+  padding-bottom: 6px;
+}
+.fp-dateline {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font: italic 12px Georgia, serif;
+  border-bottom: 1px solid #1d1a14;
+  padding: 3px 0;
+  margin-bottom: 10px;
+}
+.fp-headline {
+  font: 900 30px/1.05 Georgia, "Times New Roman", serif;
+  text-align: center;
+  margin: 8px 0 6px;
+  letter-spacing: -0.01em;
+}
+.fp-subhead { text-align: center; font-style: italic; font-size: 15px; margin-bottom: 12px; color: #3a342a; }
+.fp-cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+.fp-story p { font-size: 14px; line-height: 1.45; margin: 0 0 9px; text-align: justify; hyphens: auto; }
+.fp-story p:first-child::first-letter { float: left; font-size: 42px; line-height: 0.9; padding: 3px 5px 0 0; font-weight: bold; }
+.fp-classified { margin-top: 10px; padding: 6px 8px; border: 1px dashed #5a5242; font: 12px/1.35 "Courier New", monospace; }
+@media (max-width: 600px) {
+  .fp-cols { grid-template-columns: 1fr; }
+  .fp-mast { font-size: 28px; }
+  .fp-headline { font-size: 22px; }
+}
+
+/* ---- The gravestone ---------------------------------------------------------- */
+.gravestone {
+  background: linear-gradient(#c9c7c2, #a9a6a0);
+  color: #1c1b19;
+  padding: 34px 28px 22px;
+  border-radius: 140px 140px 8px 8px;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.35), 0 6px 24px rgba(0, 0, 0, 0.45);
+  min-width: min(460px, calc(100vw - 24px));
+}
+.gs-rip { font: bold 34px Georgia, serif; letter-spacing: 0.2em; color: #2b2a27; }
+.gs-name { font-size: 24px; font-weight: bold; margin: 6px 0 2px; }
+.gs-what { font-style: italic; margin-bottom: 10px; }
+.gs-cause { margin-bottom: 6px; }
+.gs-words, .gs-epitaph { font-style: italic; margin: 4px auto; max-width: 420px; }
+.gravestone .ridicule { text-align: left; margin-top: 14px; background: rgba(255, 255, 255, 0.35); }
+
+/* ---- Itemized Ridicule ------------------------------------------------------- */
+.ridicule { border: 1px solid #1d1a14; padding: 8px 10px; background: rgba(255, 255, 255, 0.4); align-self: start; }
+.ridicule-head {
+  font: 900 13px Georgia, serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid #1d1a14;
+  margin-bottom: 6px;
+  padding-bottom: 3px;
+}
+.ridicule dl { margin: 0; font-size: 12.5px; line-height: 1.3; }
+.ridicule dt { font-weight: bold; margin-top: 5px; }
+.ridicule dd { margin: 0 0 0 10px; }
+.ridicule dt:last-of-type { color: #7a0e0e; }
+.ridicule-none { font-style: italic; font-size: 12.5px; margin: 0; }
+
+/* On the tombstone in the game (main.html's DeathDialog) */
+#DeathRidicule .ridicule { margin-top: 10px; text-align: left; max-height: 240px; overflow: auto; }

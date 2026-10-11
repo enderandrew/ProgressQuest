@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="codex.css" type="text/css">
 <link rel="stylesheet" href="win95.css" type="text/css">
 <link rel="stylesheet" href="minus.css" type="text/css">
+<link rel="stylesheet" href="chronicle.css" type="text/css">
 <title>Progress Quest Remix</title>
 <meta name="apple-mobile-web-app-capable" content="yes" />
 
@@ -54,6 +55,7 @@
 <script src="transfer.js"></script>
 <script src="main.js"></script>
 <script src="journal.js"></script>
+<script src="chronicle.js"></script>
 <script src="gossip.js"></script>
 <script src="minus.js"></script>
 <script src="menubar.js"></script>
@@ -346,8 +348,10 @@
     <div id="DeathStats"></div>
     <div id="DeathWords"></div>
     <div id="DeathEpitaph"></div>
+    <div id="DeathRidicule"></div>
     <div class="dlg-buttons">
       <button type="button" id="DeathJournal">Journal</button>
+      <button type="button" id="DeathNovel" title="Their life, as a bad fantasy novel (Markdown)">Novel</button>
       <button type="button" id="DeathHall">Hall of the Fallen</button>
       <button type="button" id="DeathMenu">Main menu</button>
     </div>
@@ -384,7 +388,8 @@
       count as honored. Retired heroes leave your roster, so this can't be undone.</div>
     <div class="dlg-small"><a id="RetireJournal" href="#">Download their journal</a> or
       <a id="RetireBackup" href="#">a backup</a>
-      if you might want to play them again.</div>
+      if you might want to play them again, or
+      <a id="RetireNovel" href="#">their life as a bad fantasy novel</a> (it can't be had once they're gone).</div>
     <div class="dlg-buttons">
       <button type="button" id="RetireYes">Retire</button>
       <button type="button" id="RetireNo">Cancel</button>

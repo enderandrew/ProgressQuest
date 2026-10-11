@@ -496,6 +496,42 @@ the finale always stay. A level 50 hero's journal comes to about 300
 entries and 70 KB.
 
 
+Front pages, gravestones and the novel
+--------------------------------------
+
+The end of a hero gets written up (chronicle.js):
+
+- A hero who retires makes the front page of a mock newspaper (The Idle
+  Times, The Killing Fields Courier...): a headline ("HERO FINISHES QUEST,
+  DEMANDS PENSION"), the story of their career, a classified ad, and the
+  weather (grim). It opens in the Hall of Legends when they retire, and
+  their row's "Front page" button shows it again.
+- A Hardcore hero who dies gets a gravestone: the tombstone in the game,
+  and "Gravestone" in the Hall of the Fallen.
+- Both carry the Itemized Ridicule (RidiculeStats): Total Distance Walked
+  in Circles, Total Gold Wasted on Useless Clutter (the gold sinks), Gold
+  Handed to Shopkeepers Anyway, Most Humiliating Defeat (the monster
+  furthest below the hero ever to beat them), Monsters Inconvenienced,
+  Times Dragged Back to Town, Naps Taken, Viscera Sold, Quests Done for
+  People Who Could Have Done Them Themselves, Decisions Left to Fate, the
+  Longest Winning Streak, Time Spent Watching Progress Bars, and the
+  Primary Cause of Death ("Overconfidence", when the monster was below
+  them) or of Retirement. The game counts what it needs (game.trips,
+  rests, sold, shopSpent, bestStreak, worstDefeat); a hero from before
+  that is estimated, or counted from then on. The ridicule is kept with
+  the legend or the obituary, so the Hall shows it for good; legends from
+  before it say so.
+- Journal > Export as Bad Fantasy Novel downloads the hero's life as a
+  Markdown manuscript: a title ("A Song of Loot and Viscera"), praise
+  from their rival and the Old Bastard™, the Prologue, a chapter for each
+  Act with a faux title ("The Quarterly Report, Again", "The Fellowship
+  of the Rescue") made of the Act's story, the journal through it and the
+  Act's ending, an epilogue, the ridicule as an appendix, About the
+  Author and Also by. It's made from the journal, so it can only be had
+  while the hero is around: from the Journal menu, the retirement window
+  (just before) and the tombstone. A level 50 hero's runs to about 60,000
+  characters, 10,000 words.
+
 Scrollr
 -------
 

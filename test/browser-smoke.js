@@ -209,6 +209,17 @@ function step(name, ok, detail) {
     return heard.join(", ");
   });
 
+  await tryStep("the journal exports as a bad fantasy novel (Journal menu)", async () => {
+    const dl = page.waitForEvent("download");
+    await page.locator("#MenuBar .menu-top", { hasText: "Journal" }).click();
+    await page.locator("#MenuBar .menu-pop:visible li", { hasText: "Bad Fantasy Novel" }).click();
+    const file = await dl;
+    const text = require("fs").readFileSync(await file.path(), "utf8");
+    if (!/^# /.test(text) || text.indexOf("## Prologue") < 0 || text.indexOf("Itemized Ridicule") < 0)
+      throw new Error("not much of a novel: " + text.slice(0, 120));
+    return file.suggestedFilename() + ", " + text.length.toLocaleString() + " characters";
+  });
+
   await tryStep("Scrollr: R opens the feed, newest first, and clears the count", async () => {
     await page.evaluate(() => {
       ToggleFeed(false);
@@ -383,6 +394,21 @@ function step(name, ok, detail) {
     await page.click('#dlgCodex [data-tab="bestiary"]');
     await page.waitForSelector("#codexPane.codex-bestiary td.elite");
     return unique;
+  });
+
+  await tryStep("the Hall of Legends: the front page of the day they retired, with its ridicule", async () => {
+    await page.goto(BASE + "index.html#hall");
+    await page.waitForSelector("#legends .row .chronicle");
+    await page.click("#legends .row .chronicle");
+    await page.waitForSelector("dialog.chronicle-dlg[open] .frontpage");
+    const paper = await page.evaluate(() => ({
+      headline: $("dialog.chronicle-dlg .fp-headline").text(),
+      rows: $("dialog.chronicle-dlg .ridicule dt").length,
+      cause: $("dialog.chronicle-dlg .ridicule dt").last().text() + ": " + $("dialog.chronicle-dlg .ridicule dd").last().text()
+    }));
+    await page.keyboard.press("Escape");
+    if (paper.rows < 10) throw new Error("only " + paper.rows + " lines of ridicule");
+    return paper.headline + " / " + paper.cause;
   });
 
   await tryStep("New Game−: its own window, a hero in the dark, who dies in large red letters", async () => {

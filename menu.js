@@ -525,6 +525,7 @@ function ShowFallen(fallen) {
     ShareCodeFor(FallenSheet(o)).then(function (code) {
       sheetLink.attr("href", ShareUrl(code)).prop("hidden", false);
     }, function () {});
+    row.find(".chronicle").on("click", function () { OpenChronicle(o, 'died'); });   // (chronicle.js)
     row.find(".del").on("click", function () {
       if (!confirm("Remove " + o.name + "'s obituary from the Hall of the Fallen?")) return;
       storage.loadFallen(function (all) {
@@ -618,6 +619,7 @@ function ShowHall(legends) {
                                l.unverified ? "unverified (" + l.unverified + ")" : "started at level " + l.startLevel) +
         "; doesn't count for New Game+"));
     }
+    row.find(".chronicle").on("click", function () { OpenChronicle(l, 'retired'); });   // (chronicle.js)
     row.find(".del").on("click", function () {
       if (!confirm("Remove " + l.name + " from the Hall of Legends? Their race and class will no longer count as honored.")) return;
       storage.loadLegends(function (all) {
@@ -628,6 +630,12 @@ function ShowHall(legends) {
   });
   var lit = list.find(".lit")[0];
   if (lit) lit.scrollIntoView({ block: "nearest" });
+  // A hero who just retired (index.html#hall/<id>): the morning paper
+  var fresh = legends.filter(function (l) { return l.id === hashTarget && l.ridicule; })[0];
+  if (fresh && !ShowHall.paperShown) {
+    ShowHall.paperShown = true;
+    OpenChronicle(fresh, 'retired');
+  }
 }
 
 // The finale level lives in combat.js (K.Boss), which the menu doesn't load
