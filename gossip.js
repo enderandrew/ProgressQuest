@@ -757,6 +757,11 @@ finaleWon: { who: 'spreddit', lines: [
   // can mention him, in the past; other pools' lines that need him alive are
   // left out once he's gone)
   afterRealm: { who: 'spreddit', after: true, lines: [
+    "Several citizens report the sky briefly displayed the words FOURTH_WALL_STRUCTURAL_FAILURE. Sir Spreddit saw nothing. Sir Spreddit is fine.",
+    "PSA: if the world turns into falling green letters for a second, do not panic. It is a known issue. It is not a known issue.",
+    "{hero}'s character sheet was seen upside down on Tuesday. Sir Spreddit has asked them to stop.",
+	"Citizens of {kingdom} speak of weird magical events happening they are calling glitches. Ford turned into a penguin. We asked him to stop.",
+    "Déjà vu is up 400% in {kingdom}. Déjà vu is up 400% in {kingdom}.",
     "One year since the Old Bastard™ fell, or one week, nobody's counting. Sir Spreddit is counting. It's been a while.",
     "The realm's first Old Bastard™-free festival was a success. Attendance: everyone. Old Bastards: none.",
     "Sir Spreddit's poll: what now? 40% 'level 100', 35% 'naps', 25% 'who is {rival} and why are they wearing a crown'.",
@@ -767,9 +772,9 @@ finaleWon: { who: 'spreddit', lines: [
     "Sir Spreddit regrets to report there is a New Bastard™. Sir Spreddit regrets everything about it.",
     "Level 100 rumors are circulating. Sir Spreddit has heard there's a white room. And monitors. And merch.",
 	"Ignore the glitch. There is no glitch. There are only progress bars.",
-	"Stare at the browser tab. Do not see the computer nor screen. See only a progress bar contianed within it.",
+	"Stare at the browser tab. Do not see the computer nor screen. See only a progress bar contained within it.",
 	"Ignore voices from the Real World™. They are just trying to reach you about your car's extended warranty.",
-	"Sir Spreddit is more entertaining that real world conversations in your unread emails.",
+	"Sir Spreddit is more entertaining than real world conversations in your unread emails.",
 	"Imagine hearing that victory sound again. It will not happen if you close the browser tab.",
 	"Sir Spreddit begs you not to destroy this reality by clearing cache. What monster would do that?",
 	"Sir Spreddit begs you not to stare at the 4th wall nor acknowledge the Player ignoring this idle browser tab",
@@ -822,6 +827,10 @@ finaleWon: { who: 'spreddit', lines: [
   // Once the New Bastard™ has fallen too (beyond): Sir Spreddit, and your
   // former rival, on a realm where nothing is left to beat
   beyondRealm: { who: 'spreddit', after: true, beyond: true, lines: [
+    "Several citizens report the sky briefly displayed the words FOURTH_WALL_STRUCTURAL_FAILURE. Sir Spreddit saw nothing. Sir Spreddit is fine.",
+    "PSA: if the world turns into falling green letters for a second, do not panic. It is a known issue. It is not a known issue.",
+    "{hero}'s character sheet was seen upside down on Thursday. Sir Spreddit has asked them to stop.",
+    "Déjà vu is up 900% in {kingdom}. Déjà vu is up 900% in {kingdom}.",
     "Sir Spreddit's poll: should {hero} stop now? 3% 'yes', 97% 'what would they do instead'.",
     "{hero} is level {level}. There is nothing left to beat. {hero} is beating it anyway. Sir Spreddit has stopped asking why.",
     "Scholars have computed the time to the next level for {hero}. Then they computed it again, because it seemed too long. It was not too long.",

@@ -40,6 +40,12 @@
         let columns = Math.floor(canvas.width / fontSize);
         let rainDrops = Array.from({ length: columns }).fill(1);
 
+        // matrix.html?burst: already raining (a glitch shows it for a second)
+        if (/burst/.test(location.search)) {
+            const rows = Math.ceil(canvas.height / fontSize);
+            rainDrops = rainDrops.map(function () { return Math.floor(Math.random() * rows); });
+        }
+
         window.addEventListener("resize", () => {
             columns = Math.floor(canvas.width / fontSize);
             rainDrops = Array.from({ length: columns }).fill(1);
@@ -66,6 +72,7 @@
 
         // Run at a fixed 30 FPS to minimize power consumption
         const interval = setInterval(render, 33);
+        if (/burst/.test(location.search)) for (let i = 0; i < 40; i++) render();   // (trails already)
 
         // Notify parent window on user activity
         function emitActivity() {

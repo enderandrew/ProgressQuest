@@ -441,9 +441,16 @@ test("three paces, and what can be said once the Old Bastard™ and the New Bast
   const ok = ctx.PostVictoryOK, g = ctx.game;
   const lines = ["The Old Bastard™ grins", "Onward, to level 100", "Level 101, then", "A rat"];
   check(lines.every((l) => ok(l)), "a line was held back while both live");
+  const bastard = () => ctx.StoryText("Search for {the-bastard} ({bastard})", ctx.StoryVars());
+  check(bastard() == "Search for the Old Bastard™ (Old Bastard™)", "{the-bastard} while he lives: " + bastard());
+  const storiesThen = ctx.K.Stories.filter((s) => ok(s.setup)).length;
   g.finale = { state: "won" };
   check(!ok(lines[0]) && ok(lines[0], "post") && ok(lines[1]) && ok(lines[2]), "after the Old Bastard™");
+  check(bastard() == "Search for the New Bastard™ (New Bastard™)" && ok("{the-bastard} will pay"), "{the-bastard} after him: " + bastard());
+  const storiesAfter = ctx.K.Stories.filter((s) => ok(s.setup)).length;
+  check(storiesAfter >= storiesThen - 5, "stories after him: " + storiesAfter + " of " + storiesThen);
   g.endgame = { state: "won" };
+  check(!ok("{the-bastard} will pay") && !ok("Hunt {bastard}") && ok("{the-bastard} will pay", "beyond"), "{the-bastard} after both");
   check(!ok(lines[0]) && ok(lines[0], "post") && !ok(lines[1]) && !ok(lines[1], "post") && ok(lines[1], "beyond") && ok(lines[2]) && ok(lines[3]), "after the New Bastard™");
   const ending = ctx.PostVictoryEnding(["You find {rival}", "Onward, to level 100."], ctx.StoryTemplate("post-tour"));
   check(ending.length == 2 && !/level 100/.test(ending[1]) && ctx.K.PostVictory.Beyond.indexOf(ending[1]) >= 0, "the ending after both: " + JSON.stringify(ending));
@@ -452,7 +459,7 @@ test("three paces, and what can be said once the Old Bastard™ and the New Bast
   check(stories.some((s) => s.beyond) && !stories.some((s) => /level 100/.test(s.setup)), "the stories for after both");
   note(`to level 50 (days of fighting): Sonic ${order[0].toFixed(1)}, Saga ${Math.round(order[1])}, Classic / Slow ${Math.round(order[2])}; ` +
        `to 101: Saga ${(days("saga", 101) / 365).toFixed(1)} years, Classic / Slow ${Math.round(days("slow", 101) / 365)}, Sonic ${Math.round(days("sonic", 101) / 365)}; ` +
-       `${stories.length} stories after both`);
+       `${stories.length} stories after both; ${storiesAfter} of ${storiesThen} older ones after him`);
 });
 
 // ---- the chronicle ----------------------------------------------------------------

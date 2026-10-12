@@ -99,6 +99,11 @@ function SettingsList() {
       get: function () { return $("body").hasClass("show-log"); }, set: function (on) { if (on != $("body").hasClass("show-log")) ToggleCombatLog(); } },
     { section: "Display", label: "Desktop icons", kind: "check",
       get: function () { return !DesktopIconsHidden(); }, set: function (on) { if (on == DesktopIconsHidden()) ToggleDesktopIcons(); } },
+    { section: "Display", label: "Glitches in the Matrix, after the Old Bastard™", kind: "check",
+      get: function () { return typeof GlitchesOn == "function" && GlitchesOn(); },
+      set: function (on) { SettingSet("glitches", on ? null : "0"); },
+      help: "Past level 50, the game starts to come apart: a moment of wrong colors, a heading in katakana, the screensaver for a second, " +
+            "a stop screen about the fourth wall. Rare at level 51, every few minutes by 100. Only for show; nothing moves with reduced motion asked for." },
     { section: "Display", label: "Your entourage has a word now and then", kind: "check",
       get: ChatterOn, set: function (on) { SettingSet("chatter", on ? "1" : "0"); if (!on) $("#Company").text(""); },
       help: "What your henchman, tutor or pet rock makes of it all, under the fight line. Only for show." },
@@ -118,7 +123,7 @@ function SettingsList() {
 
 // Defaults: what Reset puts back
 var SettingsDefaults = { narrate: null, voice: null, rate: null, volume: null, eventpopup: null,
-                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null, sound: null, soundvolume: null, soundhidden: null, soundpopup: null,
+                         popuplinger: null, choicealert: null, icons: null, debug: null, announce: null, sound: null, soundvolume: null, soundhidden: null, soundpopup: null, glitches: null,
                          chatter: null };
 
 function OpenSettings(tab) {

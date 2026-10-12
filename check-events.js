@@ -63,7 +63,7 @@ if (!Array.isArray(events)) {
 const WHERE = ["rest", "road", "town", "field"];
 const EFFECTS = ["gold", "item", "stat", "spell", "equip", "heal", "wounded", "xp"];
 const STATS = ["random", "STR", "CON", "DEX", "INT", "WIS", "CHA"];
-const PLACEHOLDERS = ["nemesis", "rival", "rival-full", "rival-level", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
+const PLACEHOLDERS = ["bastard", "the-bastard", "nemesis", "rival", "rival-full", "rival-level", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
                       "item", "boring", "race", "race-one", "klass", "insult", "hero",
                       "gold", "loot"];
 
@@ -220,7 +220,7 @@ events.forEach((e) => {
   else if (!sinkByKey[e.sink].boon) error(`event "${e.key}": sink "${e.sink}" has no boon, so nothing lasts for the event to need`);
 });
 const COMPANY_KINDS = ["who", "idle", "win", "close", "flee", "defeat"];
-const COMPANY_WORDS = ["who", "hero", "klass", "weapon", "spell", "level", "foe", "rounds"];
+const COMPANY_WORDS = ["bastard", "the-bastard", "who", "hero", "klass", "weapon", "spell", "level", "foe", "rounds"];
 Object.keys(K.SinkCompany || {}).forEach((key) => {
   const c = K.SinkCompany[key], name = `K.SinkCompany.${key}`;
   if (!sinkByKey[key]) { error(`${name}: there's no gold sink "${key}"`); return; }
@@ -250,7 +250,7 @@ Object.keys(K.SinkCompany || {}).forEach((key) => {
 });
 
 // 2d. Scrollr (gossip.js): every line's placeholders mean something
-const GOSSIP_WORDS = ["rival", "rival-full", "rival-level", "next", "hero", "race", "klass", "a-klass", "level", "alignment", "weapon", "gear", "spell", "wins",
+const GOSSIP_WORDS = ["bastard", "the-bastard", "rival", "rival-full", "rival-level", "next", "hero", "race", "klass", "a-klass", "level", "alignment", "weapon", "gear", "spell", "wins",
                       "deaths", "kingdom", "kingdom2", "giver", "nemesis", "nemesis2", "guy", "guy2", "boring",
                       "item", "race-one", "insult", "act", "quest", "foe", "a-foe", "monsters", "loot", "rounds",
                       "done", "thing", "gold", "event", "where", "choice", "seconds", "elite", "kind", "cause"];
@@ -304,7 +304,7 @@ if (K.GossipPools) {
 
 // 3. The Act stories (story.js): every race and class has one, and each
 // story is complete
-const STORY_WORDS = ["nemesis", "rival", "rival-full", "rival-level", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
+const STORY_WORDS = ["bastard", "the-bastard", "nemesis", "rival", "rival-full", "rival-level", "nemesis2", "guy", "guy2", "giver", "kingdom", "kingdom2",
                      "item", "boring", "race", "race-one", "klass", "insult", "hero"];
 const storyKeys = {};
 let storyCount = 0;

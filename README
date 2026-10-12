@@ -486,8 +486,19 @@ go on for as long as you do. A Daily hero who starts high, or a hero from
 before Acts went by level, catches up to the Act for their level when the
 current one ends.
 
+A line about whoever you're after, rather than about him in particular,
+says {the-bastard} (or {bastard}, without "the"): the Old Bastard™ until
+he falls, then your rival, the New Bastard™ (BastardName in story.js;
+"A blind seer foretells that the Chosen One will defeat {the-bastard}").
+Lines about him in particular say "Old Bastard™": he's old, he haunts
+your dreams, he has a grandmother, he taunted you once. Swapping every
+"Old Bastard™" for "New Bastard™" would have the New Bastard™ dying of old
+age and haunting dreams, so it's a choice made line by line; 13 stories
+and a dozen journal lines and events use it, so 37 of the 40 Act stories
+can still come up after him (24 did before).
+
 Once the Old Bastard™ has fallen, nothing sends you after him: stories
-that start with him aren't picked (K.PostStories, 28 stories for after
+that start with him aren't picked (K.PostStories, 32 stories for after
 him, are), an Act ending's "You resume your quest to go after that Old
 Bastard™" becomes what you're after now (K.PostVictory.Resume), and the
 journal, Scrollr, events, quests and the entourage leave out lines that
@@ -497,8 +508,25 @@ afterRealm and newBastard, events with after: true) can mention him, in
 the past. Once the New Bastard™ has fallen too, the same goes for them:
 nothing has them still waiting at level 100 (K.EndgameWords), "Onward, to
 level 100" becomes K.PostVictory.Beyond, and what's written for after
-them (beyond: true; 4 stories, Scrollr's beyondRealm and exRival, the
-journal's K.JournalEndAsides, 4 events) takes over.
+them (beyond: true; 6 stories, Scrollr's beyondRealm and exRival, the
+journal's K.JournalEndAsides, a few events) takes over, and a line with
+{the-bastard} isn't said: there's nobody left to be after.
+
+Glitches in the Matrix (glitch.js): once the Old Bastard™ has fallen, the
+game starts to come apart, a little more every level. A moment of
+something wrong with the page (colors split, a panel skewed, inverted,
+torn or upside down, a heading in katakana, Comic Sans, a strange window
+title, "Wake up, {hero}..." in green, a ghost of a panel), the Matrix
+screensaver for a second, or a stop screen about the fourth wall that goes
+away after five seconds (K.GlitchStops: FOURTH_WALL_STRUCTURAL_FAILURE,
+NUMBER_GO_UP_OVERFLOW, PLAYER_DETECTED...). On average once every four
+hours of watching at level 51, every half hour at 75, every four minutes
+at 100 and past it (K.Glitch). Never in a background tab, while time away
+is caught up, while a window is open, or once the hero is dead; with
+reduced motion asked for, only the ones that don't move. Only for show:
+it rolls Math.random, never the game's dice, so saves and replays never
+see it. Settings > Display turns them off; Glitch() in the browser's
+console makes one now (Glitch("bsod"), Glitch("css", "flip")).
 
 Past level 50 the game knows what it is. The monsters, weapons and armor
 from 51 to 100 are about computers and about not stopping (the Sunk Cost

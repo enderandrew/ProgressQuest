@@ -240,6 +240,32 @@ function step(name, ok, detail) {
     return seen.pops.join(" / ");
   });
 
+  await tryStep("glitches in the Matrix, after the Old Bastard™: CSS, the screensaver for a second, a stop screen for five", async () => {
+    const seen = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const was = { finale: game.finale, level: Get(Traits, "Level") };
+      const before = { ready: GlitchReady() };
+      game.finale = { state: "won", wonLevel: 50, tries: 1 };
+      Put(Traits, "Level", 80);
+      const ready = GlitchReady(), often = [51, 75, 100].map((l) => Math.round(GlitchMinutes(l)));
+      const heads = () => $("#main .panel-toggle").map(function () { return this.textContent; }).get().join("|");
+      const h0 = heads();
+      Glitch("css", "scramble"); const scrambled = heads() != h0; await wait(1300); const restored = heads() == h0;
+      Glitch("css", "rgb"); const rgb = $("#main").hasClass("glitch-rgb"); await wait(900);
+      const flash = Glitch("matrix"); const up = !!document.getElementById("pq-screensaver-container"); await wait(1300);
+      const gone = !document.getElementById("pq-screensaver-container");
+      Glitch("bsod"); const stop = document.getElementById("StopScreen").open; await wait(5400);
+      const closed = !document.getElementById("StopScreen").open;
+      SettingSet("glitches", "0"); const off = !GlitchReady(); SettingSet("glitches", null);
+      game.finale = was.finale; Put(Traits, "Level", was.level);
+      return { before: before.ready, ready, often, scrambled, restored, rgb, flash, up, gone, stop, closed, off, clean: $("#main").attr("class") };
+    });
+    if (seen.before || !seen.ready || !(seen.often[0] > seen.often[1] && seen.often[1] > seen.often[2]) || !seen.scrambled || !seen.restored ||
+        !seen.rgb || seen.flash != "matrix" || !seen.up || !seen.gone || !seen.stop || !seen.closed || !seen.off || seen.clean != "vbox window")
+      throw new Error("the glitches: " + JSON.stringify(seen));
+    return "every " + seen.often.join(" / ") + " minutes at levels 51 / 75 / 100";
+  });
+
   await tryStep("the journal exports as a bad fantasy novel (Journal menu)", async () => {
     const dl = page.waitForEvent("download");
     await page.locator("#MenuBar .menu-top", { hasText: "Journal" }).click();

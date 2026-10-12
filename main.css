@@ -698,3 +698,47 @@ div.profile#DailyLine:empty { display: none; }
 .sound-popup.sp-elite .sp-bar { background: linear-gradient(to right, #604000, #c08a10); }
 @media (prefers-reduced-motion: reduce) { .sound-popup { transition: none; transform: none; } }
 @media (max-width: 480px) { #SoundPopups { left: 8px; right: 8px; width: auto; bottom: 104px; } }
+
+/* ---- Glitches in the Matrix (glitch.js): past the Old Bastard™ ------------- */
+
+#main.glitch-rgb { text-shadow: -2px 0 rgba(255, 0, 60, 0.75), 2px 0 rgba(0, 220, 255, 0.75); }
+#main.glitch-hue { filter: hue-rotate(140deg) saturate(2.2); }
+#main.glitch-font, #main.glitch-font * { font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", cursive !important; }
+#main.glitch-shake { animation: glitch-shake 0.35s steps(6) 1; }
+.panel.glitch-invert { filter: invert(1); }
+.panel.glitch-skew { transform: skewX(-8deg) translateX(6px); }
+.panel.glitch-flip { transform: rotate(180deg); }
+.panel.glitch-tear { animation: glitch-tear 0.42s steps(5) 1; }
+@keyframes glitch-shake {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-6px, 2px); } 40% { transform: translate(5px, -3px); }
+  60% { transform: translate(-3px, 4px); } 80% { transform: translate(4px, 1px); } 100% { transform: translate(0, 0); }
+}
+@keyframes glitch-tear {
+  0% { clip-path: inset(0 0 70% 0); transform: translateX(-12px); }
+  25% { clip-path: inset(30% 0 40% 0); transform: translateX(10px); }
+  50% { clip-path: inset(55% 0 10% 0); transform: translateX(-8px); }
+  75% { clip-path: inset(10% 0 60% 0); transform: translateX(14px); }
+  100% { clip-path: inset(0); transform: none; }
+}
+.glitch-wakeup {
+  position: fixed;
+  z-index: 9500;
+  padding: 6px 10px;
+  background: #000;
+  color: #33ff66;
+  font: 15px "Courier New", monospace;
+  text-shadow: 0 0 4px #33ff66;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.glitch-ghost {
+  position: fixed;
+  z-index: 8000;
+  margin: 0;
+  opacity: 0.35;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+@media (prefers-reduced-motion: reduce) {
+  #main.glitch-shake, .panel.glitch-tear { animation: none; }
+}

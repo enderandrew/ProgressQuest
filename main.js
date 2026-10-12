@@ -1965,6 +1965,7 @@ function CompanyLine(line, b, fight) {
                weapon: Get(Equips,'Weapon') || "your bare hands",
                spell: (game.bestspell || "").trim() || "a spell", foe: fight ? fight.foe || "the foe" : "the foe",
                rounds: rounds };
+  BastardVars(vars);   // ({the-bastard}: story.js)
   var text = StoryText(line, vars);
   return text.charAt(0).toUpperCase() + text.slice(1) + (/[.!?”]$/.test(text) ? "" : ".");
 }

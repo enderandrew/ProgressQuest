@@ -112,6 +112,7 @@ function JournalVars(extra) {
     quests: (game.questsDone || 0).toLocaleString(),
     act: ActCaption(game.act || 0)
   };
+  if (typeof BastardVars == "function") BastardVars(v);   // ({the-bastard}: whoever it is now)
   // the rival (story.js), once there is one
   if (game.rival && typeof RivalVars == "function") {
     var rv = RivalVars();
@@ -454,7 +455,7 @@ K.JournalLevel = [
   "Level {level}. Another progress bar filled. That sweet, sweet dopamine drip directly into my brainstem.",
   "Level {level}. After {w} fights, my lower back sounds like bubble wrap. Looking forward to more ergonomic violence at level {next}.",
   "Level {level}. Cleared {q} quests and amassed {g} gold. I did all the heavy lifting while you stared at loading bars. You're welcome.",
-  "Level {level}. Am I any closer to catching the Old Bastard™? No, but {w} wild beasts are now dead, so that's something.",
+  "Level {level}. Am I any closer to catching {the-bastard}? No, but {w} wild beasts are now dead, so that's something.",
   "Level {level}. {q} fetch quests, {w} mindless brawls, and zero personal growth. Bring on level {next}.",
   "Level {level}. Pockets are {g} gold heavier from rummaging through monster entrails. I try not to think about where the coins were kept.",
   "Level {level}. Surviving {w} fights with only {d} deaths is statistically acceptable according to my guild rep.",
@@ -588,12 +589,12 @@ K.JournalActAsides = [
   "Welcome to {act}. The dramatic arc insists that {hero} requires personal growth, but the best I can offer is +1 to an arbitrary stat.",
   "Starting {act}. The narrative pacing fell apart {hours} ago, but the invisible author refuses to roll the credits.",
   "New Act banner unlocked! That means beefier trash mobs, longer progress bars, and the exact same complete absence of player agency.",
-  "{act} begins. After {quests} completed fetch quests, I am convinced the Old Bastard™ isn't even evil—he just wanted to get away from this script.",
+  "{act} begins. After {quests} completed fetch quests, I am convinced {the-bastard} isn't even evil—they just wanted to get away from this script.",
   "A fresh Act opens. The soundtrack swelled dramatically, but since this is a text-based idle game in a browser tab, you only heard the whir of your laptop fan unless you clicked on WinCramp.",
   "Here marks the start of {act}. If this epic tale has a moral lesson, it was thoroughly buried under the corpses of the {wins} things I slaughtered.",
   "Another Act transition. Somewhere a screenwriter is weeping into their keyboard, and somewhere a server thread is keeping track of my pointless suffering.",
   "Curtains up on {act}. I have survived {wins} battles and died {deaths} times just to reach a title card that took three seconds to generate.",
-  "Entering {act}. As an ostensibly {alignment} {race}, my primary motivation is 5% vengeance on the Old Bastard™ and 95% staring blankly at loading bars.",
+  "Entering {act}. As an ostensibly {alignment} {race}, my primary motivation is 5% vengeance on {the-bastard} and 95% staring blankly at loading bars.",
   "Starting {act}. Society expects great things from a {race} {klass}. Society clearly hasn't watched me swing {weapon} at woodland creatures for {hours}.",
   "Welcome to {act}. My alignment is supposedly {alignment}, but after {days} days of endless violence, I align mostly with 'Aggressively Exhausted'.",
   "{act} is upon us. A level {level} {race} {klass} shouldn't have to put up with dramatic three-act structures, yet here we are.",
@@ -694,7 +695,7 @@ K.JournalSplurgeAsides = [
   "Spent {gold} gold on {thing}. The merchant smiled, bowed, locked his front door, and immediately retired to a tropical island. I just funded his entire bloodline.",
   "Dropped {gold} gold on {thing}. Somewhere in {kingdom}, a professional economist is clutching their chest and collapsing into a spreadsheet.",
   "Just liquidated {gold} gold for {thing}. Money can't buy happiness, but it can buy completely useless garbage while the player is afk.",
-  "Paid {gold} gold for {thing}. If the Old Bastard™ knew how terribly I mismanage liquid assets, he wouldn't fear me; he'd just offer me financial counseling.",
+  "Paid {gold} gold for {thing}. If {the-bastard} knew how terribly I mismanage liquid assets, they wouldn't fear me; they'd just offer me financial counseling.",
   "Blew {gold} gold on {thing}. Is it tax-deductible? Who cares. Royal tax collectors haven't dared approach a level {level} maniac in months.",
   "They charged me {gold} gold for {thing}. I didn't even haggle. Slogging through {quests} fetch quests has completely eroded my concept of value.",
   "I spent {gold} gold on {thing}. You left me unattended in the marketplace while you looked at memes, so frankly, this is your fault.",
@@ -710,7 +711,7 @@ K.JournalSplurgeAsides = [
   "Paid {gold} gold for {thing}. The clerk asked if I wanted a gift receipt. I asked if monsters accept returns. We shared a hollow, awkward silence.",
   "Acquired {thing} for {gold} gold. The label said 'Luxury Edition'. My dented {gear} and notched {weapon} would like a word.",
   "If anyone asks where that {gold} gold went, tell them a dragon stole it. Do not tell them I traded it for {thing}.",
-  "Dropped {gold} gold on {thing}. At this rate, I won't need to defeat the Old Bastard™—I will simply bankrupt him through aggressive local inflation.",
+  "Dropped {gold} gold on {thing}. At this rate, I won't need to defeat {the-bastard}—I will simply bankrupt them through aggressive local inflation.",
   "Dropped {gold} gold on {thing} because the devs felt we needed gold sinks to balance the game. So there you have it.",
 ];
 
@@ -742,6 +743,10 @@ K.JournalRivalAsides = [
 // After the Old Bastard™: what a hero writes on the way to level 100, and
 // past it
 K.JournalAfterAsides = [
+  "Today the sky went blue and filled up with white writing. Something about the fourth wall. Then it went back. Nobody else saw it. Everybody else very carefully didn't see it.",
+  "Saw a black cat walk past. Then the same black cat walked past again, exactly the same. I've decided not to think about it.",
+  "For a second the headings in my own character sheet turned into little squiggles. Then they were fine. I'm fine.",
+  "Green letters, falling, for a second, everywhere. Then the Killing Fields™ again. I've started blinking more.",
   "Level {level}. The Old Bastard™ is gone and I'm still hitting things. Turns out that was the hobby all along.",
   "{rival} has started signing letters “the New Bastard™”. I've started not reading them.",
   "People keep asking what's next. Level 100, apparently. {rival} will be waiting. {rival} is always waiting.",
@@ -759,6 +764,10 @@ K.JournalAfterAsides = [
   "The credits rolled at level 50. I sat through all of them. There was a name I didn't recognize at the end: “and you, for not closing the tab”."
 ];
 K.JournalEndAsides = [
+  "Today the sky went blue and filled up with white writing. Something about retention. Then it went back. Nobody else saw it. Everybody else very carefully didn't see it.",
+  "Saw a black cat walk past. Then the same black cat walked past again, exactly the same. I've decided not to think about it.",
+  "For a second the headings in my own character sheet turned into little squiggles. Then they were fine. I'm fine.",
+  "Green letters, falling, for a second, everywhere. Then the Killing Fields™ again. I've stopped blinking.",
   "Level {level}. Nothing left to beat. I beat things anyway. It's what I'm for.",
   "{rival} sent a fruit basket. It was a nice fruit basket. We're not friends. It was a nice fruit basket.",
   "The numbers keep going up. I've stopped asking why. I've started enjoying it, which is worse.",
@@ -888,15 +897,23 @@ K.JournalAwayAside = [
 
 K.JournalBrandLine = [
   "They say I cheated ({reason}). I would like it on record that I was not consulted.",
+  "The Developer expected players to cheat. They may not have expected to be caught: ({reason})",
   "Branded a cheater ({reason}). I didn't do anything. Somebody did something to me. That's the whole problem with being a save file.",
   "Apparently I'm a cheater now ({reason}). I'd argue, but my lawyer is a progress bar."
 ];
 
 K.JournalOpenedAside = [
   "Wait. Someone actually opened this. Okay. Act natural. Everything in here is fine and normal and heroic.",
-  "Someone opened the journal. I'm not saying it's you. I'm saying the only other person here is a {race} with a {weapon}, and it isn't me.",
+  "Someone opened the Journal. I'm not saying it's you. I'm saying the only other person here is a {race} with a {weapon}, and it isn't me.",
   "Oh no. You read it. All of it? The part about the pants? Forget the part about the pants.",
-  "You opened my journal. Bold. I'll be writing more carefully from now on. (I won't.)"
+  "Someone is actually reading the Journal? They might see how bad all the writing is. I blame the Developer.",
+  "I thought this game was just going to idle unmonitored. Someone is actually paying attention and reading the Journal?",
+  "Someone is reading the Journal? I am quickly erasing my Enemeies-to-Lovers-slow-burn fan fic about me and {nemesis}",
+  "If {nemesis} is reading this, they are mid. Everyone says so.",
+  "Generate some random BS real quick since the Player is trying to read the Journal. Pretend like we have always been updating it.",
+  "If you or a loved one has bene exposed to The Journal, you may be entitled to financial compensation.",
+  "Normally only The Architect monitors the Journal, but you do not need to worry about The Architect. I said nothing.",
+  "You opened my Journal. Bold. I'll be writing more carefully from now on. (I won't.)"
 ];
 
 K.JournalRetire = [
@@ -911,6 +928,8 @@ K.JournalDeath = [
   "{cause}. If anyone finds this journal: it was going really well right up until it wasn't.",
   "Final entry, probably: {cause}. Tell the Reader I said hi. They never read these anyway.",
   "{cause}. Hardcore, they said. One life, they said. I thought they were being dramatic.",
+  "{cause}. Hardcore, I thought this was Dark Souls and I was supposed to die all the time.",
+  "{cause}. Hardcore. Charge {nemesis} for my funeral but do not tell them.",
   "Writing this fast: {cause}. Level {level}, {hours} in. Please bury me with my {weapon}. Or sell it. Honestly, sell it.",
   "{cause}. The Hall of the Fallen gets a {race} {klass} today. Make sure they spell {hero} right on the stone."
 ];

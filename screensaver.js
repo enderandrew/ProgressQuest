@@ -5,6 +5,9 @@
  * (Not at all for anyone who asked their system for reduced motion; and the
  * key that wakes it is swallowed, so it doesn't also act on the game: Q
  * would quit.)
+ *
+ * ScreensaverFlash(ms): the screensaver for a moment, on its own (a glitch
+ * in the Matrix, past level 50: Glitch in main.js), already raining.
  */
 (function () {
     const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -30,8 +33,8 @@
         return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
-    function startScreensaver() {
-        if (isScreensaverActive || reducedMotion()) return;
+    function startScreensaver(src) {
+        if (isScreensaverActive || reducedMotion()) return false;
         isScreensaverActive = true;
 
         containerEl = document.createElement('div');
@@ -52,7 +55,7 @@
 
         const iframe = document.createElement('iframe');
         iframe.id = 'pq-screensaver-frame';
-        iframe.src = 'matrix.html';
+        iframe.src = src || 'matrix.html';
         iframe.title = 'Screensaver: move the mouse or press a key to wake';
         iframe.style.cssText = 'width: 100%; height: 100%; border: none; display: block; background: #000;';
 
@@ -69,7 +72,17 @@
 
         containerEl.appendChild(iframe);
         document.body.appendChild(containerEl);
+        return true;
     }
+
+    // A moment of the screensaver, then gone (unless it's already up)
+    window.ScreensaverFlash = function (ms) {
+        if (!startScreensaver('matrix.html?burst')) return false;
+        containerEl.setAttribute('aria-hidden', 'true');
+        var mine = containerEl;
+        setTimeout(function () { if (containerEl === mine) wakeUp(); }, ms || 1000);
+        return true;
+    };
 
     function wakeUp() {
         if (!isScreensaverActive) return;
@@ -99,7 +112,8 @@
     // Primary input listeners on main window
     const events = ['mousemove', 'mousedown', 'mouseup', 'keydown', 'touchstart', 'wheel'];
     events.forEach(function (evt) {
-        window.addEventListener(evt, recordActivity, { passive: true, capture: true });
+        // (keydown isn't passive: the key that wakes it is swallowed)
+        window.addEventListener(evt, recordActivity, { passive: evt !== 'keydown', capture: true });
     });
 
     // Tab state listeners
